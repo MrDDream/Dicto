@@ -7,8 +7,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use dicto_ffi::{
-    DictationListener, DictationResult, DiscardReason, FfiError, ModelManager, Dictation, State, Storage, TextEdit,
-    Trigger, render_edits,
+    Dictation, DictationListener, DictationResult, DiscardReason, Engine, FfiError, ModelManager, RefineClient, State,
+    Storage, TextEdit, Trigger, refine_presets, render_edits,
 };
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition};
@@ -16,7 +16,9 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 use crate::audio::Recorder;
 use crate::insert::{self, Written};
-use crate::settings::{ListenMode, Output, Pill, Settings};
+use crate::providers::{self, Kind};
+use crate::secrets;
+use crate::settings::{ListenMode, Output, Pill, ProviderConfig, Settings};
 
 const SILERO: &str = "silero-vad";
 
@@ -112,6 +114,8 @@ pub struct Core {
     pub settings: Mutex<Settings>,
     recorder: Recorder,
     engine: Mutex<EngineStatus>,
+    /// Moteur chargé (local ou en ligne), gardé pour les fichiers audio.
+    engine_obj: Mutex<Option<Arc<Engine>>>,
     state: Mutex<State>,
     started_at: Mutex<Option<u64>>,
     pending: AtomicU32,
@@ -123,6 +127,9 @@ pub struct Core {
     escape: AtomicBool,
     silero: Mutex<Option<String>>,
     silero_applied: AtomicBool,
+    /// Transcription de fichier en cours (annulable) et dernier résultat (pour l'export).
+    pub file_job: Mutex<Option<Arc<dicto_ffi::FileJob>>>,
+    pub last_file: Mutex<Option<(String, dicto_ffi::FileTranscript)>>,
 }
 
 struct Listener(AppHandle);
@@ -194,6 +201,7 @@ impl Core {
             settings: Mutex::new(settings),
             recorder: Recorder::default(),
             engine: Mutex::new(EngineStatus::none("Choisis un modèle dans Modèles.")),
+            engine_obj: Mutex::new(None),
             state: Mutex::new(State::Idle),
             started_at: Mutex::new(None),
             pending: AtomicU32::new(0),
@@ -204,6 +212,8 @@ impl Core {
             escape: AtomicBool::new(false),
             silero: Mutex::new(None),
             silero_applied: AtomicBool::new(false),
+            file_job: Mutex::new(None),
+            last_file: Mutex::new(None),
         }))
     }
 
@@ -258,6 +268,36 @@ impl Core {
         if self.dictation.state() == State::Idle {
             self.dictation.set_mode(s.mode.into());
         }
+        // Retouche automatique de chaque dictée, si demandée.
+        let instruction = if s.auto_refine { self.preset_instruction(&s.refine_preset) } else { None };
+        match (instruction, self.refine_client()) {
+            (Some(i), Some(client)) => self.dictation.set_refiner(Some(client), Some(i)),
+            _ => self.dictation.set_refiner(None, None),
+        }
+    }
+
+    /// Client du fournisseur de retouche actif, s'il est configuré.
+    pub fn refine_client(&self) -> Option<Arc<RefineClient>> {
+        let s = self.settings.lock().unwrap();
+        let slug = s.refine_provider.clone()?;
+        let provider = providers::refine_provider(&slug)?;
+        let cfg = s.refine_configs.get(&slug).cloned().unwrap_or_default();
+        let key = providers::secret_name(Kind::Refine, &slug).and_then(|n| secrets::get(&n));
+        Some(RefineClient::new(provider, cfg.base_url, key, cfg.model))
+    }
+
+    /// Consigne d'un préréglage (« custom » : celle de l'utilisateur).
+    pub fn preset_instruction(&self, id: &str) -> Option<String> {
+        match id {
+            "" | "none" => None,
+            "custom" => Some(self.settings.lock().unwrap().refine_custom.clone()).filter(|c| !c.trim().is_empty()),
+            id => refine_presets().into_iter().find(|p| p.id == id).map(|p| p.instruction),
+        }
+    }
+
+    /// Moteur en service (modèle local ou service en ligne), pour les fichiers audio.
+    pub fn current_engine(&self) -> Option<Arc<Engine>> {
+        self.engine_obj.lock().unwrap().clone()
     }
 
     fn set_engine_status(&self, status: EngineStatus) {
@@ -267,10 +307,16 @@ impl Core {
 
     /// Charge le modèle choisi (quelques secondes pour les gros) sans bloquer l'interface.
     pub fn load_engine(self: &Arc<Self>) {
-        let (model, gpu) = {
+        *self.engine_obj.lock().unwrap() = None;
+        let (model, gpu, cloud) = {
             let s = self.settings.lock().unwrap();
-            (s.model.clone(), s.use_gpu)
+            let cloud = s.cloud.clone().map(|slug| (s.cloud_configs.get(&slug).cloned().unwrap_or_default(), slug));
+            (s.model.clone(), s.use_gpu, cloud)
         };
+        if let Some((cfg, slug)) = cloud {
+            self.load_cloud_engine(&slug, cfg);
+            return;
+        }
         let Some(id) = model else {
             self.set_engine_status(EngineStatus::none("Choisis un modèle dans Modèles."));
             return;
@@ -284,6 +330,7 @@ impl Core {
         let core = self.clone();
         std::thread::spawn(move || match core.models.create_engine(id, gpu) {
             Ok(engine) => {
+                *core.engine_obj.lock().unwrap() = Some(engine.clone());
                 core.dictation.set_engine(engine);
                 core.set_engine_status(EngineStatus {
                     kind: "ready",
@@ -293,6 +340,31 @@ impl Core {
             }
             Err(e) => core.set_engine_status(EngineStatus { kind: "error", label, detail: Some(e.to_string()) }),
         });
+    }
+
+    /// Service en ligne : rien à charger, le client est prêt aussitôt.
+    fn load_cloud_engine(&self, slug: &str, cfg: ProviderConfig) {
+        let Some(spec) = providers::spec(Kind::Transcription, slug) else {
+            self.set_engine_status(EngineStatus::none("Service inconnu."));
+            return;
+        };
+        let key = providers::secret_name(Kind::Transcription, slug).and_then(|n| secrets::get(&n));
+        let problem = match (&cfg.model, &key, &cfg.base_url) {
+            (None, _, _) => Some("aucun modèle choisi"),
+            (_, None, _) if spec.needs_key => Some("clé d'API manquante"),
+            (_, _, None) if spec.url_placeholder.is_some() => Some("adresse du serveur manquante"),
+            _ => None,
+        };
+        if let Some(p) = problem {
+            self.set_engine_status(EngineStatus { kind: "error", label: spec.label.into(), detail: Some(format!("{p} : règle-le dans Modèles.")) });
+            return;
+        }
+        let model = cfg.model.unwrap_or_default();
+        let provider = providers::cloud_provider(slug).expect("service connu");
+        let engine = Engine::cloud(provider, cfg.base_url, key, model.clone());
+        *self.engine_obj.lock().unwrap() = Some(engine.clone());
+        self.dictation.set_engine(engine);
+        self.set_engine_status(EngineStatus { kind: "ready", label: format!("{} · {model}", spec.label), detail: Some("en ligne".into()) });
     }
 
     /// Détection de voix Silero (212 Ko) pour le mode continu, téléchargée une fois.

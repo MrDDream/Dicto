@@ -4,14 +4,16 @@
   import Logo from "./lib/Logo.svelte";
   import { app } from "./lib/store.svelte";
   import Dictee from "./screens/Dictee.svelte";
+  import Fichiers from "./screens/Fichiers.svelte";
   import Historique from "./screens/Historique.svelte";
   import Modeles from "./screens/Modeles.svelte";
   import Raccourcis from "./screens/Raccourcis.svelte";
   import Reglages from "./screens/Reglages.svelte";
 
-  type Screen = "dictee" | "historique" | "modeles" | "raccourcis" | "reglages";
+  type Screen = "dictee" | "fichiers" | "historique" | "modeles" | "raccourcis" | "reglages";
   const NAV: { id: Screen; label: string; icon: IconName }[] = [
     { id: "dictee", label: "Dictée", icon: "mic" },
+    { id: "fichiers", label: "Fichiers", icon: "file" },
     { id: "historique", label: "Historique", icon: "history" },
     { id: "modeles", label: "Modèles", icon: "models" },
     { id: "raccourcis", label: "Raccourcis", icon: "keyboard" },
@@ -25,7 +27,7 @@
     await app.init();
     ready = true;
     // Premier lancement sans modèle : on commence par en choisir un.
-    if (app.snapshot.engine.kind === "none" && !app.settings?.model) screen = "modeles";
+    if (app.snapshot.engine.kind === "none" && !app.settings?.model && !app.settings?.cloud) screen = "modeles";
   });
 
   const engine = $derived(app.snapshot.engine);
@@ -34,7 +36,9 @@
   );
   const statusText = $derived(
     engine.kind === "ready"
-      ? "Prêt, en local"
+      ? engine.detail === "en ligne"
+        ? "Prêt, en ligne"
+        : "Prêt, en local"
       : engine.kind === "loading"
         ? "Chargement du modèle…"
         : engine.kind === "error"
@@ -71,6 +75,8 @@
     {#if ready}
       {#if screen === "dictee"}
         <Dictee />
+      {:else if screen === "fichiers"}
+        <Fichiers />
       {:else if screen === "historique"}
         <Historique />
       {:else if screen === "modeles"}

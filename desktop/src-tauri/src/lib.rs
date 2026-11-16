@@ -3,7 +3,10 @@
 mod audio;
 mod commands;
 mod core;
+mod decode;
 mod insert;
+mod providers;
+mod secrets;
 mod settings;
 mod tray;
 
@@ -18,6 +21,7 @@ pub fn run() {
     tauri::Builder::default()
         // Une seule instance : relancer Dicto ramène la fenêtre existante.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| tray::show_main(app)))
+        .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
@@ -64,6 +68,18 @@ pub fn run() {
             commands::add_term,
             commands::remove_term,
             commands::credits,
+            commands::providers,
+            commands::save_provider,
+            commands::forget_provider_key,
+            commands::provider_models,
+            commands::set_cloud_engine,
+            commands::set_refine_provider,
+            commands::refine_presets,
+            commands::refine_text,
+            commands::pick_audio_file,
+            commands::transcribe_file,
+            commands::cancel_file,
+            commands::export_file,
         ])
         .run(tauri::generate_context!())
         .expect("Dicto n'a pas pu démarrer");

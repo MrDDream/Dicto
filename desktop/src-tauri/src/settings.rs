@@ -1,5 +1,7 @@
 //! Réglages du bureau, gardés en JSON dans la base du cœur (clé `desktop.settings`).
 
+use std::collections::HashMap;
+
 use dicto_ffi::{Mode, Storage};
 use serde::{Deserialize, Serialize};
 
@@ -46,6 +48,14 @@ pub enum Pill {
     Hidden,
 }
 
+/// Réglage d'un service en ligne (la clé, elle, est dans le coffre du système).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ProviderConfig {
+    pub model: Option<String>,
+    pub base_url: Option<String>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
@@ -65,6 +75,17 @@ pub struct Settings {
     pub shortcut_hold: String,
     pub pill: Pill,
     pub sounds: bool,
+    /// Service de transcription en ligne en service (sinon le modèle local).
+    pub cloud: Option<String>,
+    pub cloud_configs: HashMap<String, ProviderConfig>,
+    /// Fournisseur de retouche par IA actif.
+    pub refine_provider: Option<String>,
+    pub refine_configs: HashMap<String, ProviderConfig>,
+    /// Consigne de retouche : un préréglage du cœur, ou « custom ».
+    pub refine_preset: String,
+    pub refine_custom: String,
+    /// Retoucher chaque dictée (sinon seulement avec « Reformuler »).
+    pub auto_refine: bool,
 }
 
 impl Default for Settings {
@@ -82,6 +103,13 @@ impl Default for Settings {
             shortcut_hold: "Ctrl+Shift+Space".into(),
             pill: Pill::Bottom,
             sounds: true,
+            cloud: None,
+            cloud_configs: HashMap::new(),
+            refine_provider: None,
+            refine_configs: HashMap::new(),
+            refine_preset: "clean".into(),
+            refine_custom: String::new(),
+            auto_refine: false,
         }
     }
 }

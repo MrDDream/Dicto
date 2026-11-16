@@ -28,6 +28,11 @@ cpal = "0.18"
 enigo = "0.6"
 arboard = "3"
 log = "0.4"
+tauri-plugin-dialog = "2"
+# Clés d'API dans le coffre du système (Gestionnaire d'identification, Trousseau, Secret Service).
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+# Décodage des fichiers audio (MP3, M4A/AAC, WAV, FLAC, OGG Vorbis…).
+symphonia = { version = "0.5", features = ["all"] }
 
 [features]
 default = ["engines"]

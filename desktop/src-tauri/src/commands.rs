@@ -6,7 +6,9 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::core::{Core, Snapshot};
-use crate::settings::Settings;
+use crate::providers::{self, Kind};
+use crate::secrets;
+use crate::settings::{ProviderConfig, Settings};
 
 type Core_<'a> = State<'a, Arc<Core>>;
 
@@ -26,7 +28,11 @@ pub fn set_settings(core: Core_, settings: Settings) -> Vec<String> {
     let previous = std::mem::replace(&mut *core.settings.lock().unwrap(), settings.clone());
     settings.save(&core.storage);
     core.apply_options();
-    if previous.model != settings.model || previous.use_gpu != settings.use_gpu {
+    if previous.model != settings.model
+        || previous.use_gpu != settings.use_gpu
+        || previous.cloud != settings.cloud
+        || previous.cloud_configs != settings.cloud_configs
+    {
         core.load_engine();
     }
     let shortcuts_changed = previous.shortcut_toggle != settings.shortcut_toggle
@@ -191,10 +197,12 @@ pub fn use_model(core: Core_, id: String) {
     use_model_inner(core.inner(), id);
 }
 
+/// Choisir un modèle local quitte le service en ligne éventuel.
 fn use_model_inner(core: &Arc<Core>, id: String) {
     let settings = {
         let mut s = core.settings.lock().unwrap();
         s.model = Some(id);
+        s.cloud = None;
         s.clone()
     };
     settings.save(&core.storage);
@@ -278,4 +286,292 @@ pub fn credits(core: Core_) -> Vec<CreditView> {
         .into_iter()
         .map(|c| CreditView { name: c.name, license: c.license, credit: c.credit, url: c.url })
         .collect()
+}
+
+// --- Services en ligne et retouche par IA ------------------------------------------------
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderView {
+    #[serde(flatten)]
+    spec: providers::Spec,
+    has_key: bool,
+    model: Option<String>,
+    base_url: Option<String>,
+    /// Modèle choisi, clé et adresse présentes si nécessaires.
+    configured: bool,
+    active: bool,
+}
+
+fn configs(s: &Settings, kind: Kind) -> &std::collections::HashMap<String, ProviderConfig> {
+    match kind {
+        Kind::Transcription => &s.cloud_configs,
+        Kind::Refine => &s.refine_configs,
+    }
+}
+
+#[tauri::command]
+pub fn providers(core: Core_, kind: Kind) -> Vec<ProviderView> {
+    let s = core.settings.lock().unwrap().clone();
+    let active = match kind {
+        Kind::Transcription => s.cloud.clone(),
+        Kind::Refine => s.refine_provider.clone(),
+    };
+    providers::specs(kind)
+        .iter()
+        .map(|spec| {
+            let cfg = configs(&s, kind).get(spec.slug).cloned().unwrap_or_default();
+            let has_key = providers::secret_name(kind, spec.slug).is_some_and(|n| secrets::has(&n));
+            let configured = cfg.model.as_deref().is_some_and(|m| !m.is_empty())
+                && (!spec.needs_key || has_key)
+                && (spec.url_placeholder.is_none() || cfg.base_url.as_deref().is_some_and(|u| !u.is_empty()));
+            ProviderView {
+                spec: spec.clone(),
+                has_key,
+                model: cfg.model,
+                base_url: cfg.base_url,
+                configured,
+                active: active.as_deref() == Some(spec.slug),
+            }
+        })
+        .collect()
+}
+
+/// Enregistre la clé (si saisie), le modèle et l'adresse d'un fournisseur.
+#[tauri::command]
+pub fn save_provider(
+    core: Core_,
+    kind: Kind,
+    slug: String,
+    key: Option<String>,
+    model: String,
+    base_url: Option<String>,
+) -> Result<Settings, String> {
+    providers::spec(kind, &slug).ok_or("Fournisseur inconnu.")?;
+    if let (Some(key), Some(name)) = (key.filter(|k| !k.trim().is_empty()), providers::secret_name(kind, &slug)) {
+        secrets::set(&name, key.trim())?;
+    }
+    let cfg = ProviderConfig {
+        model: Some(model.trim().to_string()).filter(|m| !m.is_empty()),
+        base_url: base_url.map(|u| u.trim().to_string()).filter(|u| !u.is_empty()),
+    };
+    let settings = {
+        let mut s = core.settings.lock().unwrap();
+        match kind {
+            Kind::Transcription => s.cloud_configs.insert(slug.clone(), cfg),
+            Kind::Refine => s.refine_configs.insert(slug.clone(), cfg),
+        };
+        s.clone()
+    };
+    settings.save(&core.storage);
+    match kind {
+        Kind::Transcription if settings.cloud.as_deref() == Some(slug.as_str()) => core.load_engine(),
+        Kind::Refine => core.apply_options(),
+        _ => {}
+    }
+    Ok(settings)
+}
+
+#[tauri::command]
+pub fn forget_provider_key(core: Core_, kind: Kind, slug: String) -> Settings {
+    if let Some(name) = providers::secret_name(kind, &slug) {
+        secrets::forget(&name);
+    }
+    let settings = {
+        let mut s = core.settings.lock().unwrap();
+        match kind {
+            Kind::Transcription if s.cloud.as_deref() == Some(slug.as_str()) => s.cloud = None,
+            Kind::Refine if s.refine_provider.as_deref() == Some(slug.as_str()) => s.refine_provider = None,
+            _ => {}
+        }
+        s.clone()
+    };
+    settings.save(&core.storage);
+    core.load_engine();
+    core.apply_options();
+    settings
+}
+
+/// Modèles proposés par le fournisseur (`key`, `base_url` : ceux saisis, sinon les enregistrés).
+#[tauri::command]
+pub async fn provider_models(
+    core: State<'_, Arc<Core>>,
+    kind: Kind,
+    slug: String,
+    key: Option<String>,
+    base_url: Option<String>,
+) -> Result<Vec<String>, String> {
+    let saved = configs(&core.settings.lock().unwrap(), kind).get(&slug).cloned().unwrap_or_default();
+    let key = key
+        .filter(|k| !k.trim().is_empty())
+        .or_else(|| providers::secret_name(kind, &slug).and_then(|n| secrets::get(&n)));
+    let base_url = base_url.filter(|u| !u.trim().is_empty()).or(saved.base_url);
+    match kind {
+        Kind::Transcription => {
+            let provider = providers::cloud_provider(&slug).ok_or("Fournisseur inconnu.")?;
+            match dicto_ffi::list_cloud_models(provider, base_url, key).await {
+                Ok(models) if !models.is_empty() => Ok(models),
+                Ok(_) => Ok(dicto_ffi::fallback_cloud_models(provider)),
+                Err(e) => Err(e.to_string()),
+            }
+        }
+        Kind::Refine => {
+            let provider = providers::refine_provider(&slug).ok_or("Fournisseur inconnu.")?;
+            dicto_ffi::RefineClient::new(provider, base_url, key, None).list_models().await.map_err(|e| e.to_string())
+        }
+    }
+}
+
+/// Met un service en ligne en service (ou revient au modèle local avec `None`).
+#[tauri::command]
+pub fn set_cloud_engine(core: Core_, slug: Option<String>) -> Settings {
+    let settings = {
+        let mut s = core.settings.lock().unwrap();
+        s.cloud = slug;
+        s.clone()
+    };
+    settings.save(&core.storage);
+    core.load_engine();
+    settings
+}
+
+#[tauri::command]
+pub fn set_refine_provider(core: Core_, slug: Option<String>) -> Settings {
+    let settings = {
+        let mut s = core.settings.lock().unwrap();
+        // Modèle conseillé par défaut au premier choix.
+        if let Some(slug) = &slug {
+            let cfg = s.refine_configs.entry(slug.clone()).or_default();
+            if cfg.model.is_none() {
+                if let Some(p) = providers::refine_provider(slug) {
+                    cfg.model = Some(dicto_ffi::default_refine_model(p)).filter(|m| !m.is_empty());
+                }
+            }
+        }
+        s.refine_provider = slug;
+        s.clone()
+    };
+    settings.save(&core.storage);
+    core.apply_options();
+    settings
+}
+
+#[derive(Serialize)]
+pub struct PresetView {
+    id: String,
+    name: String,
+}
+
+#[tauri::command]
+pub fn refine_presets() -> Vec<PresetView> {
+    dicto_ffi::refine_presets().into_iter().map(|p| PresetView { id: p.id, name: p.name }).collect()
+}
+
+/// « Reformuler » : retouche un texte avec un préréglage.
+#[tauri::command]
+pub async fn refine_text(core: State<'_, Arc<Core>>, preset: String, text: String) -> Result<String, String> {
+    let client = core.refine_client().ok_or("Active d'abord un fournisseur de retouche dans Réglages.")?;
+    let instruction = core.preset_instruction(&preset).ok_or("Consigne vide.")?;
+    client.refine(instruction, text).await.map_err(|e| e.to_string())
+}
+
+// --- Fichiers audio ----------------------------------------------------------------------
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileResult {
+    name: String,
+    text: String,
+    duration_ms: u64,
+    engine: String,
+    segments: usize,
+}
+
+struct FileProgress(AppHandle);
+
+impl dicto_ffi::ProgressListener for FileProgress {
+    fn on_progress(&self, fraction: f32) {
+        let _ = self.0.emit("dicto://file-progress", fraction);
+    }
+}
+
+/// Choisit un fichier audio (fenêtre du système).
+#[tauri::command]
+pub async fn pick_audio_file(app: AppHandle) -> Option<String> {
+    use tauri_plugin_dialog::DialogExt;
+    app.dialog()
+        .file()
+        .set_title("Fichier audio à transcrire")
+        .add_filter("Audio", &["mp3", "m4a", "aac", "mp4", "wav", "flac", "ogg", "oga", "mkv", "webm"])
+        .blocking_pick_file()
+        .and_then(|p| p.into_path().ok())
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub async fn transcribe_file(app: AppHandle, core: State<'_, Arc<Core>>, path: String) -> Result<FileResult, String> {
+    let engine = core.current_engine().ok_or("Choisis d'abord un modèle ou un service dans Modèles.")?;
+    let path = std::path::PathBuf::from(path);
+    let name = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let decoded = tauri::async_runtime::spawn_blocking(move || crate::decode::decode(&path))
+        .await
+        .map_err(|e| e.to_string())??;
+    let (language, vocabulary) = {
+        let s = core.settings.lock().unwrap();
+        let vocab = core.storage.vocabulary().map(|v| v.into_iter().map(|t| t.term).collect()).unwrap_or_default();
+        (s.language_option(), vocab)
+    };
+    let job = dicto_ffi::FileJob::new();
+    *core.file_job.lock().unwrap() = Some(job.clone());
+    let result = job
+        .transcribe(engine, decoded.pcm, decoded.sample_rate, decoded.channels, language, vocabulary, Arc::new(FileProgress(app)))
+        .await;
+    *core.file_job.lock().unwrap() = None;
+    let transcript = result.map_err(|e| match e {
+        dicto_ffi::FfiError::Cancelled => "Transcription annulée.".to_string(),
+        e => e.to_string(),
+    })?;
+    let view = FileResult {
+        name: name.clone(),
+        text: transcript.text.clone(),
+        duration_ms: transcript.duration_ms,
+        engine: transcript.engine.clone(),
+        segments: transcript.segments.len(),
+    };
+    *core.last_file.lock().unwrap() = Some((name, transcript));
+    Ok(view)
+}
+
+#[tauri::command]
+pub fn cancel_file(core: Core_) {
+    if let Some(job) = core.file_job.lock().unwrap().as_ref() {
+        job.cancel();
+    }
+}
+
+/// Enregistre la dernière transcription de fichier : txt, srt, vtt ou md.
+#[tauri::command]
+pub async fn export_file(app: AppHandle, core: State<'_, Arc<Core>>, format: String) -> Result<bool, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let (name, transcript) = core.last_file.lock().unwrap().clone().ok_or("Aucune transcription à exporter.")?;
+    let fmt = match format.as_str() {
+        "srt" => dicto_ffi::ExportFormat::Srt,
+        "vtt" => dicto_ffi::ExportFormat::Vtt,
+        "md" => dicto_ffi::ExportFormat::Md,
+        _ => dicto_ffi::ExportFormat::Txt,
+    };
+    let content = dicto_ffi::export_transcript(transcript, fmt, name.clone());
+    let Some(path) = app
+        .dialog()
+        .file()
+        .set_title("Enregistrer la transcription")
+        .set_file_name(format!("{name}.{format}"))
+        .add_filter(format.to_uppercase(), &[format.as_str()])
+        .blocking_save_file()
+        .and_then(|p| p.into_path().ok())
+    else {
+        return Ok(false);
+    };
+    std::fs::write(&path, content).map_err(|e| format!("Enregistrement impossible : {e}"))?;
+    Ok(true)
 }

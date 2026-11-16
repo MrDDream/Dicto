@@ -1,6 +1,7 @@
 // Lien avec le cœur Rust : types, commandes et événements.
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { Brand } from "./logos";
 
 export type ListenMode = "pushToTalk" | "continuous" | "hold";
 export type Output = "type" | "paste" | "review";
@@ -35,6 +36,13 @@ export interface Settings {
   shortcutHold: string;
   pill: PillPosition;
   sounds: boolean;
+  cloud: string | null;
+  cloudConfigs: Record<string, { model: string | null; baseUrl: string | null }>;
+  refineProvider: string | null;
+  refineConfigs: Record<string, { model: string | null; baseUrl: string | null }>;
+  refinePreset: string;
+  refineCustom: string;
+  autoRefine: boolean;
 }
 
 export interface ResultView {
@@ -91,6 +99,37 @@ export interface Credit {
   url: string;
 }
 
+export type ProviderKind = "transcription" | "refine";
+
+export interface ProviderView {
+  slug: string;
+  label: string;
+  brand: Brand;
+  needsKey: boolean;
+  keyHint: string;
+  urlPlaceholder: string | null;
+  urlHint: string | null;
+  chatFilters: boolean;
+  hasKey: boolean;
+  model: string | null;
+  baseUrl: string | null;
+  configured: boolean;
+  active: boolean;
+}
+
+export interface PresetView {
+  id: string;
+  name: string;
+}
+
+export interface FileResult {
+  name: string;
+  text: string;
+  durationMs: number;
+  engine: string;
+  segments: number;
+}
+
 export const api = {
   snapshot: () => invoke<Snapshot>("snapshot"),
   getSettings: () => invoke<Settings>("get_settings"),
@@ -113,7 +152,36 @@ export const api = {
   addTerm: (term: string) => invoke<void>("add_term", { term }),
   removeTerm: (id: number) => invoke<void>("remove_term", { id }),
   credits: () => invoke<Credit[]>("credits"),
+  providers: (kind: ProviderKind) => invoke<ProviderView[]>("providers", { kind }),
+  saveProvider: (kind: ProviderKind, slug: string, key: string | null, model: string, baseUrl: string | null) =>
+    invoke<Settings>("save_provider", { kind, slug, key, model, baseUrl }),
+  forgetProviderKey: (kind: ProviderKind, slug: string) => invoke<Settings>("forget_provider_key", { kind, slug }),
+  providerModels: (kind: ProviderKind, slug: string, key: string | null, baseUrl: string | null) =>
+    invoke<string[]>("provider_models", { kind, slug, key, baseUrl }),
+  setCloudEngine: (slug: string | null) => invoke<Settings>("set_cloud_engine", { slug }),
+  setRefineProvider: (slug: string | null) => invoke<Settings>("set_refine_provider", { slug }),
+  refinePresets: () => invoke<PresetView[]>("refine_presets"),
+  refineText: (preset: string, text: string) => invoke<string>("refine_text", { preset, text }),
+  pickAudioFile: () => invoke<string | null>("pick_audio_file"),
+  transcribeFile: (path: string) => invoke<FileResult>("transcribe_file", { path }),
+  cancelFile: () => invoke<void>("cancel_file"),
+  exportFile: (format: "txt" | "srt" | "vtt" | "md") => invoke<boolean>("export_file", { format }),
 };
+
+/** Nom lisible d'un identifiant de modèle (« gpt-4o-mini-transcribe » → « GPT-4o mini transcribe »). */
+export function prettyModel(id: string): string {
+  const m = id.split("/").pop() ?? id;
+  return m
+    .split("-")
+    .filter(Boolean)
+    .map((p, i) => {
+      if (/^gpt$/i.test(p)) return "GPT";
+      if (i === 0 || /^[a-z]/.test(p) === false) return p.charAt(0).toUpperCase() + p.slice(1);
+      return p;
+    })
+    .join(" ")
+    .replace(/^GPT (\d)/, "GPT-$1");
+}
 
 export const events = {
   snapshot: (f: (s: Snapshot) => void): Promise<UnlistenFn> => listen<Snapshot>("dicto://snapshot", (e) => f(e.payload)),
@@ -122,6 +190,8 @@ export const events = {
   message: (f: (m: string) => void): Promise<UnlistenFn> => listen<string>("dicto://message", (e) => f(e.payload)),
   download: (f: (d: DownloadEvent) => void): Promise<UnlistenFn> =>
     listen<DownloadEvent>("dicto://download", (e) => f(e.payload)),
+  fileProgress: (f: (fraction: number) => void): Promise<UnlistenFn> =>
+    listen<number>("dicto://file-progress", (e) => f(e.payload)),
 };
 
 export const MODE_LABELS: Record<ListenMode, string> = {

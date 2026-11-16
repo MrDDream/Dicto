@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
-  import { api, formatDuration, MODE_LABELS, shortcutKeys, type ListenMode } from "../lib/api";
+  import { onDestroy, onMount } from "svelte";
+  import { api, formatDuration, MODE_LABELS, shortcutKeys, type ListenMode, type PresetView } from "../lib/api";
   import { app } from "../lib/store.svelte";
   import Waveform from "../lib/Waveform.svelte";
 
@@ -40,6 +40,24 @@
       app.show("Texte copié.");
     } catch (e) {
       app.show(String(e));
+    }
+  }
+
+  // « Reformuler » : retouche tout le texte avec un préréglage (fournisseur réglé dans Réglages).
+  let presets = $state<PresetView[]>([]);
+  let preset = $state(app.settings?.refinePreset ?? "clean");
+  let refining = $state(false);
+  onMount(async () => (presets = await api.refinePresets()));
+
+  async function refine() {
+    refining = true;
+    try {
+      const text = await api.refineText(preset, fullText);
+      app.transcript = [{ text, written: false }];
+    } catch (e) {
+      app.show(String(e));
+    } finally {
+      refining = false;
     }
   }
 
@@ -106,6 +124,18 @@
     </div>
     <div class="actions">
       <button class="pill-btn" disabled={!fullText} onclick={copy}>Copier</button>
+      {#if app.settings?.refineProvider}
+        <label class="refine">
+          <span class="sr-only">Consigne de retouche</span>
+          <select bind:value={preset} disabled={refining}>
+            {#each presets as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+            {#if app.settings.refineCustom}<option value="custom">Personnalisée</option>{/if}
+          </select>
+        </label>
+        <button class="pill-btn tonal" disabled={!fullText || refining} onclick={refine}>
+          {refining ? "Retouche…" : "Reformuler"}
+        </button>
+      {/if}
       <button class="pill-btn ghost end" disabled={!fullText} onclick={() => (app.transcript = [])}>Effacer</button>
     </div>
   </section>
@@ -271,6 +301,16 @@
 
   .actions .end {
     margin-left: auto;
+  }
+
+  .refine select {
+    height: 40px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 600;
   }
 
   .bar {

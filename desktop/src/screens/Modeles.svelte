@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { api, events, formatSize, type ModelView } from "../lib/api";
+  import BrandLogo from "../lib/BrandLogo.svelte";
   import Icon from "../lib/Icon.svelte";
+  import type { Brand } from "../lib/logos";
+  import ProviderList from "../lib/ProviderList.svelte";
   import { app } from "../lib/store.svelte";
 
   let models = $state<ModelView[]>([]);
@@ -46,11 +49,12 @@
     refresh();
   }
 
-  function maker(id: string): { name: string; mark: string; bg: string; fg: string } {
-    if (id.startsWith("whisper")) return { name: "OpenAI", mark: "AI", bg: "var(--bg)", fg: "var(--ink)" };
-    if (/^(canary|parakeet|nemotron)/.test(id)) return { name: "NVIDIA", mark: "NV", bg: "#E3F0D0", fg: "#3F6212" };
-    if (id.startsWith("omnilingual")) return { name: "Meta", mark: "M", bg: "#DCE8FB", fg: "#1D4E9E" };
-    return { name: "", mark: "?", bg: "var(--bg)", fg: "var(--ink-2)" };
+  /** Qui a créé le modèle : son logo. */
+  function maker(id: string): { name: string; brand: Brand | null } {
+    if (id.startsWith("whisper")) return { name: "OpenAI", brand: "openai" };
+    if (/^(canary|parakeet|nemotron)/.test(id)) return { name: "NVIDIA", brand: "nvidia" };
+    if (id.startsWith("omnilingual")) return { name: "Meta", brand: "meta" };
+    return { name: "", brand: null };
   }
 
   function languages(m: ModelView): string {
@@ -58,7 +62,8 @@
     return m.languages.map((l) => l.toUpperCase()).join(", ");
   }
 
-  const current = $derived(app.settings?.model);
+  // Un service en ligne en service remplace le modèle local.
+  const current = $derived(app.settings?.cloud ? null : app.settings?.model);
   const installed = $derived(models.filter((m) => m.installed));
   const available = $derived(models.filter((m) => !m.installed));
 </script>
@@ -75,7 +80,9 @@
   {@const p = progress[m.id]}
   {@const inUse = current === m.id}
   <div class="model">
-    <div class="mark" style:background={mk.bg} style:color={mk.fg} title={mk.name}>{mk.mark}</div>
+    <div class="mark" title={mk.name}>
+      {#if mk.brand}<BrandLogo brand={mk.brand} size={26} />{:else}?{/if}
+    </div>
     <div class="info">
       <div class="name">
         {m.name}
@@ -124,7 +131,7 @@
 <div class="screen">
   <div>
     <h1>Modèles</h1>
-    <p class="lead">Ils tournent sur cet ordinateur : ta voix ne quitte pas la machine.</p>
+    <p class="lead">Les modèles locaux tournent sur cet ordinateur : ta voix ne quitte pas la machine.</p>
   </div>
 
   {#if installed.length}
@@ -137,6 +144,15 @@
   <section class="card list" aria-labelledby="catalog">
     <h2 id="catalog">À télécharger</h2>
     {#each available as m (m.id)}{@render model(m)}{/each}
+  </section>
+
+  <section class="card list" aria-labelledby="online">
+    <h2 id="online">Services en ligne</h2>
+    <p class="section-hint">
+      L'audio part chez le fournisseur choisi. Un seul moteur sert à la fois : activer un service le met en service à
+      la place du modèle local.
+    </p>
+    <ProviderList kind="transcription" />
   </section>
 
   <label class="gpu card">
@@ -181,10 +197,19 @@
     border-bottom: none;
   }
 
+  .section-hint {
+    margin: 0;
+    padding: 0 22px 6px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
   .mark {
     width: 44px;
     height: 44px;
     border-radius: 13px;
+    background: var(--bg);
+    color: var(--ink);
     display: flex;
     align-items: center;
     justify-content: center;

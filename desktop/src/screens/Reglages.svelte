@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { api, type Credit, type Term } from "../lib/api";
+  import { api, type Credit, type PresetView, type Term } from "../lib/api";
   import Icon from "../lib/Icon.svelte";
+  import ProviderList from "../lib/ProviderList.svelte";
   import { app } from "../lib/store.svelte";
 
   const LANGUAGES = [
@@ -20,9 +21,20 @@
   let credits = $state<Credit[]>([]);
   let showCredits = $state(false);
 
+  let presets = $state<PresetView[]>([]);
+
   onMount(async () => {
     terms = await api.vocabulary();
+    presets = await api.refinePresets();
   });
+
+  // La consigne personnalisée s'enregistre après la frappe.
+  let customTimer: ReturnType<typeof setTimeout> | undefined;
+  function setCustom(text: string) {
+    if (app.settings) app.settings.refineCustom = text;
+    clearTimeout(customTimer);
+    customTimer = setTimeout(() => app.update({ refineCustom: text }), 600);
+  }
 
   async function addTerm(e: SubmitEvent) {
     e.preventDefault();
@@ -107,6 +119,47 @@
       {/if}
     </section>
 
+    <section class="card" aria-labelledby="retouche">
+      <h2 id="retouche" class="pad">Retouche par IA</h2>
+      <p class="hint pad-x">
+        Ponctuation, style, traduction. Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut
+        tourner sur cet ordinateur. Les clés restent dans le coffre du système.
+      </p>
+      <ProviderList kind="refine" />
+    </section>
+
+    {#if s.refineProvider}
+      <section class="card vocab" aria-labelledby="consigne">
+        <h2 id="consigne">Consigne</h2>
+        <div class="presets" role="radiogroup" aria-label="Consigne de retouche">
+          {#each [...presets, { id: "custom", name: "Personnalisée" }] as p (p.id)}
+            <button role="radio" aria-checked={s.refinePreset === p.id} class:on={s.refinePreset === p.id} onclick={() => app.update({ refinePreset: p.id })}
+              >{p.name}</button
+            >
+          {/each}
+        </div>
+        {#if s.refinePreset === "custom"}
+          <label class="custom">
+            <span class="sr-only">Ta consigne</span>
+            <textarea
+              class="field"
+              rows="3"
+              placeholder="Ex. : mets le texte au format d'un e-mail poli, en vouvoyant."
+              value={s.refineCustom}
+              oninput={(e) => setCustom(e.currentTarget.value)}
+            ></textarea>
+          </label>
+        {/if}
+        <label class="inline-switch">
+          <span>
+            <span class="title">Retoucher chaque dictée</span>
+            <span class="hint">Sinon, utilise « Reformuler » dans l'écran Dictée.</span>
+          </span>
+          <input type="checkbox" class="switch" checked={s.autoRefine} onchange={(e) => app.update({ autoRefine: e.currentTarget.checked })} />
+        </label>
+      </section>
+    {/if}
+
     <section class="card about" aria-labelledby="apropos">
       <h2 id="apropos">À propos</h2>
       <p class="hint">
@@ -135,6 +188,59 @@
 
   .pad {
     padding: 18px 22px 6px;
+  }
+
+  .pad-x {
+    padding: 0 22px 6px;
+  }
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .presets button {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .presets button.on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .custom textarea {
+    width: 100%;
+    height: auto;
+    padding: 10px 12px;
+    font-weight: 500;
+    resize: vertical;
+  }
+
+  .inline-switch {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+  }
+
+  .inline-switch > span {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title {
+    font-size: 15px;
+    font-weight: 700;
   }
 
   label.row {
