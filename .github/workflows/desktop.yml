@@ -51,7 +51,8 @@ jobs:
         working-directory: desktop/src-tauri
         run: |
           rm -rf target/sherpa-onnx-prebuilt
-          rm -rf target/*/build/sherpa-onnx-sys-* target/*/.fingerprint/sherpa-onnx-sys-*
+          # Ancienne disposition (sherpa-onnx-sys-<hash>) et nouvelle (sherpa-onnx-sys/<hash>/fingerprint).
+          rm -rf target/*/build/sherpa-onnx-sys* target/*/.fingerprint/sherpa-onnx-sys*
 
       - name: Bibliothèques Linux (WebKitGTK, zone de notification, son, saisie)
         if: runner.os == 'Linux'
