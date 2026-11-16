@@ -108,7 +108,7 @@ mod tests {
         }
         async fn transcribe(&self, pcm: &[f32], _: &TranscribeOptions) -> Result<Transcript> {
             self.0.fetch_add(1, Ordering::SeqCst);
-            Ok(Transcript::from_text(&format!("{} échantillons", pcm.len())))
+            Ok(Transcript::from_text(format!("{} échantillons", pcm.len())))
         }
     }
 
