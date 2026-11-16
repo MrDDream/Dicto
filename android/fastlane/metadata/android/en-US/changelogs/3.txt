@@ -1,0 +1,2 @@
+- Automatic paragraphs: a clear pause starts a new paragraph (Settings › While dictating).
+- New "Structure" rework style: paragraphs, headings and lists, without changing your words.

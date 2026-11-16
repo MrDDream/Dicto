@@ -32,6 +32,8 @@ export interface Settings {
   language: string;
   voiceCommands: boolean;
   livePreview: boolean;
+  /** Pause (ms) qui ouvre un paragraphe, 0 = jamais. */
+  paragraphPauseMs: number;
   output: Output;
   mode: ListenMode;
   shortcutToggle: string;
@@ -56,6 +58,7 @@ export interface ResultView {
   engine: string;
   durationMs: number;
   written: boolean;
+  newParagraph: boolean;
 }
 
 export interface ModelView {

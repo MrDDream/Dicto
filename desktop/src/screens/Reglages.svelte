@@ -23,6 +23,13 @@
     ["fr", "Français"],
     ["en", "English"],
   ];
+  /** Pauses qui ouvrent un paragraphe (ms, 0 = jamais). */
+  const PARAGRAPH_PAUSES: [number, string][] = [
+    [0, "Jamais"],
+    [1500, "Après 1,5 s"],
+    [2500, "Après 2,5 s"],
+    [4000, "Après 4 s"],
+  ];
   const THEMES: [Theme, string][] = [
     ["auto", "Automatique"],
     ["light", "Clair"],
@@ -151,6 +158,18 @@
         </span>
         <input type="checkbox" class="switch" checked={s.voiceCommands} onchange={(e) => app.update({ voiceCommands: e.currentTarget.checked })} />
       </label>
+      <div class="row">
+        <div class="label">
+          <div class="title">{t("Paragraphes automatiques")}</div>
+          <div class="hint">{t("Une pause marquée ouvre un nouveau paragraphe, entre deux phrases ou dans un long enregistrement.")}</div>
+        </div>
+        <label>
+          <span class="sr-only">{t("Paragraphes automatiques")}</span>
+          <select class="field" value={String(s.paragraphPauseMs ?? 2500)} onchange={(e) => app.update({ paragraphPauseMs: Number(e.currentTarget.value) })}>
+            {#each PARAGRAPH_PAUSES as [ms, name] (ms)}<option value={String(ms)}>{t(name)}</option>{/each}
+          </select>
+        </label>
+      </div>
       <label class="row">
         <span class="label">
           <span class="title">{t("Texte en direct")}</span>

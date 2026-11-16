@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { api, formatDuration, MODE_LABELS, shortcutKeys, type ListenMode, type PresetView } from "../lib/api";
-  import { app } from "../lib/store.svelte";
+  import { app, type Chunk } from "../lib/store.svelte";
   import { t, tr } from "../lib/i18n.svelte";
   import Waveform from "../lib/Waveform.svelte";
 
@@ -33,7 +33,16 @@
         : null,
   );
 
-  const fullText = $derived(app.transcript.map((c) => c.text).join(" "));
+  /** Les phrases groupées en paragraphes (une longue pause en ouvre un nouveau). */
+  const paragraphs = $derived.by(() => {
+    const out: Chunk[][] = [];
+    for (const c of app.transcript) {
+      if (out.length === 0 || c.newParagraph) out.push([c]);
+      else out[out.length - 1].push(c);
+    }
+    return out;
+  });
+  const fullText = $derived(paragraphs.map((p) => p.map((c) => c.text).join(" ")).join("\n\n"));
 
   async function copy() {
     try {
@@ -117,8 +126,8 @@
             : t("Choisis d'abord un modèle dans Modèles.")}
         </p>
       {/if}
-      {#each app.transcript as chunk, i (i)}
-        <p title={chunk.written ? t("Écrit dans la fenêtre active") : undefined}>{chunk.text}</p>
+      {#each paragraphs as para, i (i)}
+        <p>{#each para as chunk, j (j)}{j > 0 ? " " : ""}<span title={chunk.written ? t("Écrit dans la fenêtre active") : undefined}>{chunk.text}</span>{/each}</p>
       {/each}
       {#if snap.partial}<p class="partial">{snap.partial}</p>{/if}
     </div>
@@ -275,7 +284,8 @@
   }
 
   .text p {
-    margin: 0 0 10px;
+    margin: 0 0 14px;
+    white-space: pre-wrap;
     font-size: 21px;
     line-height: 1.6;
     max-width: 68ch;

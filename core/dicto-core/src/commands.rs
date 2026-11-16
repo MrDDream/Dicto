@@ -135,6 +135,35 @@ pub fn render(edits: &[Edit]) -> String {
     out
 }
 
+/// Met bout à bout les éditions de plusieurs morceaux d'un même enregistrement, un
+/// paragraphe par morceau. « Efface ça » en tête d'un morceau efface le morceau précédent.
+pub fn join_paragraphs(pieces: Vec<Vec<Edit>>) -> Vec<Edit> {
+    let mut out: Vec<Edit> = Vec::new();
+    for piece in pieces {
+        let mut first = true;
+        for e in piece {
+            if e == Edit::DeletePrevious {
+                if out.iter().any(|e| matches!(e, Edit::Text(_))) {
+                    while let Some(last) = out.pop() {
+                        if matches!(last, Edit::Text(_)) {
+                            break;
+                        }
+                    }
+                } else {
+                    out.push(Edit::DeletePrevious);
+                }
+                continue;
+            }
+            if first && matches!(out.last(), Some(Edit::Text(_))) {
+                out.push(Edit::Paragraph);
+            }
+            first = false;
+            out.push(e);
+        }
+    }
+    out
+}
+
 /// Textes que Whisper invente sur du silence ou du bruit (sous-titres de son corpus).
 const HALLUCINATIONS: &[&str] = &[
     "amara.org",
@@ -192,6 +221,18 @@ mod tests {
     fn paragraph_and_render() {
         let edits = parse_voice_commands("Salut. Nouveau paragraphe. À demain. New line. Bye");
         assert_eq!(render(&edits), "Salut.\n\nÀ demain.\nBye");
+    }
+
+    #[test]
+    fn joins_pieces_as_paragraphs() {
+        let pieces = vec![
+            parse_voice_commands("Premier point."),
+            parse_voice_commands("Deuxième point."),
+            parse_voice_commands("Efface ça. Troisième point."),
+        ];
+        assert_eq!(render(&join_paragraphs(pieces)), "Premier point.\n\nTroisième point.");
+        let lone = join_paragraphs(vec![parse_voice_commands("Efface ça.")]);
+        assert_eq!(lone, vec![Edit::DeletePrevious]);
     }
 
     #[test]

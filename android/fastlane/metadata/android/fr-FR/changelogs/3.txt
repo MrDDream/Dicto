@@ -1,0 +1,2 @@
+- Paragraphes automatiques : une pause marquée ouvre un nouveau paragraphe (Réglages › Pendant la dictée).
+- Nouveau style de retouche « Structurer » : paragraphes, intertitres et listes, sans changer tes mots.

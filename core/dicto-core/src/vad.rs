@@ -102,8 +102,9 @@ impl Default for SegmenterConfig {
 pub enum VadEvent {
     /// La voix a été confirmée (`min_speech_ms` atteint).
     SpeechStarted,
-    /// Un énoncé complet, prêt à transcrire.
-    Utterance(Vec<f32>),
+    /// Un énoncé complet, prêt à transcrire, avec le silence qui le sépare de la fin du
+    /// précédent (`None` pour le premier depuis le début de l'écoute).
+    Utterance { samples: Vec<f32>, pause_before_ms: Option<u64> },
 }
 
 pub struct Segmenter<D: VoiceDetector = EnergyVad> {
@@ -117,6 +118,12 @@ pub struct Segmenter<D: VoiceDetector = EnergyVad> {
     confirmed: bool,
     voiced_ms: u32,
     silence_ms: u32,
+    /// Temps écoulé depuis le début de l'écoute, en ms d'audio.
+    clock_ms: u64,
+    /// Début de la voix de l'énoncé en cours.
+    onset_ms: u64,
+    /// Fin de la voix de l'énoncé précédent.
+    last_end_ms: Option<u64>,
 }
 
 impl Segmenter<EnergyVad> {
@@ -139,6 +146,9 @@ impl<D: VoiceDetector> Segmenter<D> {
             confirmed: false,
             voiced_ms: 0,
             silence_ms: 0,
+            clock_ms: 0,
+            onset_ms: 0,
+            last_end_ms: None,
         }
     }
 
@@ -158,8 +168,9 @@ impl<D: VoiceDetector> Segmenter<D> {
         events
     }
 
-    /// Termine l'énoncé en cours (fin de l'écoute) et le renvoie s'il contient de la voix.
-    pub fn flush(&mut self) -> Option<Vec<f32>> {
+    /// Termine l'énoncé en cours (fin de l'écoute) et le renvoie s'il contient de la voix,
+    /// avec la pause qui le précède.
+    pub fn flush(&mut self) -> Option<(Vec<f32>, Option<u64>)> {
         let rest = std::mem::take(&mut self.pending);
         if self.in_speech {
             self.current.extend_from_slice(&rest);
@@ -167,14 +178,18 @@ impl<D: VoiceDetector> Segmenter<D> {
         let out = self.finish();
         self.pre_roll.clear();
         self.detector.reset();
+        self.clock_ms = 0;
+        self.last_end_ms = None;
         out
     }
 
     fn process_frame(&mut self, frame: &[f32], events: &mut Vec<VadEvent>) {
         let speech = self.detector.is_speech(frame);
+        self.clock_ms += self.frame_ms as u64;
 
         if !self.in_speech {
             if speech {
+                self.onset_ms = self.clock_ms - self.frame_ms as u64;
                 self.in_speech = true;
                 self.confirmed = false;
                 self.voiced_ms = self.frame_ms;
@@ -209,11 +224,12 @@ impl<D: VoiceDetector> Segmenter<D> {
                 self.reset_utterance();
                 return;
             }
-            if let Some(u) = self.finish() {
-                events.push(VadEvent::Utterance(u));
+            if let Some((samples, pause_before_ms)) = self.finish() {
+                events.push(VadEvent::Utterance { samples, pause_before_ms });
             }
             if too_long && speech {
                 // On continue directement l'énoncé suivant.
+                self.onset_ms = self.clock_ms;
                 self.in_speech = true;
                 self.confirmed = true;
                 self.voiced_ms = self.cfg.min_speech_ms;
@@ -228,7 +244,7 @@ impl<D: VoiceDetector> Segmenter<D> {
         }
     }
 
-    fn finish(&mut self) -> Option<Vec<f32>> {
+    fn finish(&mut self) -> Option<(Vec<f32>, Option<u64>)> {
         if !self.in_speech || !self.confirmed {
             self.reset_utterance();
             return None;
@@ -237,8 +253,10 @@ impl<D: VoiceDetector> Segmenter<D> {
         // Retire le silence final au-delà de `tail_ms`.
         let trailing = samples_for_ms(self.silence_ms.saturating_sub(self.cfg.tail_ms));
         utt.truncate(utt.len().saturating_sub(trailing));
+        let pause = self.last_end_ms.map(|end| self.onset_ms.saturating_sub(end));
+        self.last_end_ms = Some(self.clock_ms.saturating_sub(self.silence_ms as u64));
         self.reset_utterance();
-        Some(utt)
+        Some((utt, pause))
     }
 
     fn reset_utterance(&mut self) {
@@ -248,6 +266,39 @@ impl<D: VoiceDetector> Segmenter<D> {
         self.silence_ms = 0;
         self.current.clear();
     }
+}
+
+/// Découpe un enregistrement aux silences d'au moins `min_pause_ms` (les paragraphes d'une
+/// longue dictée en push-to-talk). Les morceaux se suivent et couvrent tout l'audio ; chaque
+/// coupure tombe au milieu d'un silence encadré de voix.
+pub fn split_on_pauses(samples: &[f32], min_pause_ms: u32) -> Vec<std::ops::Range<usize>> {
+    let mut vad = EnergyVad::default();
+    let n = vad.frame_len();
+    let frame_ms = (n * 1000 / crate::audio::SAMPLE_RATE as usize) as u32;
+    let speech: Vec<bool> = samples.chunks(n).map(|f| vad.is_speech(f)).collect();
+    let mut cuts = Vec::new();
+    let mut seen_speech = false;
+    let mut run_start = None;
+    for (i, &s) in speech.iter().enumerate() {
+        if s {
+            if let Some(start) = run_start.take() {
+                if seen_speech && (i - start) as u32 * frame_ms >= min_pause_ms {
+                    cuts.push((start + i) / 2 * n);
+                }
+            }
+            seen_speech = true;
+        } else if run_start.is_none() {
+            run_start = Some(i);
+        }
+    }
+    let mut ranges = Vec::new();
+    let mut from = 0;
+    for cut in cuts {
+        ranges.push(from..cut);
+        from = cut;
+    }
+    ranges.push(from..samples.len());
+    ranges
 }
 
 /// Détecteur Silero (réseau de neurones, via sherpa-onnx) : bien plus fiable que
@@ -322,7 +373,7 @@ mod tests {
         events
             .iter()
             .filter_map(|e| match e {
-                VadEvent::Utterance(u) => Some(u.len()),
+                VadEvent::Utterance { samples, .. } => Some(samples.len()),
                 _ => None,
             })
             .collect()
@@ -362,8 +413,49 @@ mod tests {
         let mut seg = Segmenter::energy(SegmenterConfig::default());
         seg.push(&tone(600, 0.3));
         assert!(seg.is_in_speech());
-        let u = seg.flush().expect("énoncé en cours");
+        let (u, pause) = seg.flush().expect("énoncé en cours");
         assert!(crate::audio::ms_for_samples(u.len()) >= 570);
+        assert_eq!(pause, None);
+    }
+
+    #[test]
+    fn measures_the_pause_between_utterances() {
+        let mut seg = Segmenter::energy(SegmenterConfig::default());
+        let mut events = Vec::new();
+        events.extend(seg.push(&tone(1000, 0.3)));
+        events.extend(seg.push(&silence(3000)));
+        events.extend(seg.push(&tone(1000, 0.3)));
+        events.extend(seg.push(&silence(1000)));
+        let pauses: Vec<Option<u64>> = events
+            .iter()
+            .filter_map(|e| match e {
+                VadEvent::Utterance { pause_before_ms, .. } => Some(*pause_before_ms),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(pauses.len(), 2);
+        assert_eq!(pauses[0], None);
+        let p = pauses[1].unwrap();
+        assert!((2900..=3100).contains(&p), "pause = {p} ms");
+    }
+
+    #[test]
+    fn splits_recordings_on_long_pauses_only() {
+        let mut audio = tone(1500, 0.3);
+        audio.extend(silence(1000));
+        audio.extend(tone(1500, 0.3));
+        audio.extend(silence(3000));
+        audio.extend(tone(1500, 0.3));
+        audio.extend(silence(2500));
+        let ranges = split_on_pauses(&audio, 2000);
+        assert_eq!(ranges.len(), 2, "{ranges:?}");
+        assert_eq!(ranges[0].start, 0);
+        assert_eq!(ranges[1].end, audio.len());
+        assert_eq!(ranges[0].end, ranges[1].start);
+        // La coupure tombe au milieu du silence de 3 s (entre 4 s et 7 s).
+        let cut_ms = crate::audio::ms_for_samples(ranges[0].end);
+        assert!((5000..=6000).contains(&cut_ms), "coupure à {cut_ms} ms");
+        assert_eq!(split_on_pauses(&tone(1000, 0.3), 2000).len(), 1);
     }
 
     #[test]

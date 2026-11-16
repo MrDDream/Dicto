@@ -69,6 +69,7 @@ const settings = {
   language: "auto",
   voiceCommands: true,
   livePreview: true,
+  paragraphPauseMs: 2500,
   output: "type",
   mode: "continuous",
   shortcutToggle: "Ctrl+Alt+Space",
@@ -167,6 +168,7 @@ const mock = {
   vocabulary: ["Dicto", "Tauri", "sherpa-onnx", "Parakeet", "Nextcloud"].map((term, i) => ({ id: i + 1, term })),
   presets: [
     ["clean", "Nettoyer"],
+    ["structure", "Structurer"],
     ["email", "Mail"],
     ["notes", "Notes"],
     ["message", "Message"],

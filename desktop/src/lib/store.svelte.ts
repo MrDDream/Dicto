@@ -5,6 +5,8 @@ import { i18n, tr } from "./i18n.svelte";
 export interface Chunk {
   text: string;
   written: boolean;
+  /** Commence un nouveau paragraphe (longue pause avant). */
+  newParagraph?: boolean;
 }
 
 class AppState {
@@ -31,7 +33,7 @@ class AppState {
       events.snapshot((s) => (this.snapshot = s)),
       events.level((l) => (this.level = l)),
       events.result((r) => {
-        if (r.text.trim()) this.transcript.push({ text: r.text, written: r.written });
+        if (r.text.trim()) this.transcript.push({ text: r.text, written: r.written, newParagraph: r.newParagraph });
       }),
       events.message((m) => this.show(m)),
       events.update((u) => (this.updates = u)),

@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dicto.data.Journal
@@ -85,6 +86,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 SettingRow(tr("Commandes vocales"), tr("« nouvelle ligne », « nouveau paragraphe », « efface ça »")) {
                     DictoSwitch(voiceCommands, app.settings::setVoiceCommands, tr("Commandes vocales"))
                 }
+                ParagraphsSetting()
                 SettingRow(
                     tr("Texte en direct"),
                     tr("Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de batterie."),
@@ -213,6 +215,31 @@ private fun UpdatesCard() {
 }
 
 /** Langue de l'app et thème : « Auto » suit le téléphone. */
+/** Pauses qui ouvrent un paragraphe (ms, « 0 » = jamais). */
+private val PARAGRAPH_PAUSES = listOf("0" to "Jamais", "1500" to "Après 1,5 s", "2500" to "Après 2,5 s", "4000" to "Après 4 s")
+
+@Composable
+private fun ParagraphsSetting() {
+    val paragraphs = DictoApp.instance.settings.paragraphs
+    val pause by paragraphs.flow.collectAsStateWithLifecycle()
+    Column(Modifier.padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(tr("Paragraphes automatiques"), style = MaterialTheme.typography.titleSmall)
+        Text(
+            tr("Une pause marquée ouvre un nouveau paragraphe, entre deux phrases ou dans un long enregistrement."),
+            style = MaterialTheme.typography.labelSmall,
+            color = Dicto.InkMuted,
+            fontWeight = FontWeight.Normal,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for ((ms, name) in PARAGRAPH_PAUSES) {
+                ChipButton(onClick = { paragraphs.set(ms) }, accent = ms == pause) {
+                    Text(tr(name), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun AppearanceCard() {
     val settings = DictoApp.instance.settings

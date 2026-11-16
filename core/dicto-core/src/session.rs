@@ -51,6 +51,10 @@ pub enum DiscardReason {
 pub struct Utterance {
     pub id: u64,
     pub samples: Vec<f32>,
+    /// Mode continu : silence depuis la phrase précédente (`None` pour la première).
+    pub pause_before_ms: Option<u64>,
+    /// Push-to-talk ou maintenu : tout l'enregistrement d'un coup (peut contenir des pauses).
+    pub whole_recording: bool,
 }
 
 impl Utterance {
@@ -175,8 +179,8 @@ impl Session {
                 for event in self.segmenter.push(samples) {
                     match event {
                         VadEvent::SpeechStarted => self.set_state(State::Speaking, &mut actions),
-                        VadEvent::Utterance(samples) => {
-                            let u = self.utterance(samples);
+                        VadEvent::Utterance { samples, pause_before_ms } => {
+                            let u = self.utterance(samples, pause_before_ms, false);
                             actions.push(Action::Transcribe(u));
                             self.set_state(State::Listening, &mut actions);
                         }
@@ -200,7 +204,7 @@ impl Session {
         if ms_for_samples(samples.len()) < self.cfg.min_recording_ms as u64 {
             actions.push(Action::Discarded(DiscardReason::TooShort));
         } else {
-            let u = self.utterance(samples);
+            let u = self.utterance(samples, None, true);
             actions.push(Action::Transcribe(u));
         }
         self.set_state(State::Idle, &mut actions);
@@ -209,8 +213,8 @@ impl Session {
 
     fn stop_listening(&mut self) -> Vec<Action> {
         let mut actions = vec![Action::StopCapture];
-        if let Some(samples) = self.segmenter.flush() {
-            let u = self.utterance(samples);
+        if let Some((samples, pause_before_ms)) = self.segmenter.flush() {
+            let u = self.utterance(samples, pause_before_ms, false);
             actions.push(Action::Transcribe(u));
         }
         self.set_state(State::Idle, &mut actions);
@@ -228,10 +232,10 @@ impl Session {
         actions
     }
 
-    fn utterance(&mut self, samples: Vec<f32>) -> Utterance {
+    fn utterance(&mut self, samples: Vec<f32>, pause_before_ms: Option<u64>, whole_recording: bool) -> Utterance {
         let id = self.next_id;
         self.next_id += 1;
-        Utterance { id, samples }
+        Utterance { id, samples, pause_before_ms, whole_recording }
     }
 
     fn set_state(&mut self, state: State, actions: &mut Vec<Action>) {

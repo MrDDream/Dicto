@@ -61,6 +61,8 @@ pub struct ResultView {
     pub duration_ms: u64,
     /// Texte écrit dans une autre fenêtre (sinon gardé dans Dicto).
     pub written: bool,
+    /// Longue pause avant : la phrase ouvre un paragraphe.
+    pub new_paragraph: bool,
 }
 
 /// Raccourcis globaux et le mode qu'ils lancent.
@@ -265,6 +267,7 @@ impl Core {
         let vocabulary = self.storage.vocabulary().map(|v| v.into_iter().map(|t| t.term).collect()).unwrap_or_default();
         self.dictation.set_options(s.language_option(), vocabulary, s.voice_commands);
         self.dictation.set_live_preview(s.live_preview);
+        self.dictation.set_paragraphs((s.paragraph_pause_ms > 0).then_some(s.paragraph_pause_ms));
         if self.dictation.state() == State::Idle {
             self.dictation.set_mode(s.mode.into());
         }
@@ -557,7 +560,13 @@ impl Core {
         }
         let _ = self.app.emit(
             "dicto://result",
-            ResultView { text: result.text.clone(), engine: result.engine.clone(), duration_ms: result.duration_ms, written: to_window },
+            ResultView {
+                text: result.text.clone(),
+                engine: result.engine.clone(),
+                duration_ms: result.duration_ms,
+                written: to_window,
+                new_paragraph: result.new_paragraph,
+            },
         );
         self.emit_snapshot();
         self.update_pill();

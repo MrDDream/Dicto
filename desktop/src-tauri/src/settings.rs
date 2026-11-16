@@ -88,6 +88,8 @@ pub struct Settings {
     pub language: String,
     pub voice_commands: bool,
     pub live_preview: bool,
+    /// Paragraphes automatiques : pause (ms) qui ouvre un paragraphe, 0 = jamais.
+    pub paragraph_pause_ms: u32,
     pub output: Output,
     /// Mode du bouton micro de la fenêtre Dicto.
     pub mode: ListenMode,
@@ -120,6 +122,7 @@ impl Default for Settings {
             language: "auto".into(),
             voice_commands: true,
             live_preview: true,
+            paragraph_pause_ms: 2500,
             output: Output::Type,
             mode: ListenMode::PushToTalk,
             shortcut_toggle: "Ctrl+Alt+Space".into(),
@@ -176,6 +179,7 @@ mod tests {
         assert_eq!(s.output, Output::Paste);
         assert_eq!(s.shortcut_toggle, "Ctrl+Alt+Space");
         assert!(s.voice_commands);
+        assert_eq!(s.paragraph_pause_ms, 2500);
         assert_eq!(s.ui_language, UiLanguage::Auto);
         assert_eq!(s.theme, Theme::Auto);
         let s: Settings = serde_json::from_str(r#"{"uiLanguage":"en","theme":"dark"}"#).unwrap();

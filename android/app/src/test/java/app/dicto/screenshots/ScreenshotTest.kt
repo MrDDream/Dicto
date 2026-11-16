@@ -68,7 +68,7 @@ class ScreenshotTest {
         for ((text, ms) in history) {
             runCatching {
                 d.storage.addHistory(
-                    uniffi.dicto_ffi.DictationResult(text, emptyList(), text, lang, "Parakeet v3", ms, null),
+                    uniffi.dicto_ffi.DictationResult(text, emptyList(), text, lang, "Parakeet v3", ms, null, false),
                     "app.dicto",
                 )
             }

@@ -11,8 +11,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut seg = Segmenter::new(SileroVad::load(std::path::Path::new(&model))?, SegmenterConfig::default());
         for chunk in pcm.chunks(800) {
             for e in seg.push(chunk) {
-                if let VadEvent::Utterance(u) = e {
-                    println!("phrase de {:.2} s", u.len() as f32 / 16_000.0);
+                if let VadEvent::Utterance { samples, pause_before_ms } = e {
+                    println!("phrase de {:.2} s (pause avant : {pause_before_ms:?} ms)", samples.len() as f32 / 16_000.0);
                 }
             }
         }

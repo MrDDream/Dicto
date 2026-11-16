@@ -71,6 +71,7 @@ pub fn builtin_presets() -> Vec<Preset> {
     vec![
         p("clean", "Nettoyer", "Corrige la ponctuation, les majuscules et les fautes, retire les hésitations (euh, bah, hum) et les répétitions. Garde exactement le sens, le ton et les mots de l'auteur."),
         p("email", "Mail", "Mets ce texte en forme de mail clair et poli, avec une formule d'appel et une formule de politesse adaptées. Garde toutes les informations."),
+        p("structure", "Structurer", "Rends ce texte facile à lire sans changer les mots : découpe-le en paragraphes courts, un par idée ; s'il aborde plusieurs sujets, ajoute un intertitre court sur sa propre ligne avant chacun ; transforme les énumérations en listes, une ligne par élément commençant par « • ». Corrige seulement la ponctuation et les majuscules. N'ajoute, ne retire et ne résume rien. Pas de Markdown (ni #, ni **)."),
         p("notes", "Notes", "Transforme ce texte en notes concises sous forme de liste à puces, une idée par puce."),
         p("message", "Message", "Rends ce texte naturel pour un message instantané : phrases courtes, ton conversationnel, sans formules."),
         p("formal", "Formel", "Reformule dans un registre soutenu et professionnel, sans rien ajouter."),

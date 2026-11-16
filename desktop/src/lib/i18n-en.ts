@@ -192,7 +192,7 @@ const EN: Record<string, string> = {
   Néerlandais: "Dutch",
   "Pendant la dictée": "While dictating",
   "Commandes vocales": "Voice commands",
-  "« nouvelle ligne », « nouveau paragraphe », « efface ça »": "“new line”, “new paragraph”, “delete that” (in French for now)",
+  "« nouvelle ligne », « nouveau paragraphe », « efface ça »": "“new line”, “new paragraph”, “delete that”",
   "Texte en direct": "Live text",
   "Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de processeur.":
     "Shows the sentence while you speak, with the fast models. Uses a little more processor.",
@@ -322,6 +322,14 @@ const EN: Record<string, string> = {
   "%1, converti en ONNX par %2": "%1, converted to ONNX by %2",
   "%1, converti au format ggml par %2": "%1, converted to ggml by %2",
   "Bofeng Huang, à partir de Whisper large-v3 (OpenAI)": "Bofeng Huang, based on Whisper large-v3 (OpenAI)",
+  "Paragraphes automatiques": "Automatic paragraphs",
+  "Une pause marquée ouvre un nouveau paragraphe, entre deux phrases ou dans un long enregistrement.":
+    "A clear pause starts a new paragraph, between two sentences or within a long recording.",
+  "Jamais": "Never",
+  "Après 1,5 s": "After 1.5 s",
+  "Après 2,5 s": "After 2.5 s",
+  "Après 4 s": "After 4 s",
+  "Structurer": "Structure",
 };
 
 export default EN;

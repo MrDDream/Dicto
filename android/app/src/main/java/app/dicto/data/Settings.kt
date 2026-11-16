@@ -142,6 +142,8 @@ class Settings(private val storage: Storage) {
     val refinePreset = text("refine.preset", "clean")
     val refineCustom = text("refine.custom", "")
     val autoRefine = flag("refine.auto", false)
+    /** Paragraphes automatiques : pause (ms) qui ouvre un paragraphe, « 0 » = jamais. */
+    val paragraphs = text("dictation.paragraphs", "2500")
     /** Texte provisoire pendant qu'on parle, pour les modèles qui transcrivent une phrase entière. */
     val livePreview = flag("dictation.live_preview", true)
     /** Clavier Dicto : écoute dès qu'il s'ouvre. */

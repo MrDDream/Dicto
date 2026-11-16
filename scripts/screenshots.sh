@@ -15,6 +15,9 @@ source "$ROOT/scripts/env.sh"
 LANGS=("$@")
 [ ${#LANGS[@]} -eq 0 ] && LANGS=(en fr)
 
+echo "==> Cœur pour les tests JVM (captures Android)"
+(cd "$ROOT/core" && cargo build -q -p dicto-ffi --features whisper,sherpa-shared)
+
 echo "==> Interface de bureau"
 (cd "$ROOT/desktop" && npm run build > /dev/null)
 

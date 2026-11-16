@@ -185,6 +185,9 @@ pub struct DictationResult {
     pub duration_ms: u64,
     /// Problème non bloquant (ex. retouche impossible : le texte brut est livré).
     pub warning: Option<String>,
+    /// Longue pause avant cette phrase : elle ouvre un paragraphe. `edits` commence alors par
+    /// `Paragraph` ; `text` ne contient pas ce saut.
+    pub new_paragraph: bool,
 }
 
 // --- Moteurs -------------------------------------------------------------------
@@ -322,6 +325,8 @@ pub trait DictationListener: Send + Sync {
 struct Job {
     id: u64,
     samples: Vec<f32>,
+    pause_before_ms: Option<u64>,
+    whole_recording: bool,
 }
 
 #[derive(Clone)]
@@ -330,6 +335,8 @@ struct JobSettings {
     options: TranscribeOptions,
     voice_commands: bool,
     refine: Option<(Refiner, String)>,
+    /// Paragraphes automatiques : pause qui en ouvre un (`None` = jamais).
+    paragraph_pause_ms: Option<u32>,
 }
 
 enum LiveMsg {
@@ -368,6 +375,7 @@ impl Dictation {
             options: TranscribeOptions::default(),
             voice_commands: true,
             refine: None,
+            paragraph_pause_ms: None,
         }));
         let (tx, rx) = mpsc::unbounded_channel();
         let pending = Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -461,6 +469,12 @@ impl Dictation {
         s.options.prompt = vocabulary_prompt(&vocabulary);
         s.voice_commands = voice_commands;
     }
+
+    /// Paragraphes automatiques : une pause d'au moins `pause_ms` ouvre un nouveau paragraphe
+    /// (entre deux phrases en mode continu, dans l'enregistrement sinon). `None` = désactivé.
+    pub fn set_paragraphs(&self, pause_ms: Option<u32>) {
+        self.settings.write().unwrap().paragraph_pause_ms = pause_ms.filter(|p| *p > 0);
+    }
 }
 
 impl Dictation {
@@ -488,7 +502,7 @@ impl Dictation {
                     }
                     self.listener.on_transcribing(u.id);
                     self.pending.fetch_add(1, Ordering::SeqCst);
-                    if self.jobs.send(Job { id: u.id, samples: u.samples }).is_err() {
+                    if self.jobs.send(Job { id: u.id, samples: u.samples, pause_before_ms: u.pause_before_ms, whole_recording: u.whole_recording }).is_err() {
                         self.pending.fetch_sub(1, Ordering::SeqCst);
                     }
                 }
@@ -599,49 +613,77 @@ async fn worker(
             listener.on_error(job.id, FfiError::Model { detail: "aucun moteur sélectionné".into() });
             continue;
         };
-        match transcribe_filtered(engine.as_ref(), &job.samples, &s.options).await {
-            Ok(Some(t)) => {
-                let mut edits = if s.voice_commands {
-                    commands::parse_voice_commands(&t.text)
-                } else {
-                    vec![Edit::Text(t.text.clone())]
-                };
-                if edits.is_empty() {
-                    listener.on_discarded(DiscardReason::NoSpeech);
-                    continue;
+        // Un long enregistrement est transcrit morceau par morceau, coupé aux longues pauses :
+        // un paragraphe par morceau.
+        let ranges = match s.paragraph_pause_ms {
+            Some(pause) if job.whole_recording => dicto_core::vad::split_on_pauses(&job.samples, pause),
+            _ => std::iter::once(0..job.samples.len()).collect(),
+        };
+        let mut texts = Vec::new();
+        let mut language = None;
+        let mut failed = None;
+        for range in ranges {
+            match transcribe_filtered(engine.as_ref(), &job.samples[range], &s.options).await {
+                Ok(Some(t)) => {
+                    language = language.or(t.language);
+                    texts.push(t.text);
                 }
-                let mut warning = None;
-                let mut engine_id = engine.id();
-                if let Some((refiner, instruction)) = &s.refine {
-                    // « efface ça » en tête reste une commande ; le reste est retouché d'un bloc.
-                    let delete_first = matches!(edits.first(), Some(Edit::DeletePrevious));
-                    let body: Vec<Edit> = edits.iter().filter(|e| !matches!(e, Edit::DeletePrevious)).cloned().collect();
-                    let text = commands::render(&body);
-                    if !text.trim().is_empty() {
-                        match refiner.refine(instruction, &text).await {
-                            Ok(refined) if !refined.trim().is_empty() => {
-                                edits = delete_first.then_some(Edit::DeletePrevious).into_iter().chain([Edit::Text(refined)]).collect();
-                                engine_id = format!("{engine_id}+{}", refiner.id());
-                            }
-                            Ok(_) => {}
-                            Err(e) => warning = Some(format!("retouche impossible : {e}")),
-                        }
-                    }
+                Ok(None) => {}
+                Err(e) => {
+                    failed = Some(e);
+                    break;
                 }
-                let result = DictationResult {
-                    text: commands::render(&edits),
-                    edits: edits.into_iter().map(Into::into).collect(),
-                    raw_text: t.text,
-                    language: t.language.or(s.options.language),
-                    engine: engine_id,
-                    duration_ms: ms_for_samples(job.samples.len()),
-                    warning,
-                };
-                listener.on_result(job.id, result);
             }
-            Ok(None) => listener.on_discarded(DiscardReason::NoSpeech),
-            Err(e) => listener.on_error(job.id, e.into()),
         }
+        if let Some(e) = failed {
+            listener.on_error(job.id, e.into());
+            continue;
+        }
+        let pieces: Vec<Vec<Edit>> = texts
+            .iter()
+            .map(|text| if s.voice_commands { commands::parse_voice_commands(text) } else { vec![Edit::Text(text.clone())] })
+            .collect();
+        let mut edits = commands::join_paragraphs(pieces);
+        if edits.is_empty() {
+            listener.on_discarded(DiscardReason::NoSpeech);
+            continue;
+        }
+        let mut warning = None;
+        let mut engine_id = engine.id();
+        if let Some((refiner, instruction)) = &s.refine {
+            // « efface ça » en tête reste une commande ; le reste est retouché d'un bloc.
+            let delete_first = matches!(edits.first(), Some(Edit::DeletePrevious));
+            let body: Vec<Edit> = edits.iter().filter(|e| !matches!(e, Edit::DeletePrevious)).cloned().collect();
+            let text = commands::render(&body);
+            if !text.trim().is_empty() {
+                match refiner.refine(instruction, &text).await {
+                    Ok(refined) if !refined.trim().is_empty() => {
+                        edits = delete_first.then_some(Edit::DeletePrevious).into_iter().chain([Edit::Text(refined)]).collect();
+                        engine_id = format!("{engine_id}+{}", refiner.id());
+                    }
+                    Ok(_) => {}
+                    Err(e) => warning = Some(format!("retouche impossible : {e}")),
+                }
+            }
+        }
+        let text = commands::render(&edits);
+        // Longue pause depuis la phrase précédente (mode continu) : nouveau paragraphe.
+        let new_paragraph = !matches!(edits.first(), Some(Edit::DeletePrevious) | None)
+            && matches!((s.paragraph_pause_ms, job.pause_before_ms), (Some(p), Some(b)) if b >= p as u64);
+        if new_paragraph {
+            edits.insert(0, Edit::Paragraph);
+        }
+        let result = DictationResult {
+            text,
+            new_paragraph,
+            edits: edits.into_iter().map(Into::into).collect(),
+            raw_text: texts.join("\n\n"),
+            language: language.or(s.options.language),
+            engine: engine_id,
+            duration_ms: ms_for_samples(job.samples.len()),
+            warning,
+        };
+        listener.on_result(job.id, result);
     }
 }
 

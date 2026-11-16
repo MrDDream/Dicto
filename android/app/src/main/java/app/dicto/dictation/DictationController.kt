@@ -81,7 +81,8 @@ fun applyEdits(chunks: List<String>, edits: List<TextEdit>): List<String> {
     for (e in edits) {
         if (e is TextEdit.DeletePrevious && rest.isEmpty()) out.removeLastOrNull() else rest += e
     }
-    val text = renderEdits(rest)
+    // Un saut de paragraphe n'a pas de sens en tête d'un texte vide.
+    val text = renderEdits(rest).let { if (out.isEmpty()) it.trimStart() else it }
     if (text.isNotBlank()) out += text
     return out
 }
@@ -135,6 +136,7 @@ class DictationController(private val context: Context) : DictationListener {
                 .distinctUntilChanged().drop(1).collect { refreshEngine(force = true) }
         }
         scope.launch { settings.livePreview.flow.collect { dictation.setLivePreview(it) } }
+        scope.launch { settings.paragraphs.flow.drop(1).collect { applyOptions() } }
         scope.launch {
             combine(settings.language, settings.voiceCommands) { l, v -> l to v }
                 .distinctUntilChanged().drop(1).collect { applyOptions() }
@@ -239,6 +241,7 @@ class DictationController(private val context: Context) : DictationListener {
         val vocabulary = runCatching { app.storage.vocabulary().map { it.term } }.getOrDefault(emptyList())
         val language = profile?.language?.takeIf { it.isNotBlank() } ?: s.language.value
         dictation.setOptions(language, vocabulary, s.voiceCommands.value)
+        dictation.setParagraphs(s.paragraphs.value.toUIntOrNull()?.takeIf { it > 0u })
 
         val presetId = profile?.refinePreset?.takeIf { it.isNotBlank() } ?: if (s.autoRefine.value) s.refinePreset.value else null
         val instruction = presetInstruction(presetId)
