@@ -1,5 +1,5 @@
 // État partagé de l'interface, alimenté par les événements du cœur.
-import { api, events, type Settings, type Snapshot } from "./api";
+import { api, events, type Settings, type Snapshot, type UpdateView } from "./api";
 
 export interface Chunk {
   text: string;
@@ -21,6 +21,8 @@ class AppState {
   transcript = $state<Chunk[]>([]);
   level = $state(0);
   message = $state<string | null>(null);
+  /** Mises à jour (la fenêtre s'ouvre quand une version est proposée, ou pour la question du début). */
+  updates = $state<UpdateView | null>(null);
   #messageTimer: ReturnType<typeof setTimeout> | undefined;
 
   async init() {
@@ -31,9 +33,11 @@ class AppState {
         if (r.text.trim()) this.transcript.push({ text: r.text, written: r.written });
       }),
       events.message((m) => this.show(m)),
+      events.update((u) => (this.updates = u)),
     ]);
     this.snapshot = await api.snapshot();
     this.settings = await api.getSettings();
+    this.updates = await api.updateState();
   }
 
   show(message: string) {

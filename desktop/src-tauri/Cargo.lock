@@ -1192,16 +1192,20 @@ dependencies = [
  "cpal",
  "dicto-ffi",
  "enigo",
+ "hex",
  "keyring",
  "log",
+ "reqwest 0.12.28",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "symphonia",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-global-shortcut",
  "tauri-plugin-single-instance",
+ "tokio",
 ]
 
 [[package]]

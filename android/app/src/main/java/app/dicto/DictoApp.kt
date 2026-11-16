@@ -29,6 +29,7 @@ class DictoApp : Application(), androidx.work.Configuration.Provider {
         super.onCreate()
         instance = this
         app.dicto.data.Journal.init(this)
+        app.dicto.update.UpdateChecker.init(this)
         createChannels()
         storage = Storage.open(File(filesDir, "dicto.db").path)
         models = ModelManager(File(filesDir, "models").apply { mkdirs() }.path, "android")

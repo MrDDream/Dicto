@@ -130,6 +130,22 @@ export interface FileResult {
   segments: number;
 }
 
+/** Mises à jour : la version installée, la réponse à la question du premier lancement, la version proposée. */
+export interface UpdateView {
+  current: string;
+  consent: boolean | null;
+  available: ReleaseView | null;
+  downloading: boolean;
+}
+
+export interface ReleaseView {
+  tag: string;
+  notes: string;
+  page: string;
+  /** Un fichier pour ce système (sinon : ouvrir la page). */
+  installable: boolean;
+}
+
 export const api = {
   snapshot: () => invoke<Snapshot>("snapshot"),
   getSettings: () => invoke<Settings>("get_settings"),
@@ -166,6 +182,14 @@ export const api = {
   transcribeFile: (path: string) => invoke<FileResult>("transcribe_file", { path }),
   cancelFile: () => invoke<void>("cancel_file"),
   exportFile: (format: "txt" | "srt" | "vtt" | "md") => invoke<boolean>("export_file", { format }),
+  updateState: () => invoke<UpdateView>("update_state"),
+  updateSetConsent: (on: boolean) => invoke<UpdateView>("update_set_consent", { on }),
+  updateCheck: () => invoke<UpdateView>("update_check"),
+  updateSkip: () => invoke<UpdateView>("update_skip"),
+  updateLater: () => invoke<UpdateView>("update_later"),
+  /** Télécharge, vérifie et installe ; rend un message quand Dicto reste ouvert. */
+  updateInstall: () => invoke<string>("update_install"),
+  updateOpenPage: () => invoke<void>("update_open_page"),
 };
 
 /** Nom lisible d'un identifiant de modèle (« gpt-4o-mini-transcribe » → « GPT-4o mini transcribe »). */
@@ -192,6 +216,9 @@ export const events = {
     listen<DownloadEvent>("dicto://download", (e) => f(e.payload)),
   fileProgress: (f: (fraction: number) => void): Promise<UnlistenFn> =>
     listen<number>("dicto://file-progress", (e) => f(e.payload)),
+  update: (f: (u: UpdateView) => void): Promise<UnlistenFn> => listen<UpdateView>("dicto://update", (e) => f(e.payload)),
+  updateProgress: (f: (p: { done: number; total: number }) => void): Promise<UnlistenFn> =>
+    listen<{ done: number; total: number }>("dicto://update-progress", (e) => f(e.payload)),
 };
 
 export const MODE_LABELS: Record<ListenMode, string> = {

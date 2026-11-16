@@ -34,6 +34,7 @@ import app.dicto.DictoApp
 import app.dicto.data.LANGUAGES
 import app.dicto.ui.theme.Dicto
 import app.dicto.ui.theme.DictoIcons
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
@@ -160,6 +161,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle("Mises à jour", "Les nouvelles versions publiées sur GitHub.")
+            UpdatesCard()
+
             SectionTitle("À propos")
             DictoCard {
                 Text("Dicto ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleSmall)
@@ -171,5 +175,35 @@ fun SettingsScreen(onBack: () -> Unit) {
                 TonalButton("Crédits et licences", { creditsOpen = true })
             }
         }
+    }
+}
+
+/** Vérification automatique (une fois par jour) et « Vérifier maintenant ». */
+@Composable
+private fun UpdatesCard() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val consent by app.dicto.update.UpdateChecker.consent.collectAsStateWithLifecycle()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+    DictoCard {
+        SettingRow("Vérifier automatiquement", "Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.") {
+            DictoSwitch(consent == true, { app.dicto.update.UpdateChecker.setEnabled(context, it) }, "Vérifier automatiquement")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TonalButton(if (checking) "Vérification…" else "Vérifier maintenant", {
+                if (checking) return@TonalButton
+                checking = true
+                status = null
+                scope.launch {
+                    status = app.dicto.update.UpdateChecker.checkNow(context).fold(
+                        { r -> if (r == null) "Dicto est à jour (${BuildConfig.VERSION_NAME})." else "Dicto ${r.tag} est disponible." },
+                        { e -> e.message ?: "Vérification impossible." },
+                    )
+                    checking = false
+                }
+            })
+        }
+        status?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted) }
     }
 }

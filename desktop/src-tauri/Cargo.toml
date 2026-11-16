@@ -33,6 +33,11 @@ tauri-plugin-dialog = "2"
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 # Décodage des fichiers audio (MP3, M4A/AAC, WAV, FLAC, OGG Vorbis…).
 symphonia = { version = "0.5", features = ["all"] }
+# Mises à jour : la dernière version sur GitHub, son téléchargement et sa somme de contrôle.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+sha2 = "0.10"
+hex = "0.4"
+tokio = { version = "1", features = ["time"] }
 
 [features]
 default = ["engines"]

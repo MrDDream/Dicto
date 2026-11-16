@@ -86,6 +86,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Les services de premier plan ne peuvent démarrer que depuis l'avant-plan : on les relance ici.
         val settings = app.dicto.DictoApp.instance.settings
+        // Une fois par jour au plus, si l'utilisateur l'a accepté.
+        app.dicto.update.UpdateChecker.checkAtStart(this)
         if (settings.bubble.value || settings.edgeSwipe.value) app.dicto.triggers.BubbleService.refresh(this)
         if (settings.wakeWord.value && !app.dicto.triggers.WakeWordService.running &&
             checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -137,6 +139,7 @@ fun DictoRoot() {
         }
         if (!settingsOpen && !filesOpen) BottomNav(tab) { tab = it }
     }
+    app.dicto.update.UpdateDialogs()
 }
 
 @Composable

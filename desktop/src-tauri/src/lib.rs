@@ -9,6 +9,7 @@ mod providers;
 mod secrets;
 mod settings;
 mod tray;
+mod update;
 
 use std::sync::Arc;
 
@@ -34,8 +35,10 @@ pub fn run() {
         .setup(|app| {
             let core = Core::new(app.handle().clone())?;
             app.manage(core.clone());
+            app.manage(update::Updates::new(core.storage.clone()));
             tray::create(app.handle())?;
             core.start();
+            update::start(app.handle().clone());
             Ok(())
         })
         // Fermer la fenêtre la range dans la zone de notification : les raccourcis restent actifs.
@@ -48,6 +51,13 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            update::update_state,
+            update::update_set_consent,
+            update::update_check,
+            update::update_skip,
+            update::update_later,
+            update::update_install,
+            update::update_open_page,
             commands::snapshot,
             commands::get_settings,
             commands::set_settings,

@@ -9,6 +9,7 @@
   import Modeles from "./screens/Modeles.svelte";
   import Raccourcis from "./screens/Raccourcis.svelte";
   import Reglages from "./screens/Reglages.svelte";
+  import UpdateDialog from "./lib/UpdateDialog.svelte";
 
   type Screen = "dictee" | "fichiers" | "historique" | "modeles" | "raccourcis" | "reglages";
   const NAV: { id: Screen; label: string; icon: IconName }[] = [
@@ -88,6 +89,8 @@
       {/if}
     {/if}
   </main>
+
+  {#if ready}<UpdateDialog />{/if}
 
   {#if app.message}
     <div class="toast" role="status">

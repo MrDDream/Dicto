@@ -1,0 +1,288 @@
+name: Publication
+
+# Pousser un tag vX.Y.Z (égal au versionName d'Android et à la version du bureau) compile les APK signés et les
+# installateurs du bureau (Windows, .deb, .rpm, AppImage, .dmg), puis les joint à la version GitHub avec leurs
+# sommes de contrôle. Les apps n'installent une mise à jour que si ces sommes listent le fichier avec ce hash.
+#
+# Les jobs qui compilent ne gardent aucun jeton dans le dépôt cloné. Les secrets de signature sont dans
+# l'environnement `release` et ne vont qu'au job Android. Seul le dernier job, qui ne compile rien, écrit la version.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      NDK_VERSION: 29.0.14206865
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: core
+      - uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2.90.4
+        with:
+          tool: cargo-ndk
+      # Le cache rend le dossier des bibliothèques de sherpa-onnx sans les bibliothèques : on efface sa trace.
+      - name: Bibliothèques sherpa-onnx fraîches
+        run: rm -rf core/target/sherpa-onnx-prebuilt core/target/*/build/sherpa-onnx-sys* core/target/*/.fingerprint/sherpa-onnx-sys* core/target/*/*/build/sherpa-onnx-sys* core/target/*/*/.fingerprint/sherpa-onnx-sys*
+
+      - name: Le tag correspond au versionName
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' android/app/build.gradle.kts)
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Le tag $GITHUB_REF_NAME ne correspond pas au versionName $VERSION" >&2
+            exit 1
+          fi
+
+      - name: NDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" > /dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Bibliothèques natives (cœur Rust, whisper.cpp, sherpa-onnx)
+        run: scripts/build-android-libs.sh
+
+      - name: Clé de signature
+        env:
+          KEYSTORE_B64: ${{ secrets.DICTO_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::Le secret DICTO_KEYSTORE_B64 manque dans l'environnement release"
+            exit 1
+          fi
+          umask 077
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/dicto-release.jks"
+
+      - name: APK signés
+        working-directory: android
+        env:
+          DICTO_STORE_FILE: ${{ runner.temp }}/dicto-release.jks
+          DICTO_STORE_PASSWORD: ${{ secrets.DICTO_STORE_PASSWORD }}
+          DICTO_KEY_ALIAS: ${{ secrets.DICTO_KEY_ALIAS }}
+          DICTO_KEY_PASSWORD: ${{ secrets.DICTO_KEY_PASSWORD }}
+        run: |
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests 'app.dicto.update.*' :app:assembleRelease
+          mkdir ../dist
+          for f in app/build/outputs/apk/release/*-release.apk; do
+            abi=$(basename "$f" | sed -E 's/^Dicto-v[^-]+-(.*)-release\.apk$/\1/')
+            if [ "$abi" = "universal" ]; then cp "$f" "../dist/Dicto-$GITHUB_REF_NAME.apk"; else cp "$f" "../dist/Dicto-$GITHUB_REF_NAME-$abi.apk"; fi
+          done
+          (cd ../dist && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - name: Retirer la clé
+        if: always()
+        run: rm -f "$RUNNER_TEMP/dicto-release.jks"
+
+      - name: Certificat de signature
+        id: cert
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          CERT=$("$APKSIGNER" verify --print-certs "dist/Dicto-$GITHUB_REF_NAME.apk" | grep -oP 'SHA-256 digest: \K[0-9a-f]+' | head -1)
+          echo "sha256=$CERT" >> "$GITHUB_OUTPUT"
+
+      - name: Notes de version
+        env:
+          CERT: ${{ steps.cert.outputs.sha256 }}
+        run: |
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' android/app/build.gradle.kts)
+          mkdir notes
+          {
+            # Les notes complètes quand elles existent pour cette version, sinon le journal des modifications F-Droid.
+            if [ -f "release-notes/$GITHUB_REF_NAME.md" ]; then
+              cat "release-notes/$GITHUB_REF_NAME.md"
+            else
+              cat "android/fastlane/metadata/android/fr-FR/changelogs/$CODE.txt" 2>/dev/null || true
+            fi
+            echo
+            echo "---"
+            echo
+            echo "**Android :** \`Dicto-$GITHUB_REF_NAME-arm64-v8a.apk\` pour presque tous les téléphones récents, l'APK universel en cas de doute. Paquet \`app.dicto\` · certificat de signature SHA-256 : \`$CERT\`."
+            echo
+            echo "**Bureau :** \`Dicto-*-setup.exe\` (Windows, sans droits d'administrateur), \`.deb\` (Debian, Ubuntu), \`.rpm\` (Fedora, openSUSE), \`.AppImage\` (autres Linux), \`.dmg\` (macOS, puces Apple, pas encore notarisé : ouvrir une fois, puis Réglages Système › Confidentialité et sécurité › *Ouvrir quand même*). Les fichiers Windows ne sont pas encore signés : SmartScreen affiche « Windows a protégé votre ordinateur » → *Informations complémentaires* → *Exécuter quand même*. Sommes de contrôle : \`SHA256SUMS.txt\` (Android) et \`SHA256SUMS-desktop.txt\` (bureau)."
+          } > notes/notes.md
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android
+          path: dist/*
+          if-no-files-found: error
+          overwrite: true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: notes
+          path: notes/notes.md
+          if-no-files-found: error
+          overwrite: true
+
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis
+          - os: ubuntu-22.04
+            bundles: deb,rpm,appimage
+          - os: macos-latest
+            bundles: dmg
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: desktop/src-tauri
+      # Le cache rend le dossier des bibliothèques de sherpa-onnx sans les bibliothèques : on efface sa trace.
+      - name: Bibliothèques sherpa-onnx fraîches
+        working-directory: desktop/src-tauri
+        run: |
+          rm -rf target/sherpa-onnx-prebuilt
+          rm -rf target/*/build/sherpa-onnx-sys* target/*/.fingerprint/sherpa-onnx-sys*
+
+      - name: Le tag correspond à la version du bureau
+        run: |
+          for v in "$(node -p 'require("./package.json").version')" \
+                   "$(node -p 'require("./src-tauri/tauri.conf.json").version')" \
+                   "$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -1)"; do
+            if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+              echo "Le tag $GITHUB_REF_NAME ne correspond pas à la version du bureau $v" >&2
+              exit 1
+            fi
+          done
+
+      - name: Bibliothèques Linux (WebKitGTK, zone de notification, son, saisie)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev libxdo-dev libdbus-1-dev patchelf cmake clang
+      - name: libclang (whisper.cpp)
+        if: runner.os == 'Windows'
+        run: echo "LIBCLANG_PATH=C:\\Program Files\\LLVM\\bin" >> "$GITHUB_ENV"
+
+      - name: Interface
+        run: |
+          npm ci
+          npm run build
+      - name: Tests
+        working-directory: desktop/src-tauri
+        run: cargo test --locked --no-default-features
+      - name: Compilation
+        working-directory: desktop/src-tauri
+        run: cargo build --release --locked
+      - name: Paquets
+        run: |
+          node scripts/bundle-libs.mjs
+          npx tauri build --bundles ${{ matrix.bundles }} --config src-tauri/libs.conf.json
+      # Les noms que les apps cherchent dans une version (update.rs, asset_name).
+      - name: Noms de publication
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          B=src-tauri/target/release/bundle
+          mkdir -p dist
+          case "$RUNNER_OS" in
+            Windows) cp "$(ls $B/nsis/*.exe | head -1)" "dist/Dicto-$V-setup.exe" ;;
+            Linux)
+              cp "$(ls $B/deb/*.deb | head -1)" "dist/dicto_${V}_amd64.deb"
+              cp "$(ls $B/rpm/*.rpm | head -1)" "dist/dicto-$V.x86_64.rpm"
+              cp "$(ls $B/appimage/*.AppImage | head -1)" "dist/Dicto-$V-x86_64.AppImage"
+              ;;
+            macOS) cp "$(ls $B/dmg/*.dmg | head -1)" "dist/Dicto-$V-macos-arm64.dmg" ;;
+          esac
+          ls -la dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          # Pas « desktop-* » : l'artifact du job des sommes (desktop-with-sums) ne doit pas entrer dans son propre motif.
+          name: build-desktop-${{ runner.os }}
+          path: desktop/dist/*
+          if-no-files-found: error
+          overwrite: true
+
+  sums-desktop:
+    needs: desktop
+    # Ce qui a été compilé est joint, même si un système a échoué.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: build-desktop-*
+          merge-multiple: true
+          path: dist
+      - name: Sommes des paquets
+        run: |
+          ls dist/* >/dev/null
+          cd dist
+          sha256sum * > ../SHA256SUMS-desktop.txt
+          mv ../SHA256SUMS-desktop.txt .
+          cat SHA256SUMS-desktop.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-with-sums
+          path: dist/*
+          if-no-files-found: error
+          overwrite: true
+
+  # Publie seulement ce que les autres jobs ont compilé : pas de dépôt cloné, pas d'outil de compilation, pas de secret.
+  publish:
+    needs: [android, desktop, sums-desktop]
+    # Les APK sont publiés même si un paquet du bureau a échoué ; les paquets du bureau seulement avec leurs sommes.
+    if: ${{ !cancelled() && needs.android.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: android
+          path: dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: notes
+          path: notes
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: ${{ needs.sums-desktop.result == 'success' }}
+        with:
+          name: desktop-with-sums
+          path: dist
+      - name: Publier la version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la dist
+          # Un tag avec suffixe (v0.2.0-rc1) est une pré-version : jamais « latest », donc jamais proposée aux apps.
+          kind=()
+          case "$GITHUB_REF_NAME" in
+            *-*) kind=(--prerelease --latest=false) ;;
+          esac
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* "${kind[@]}" --title "Dicto $GITHUB_REF_NAME" --notes-file notes/notes.md --repo "$GITHUB_REPOSITORY"
+          fi

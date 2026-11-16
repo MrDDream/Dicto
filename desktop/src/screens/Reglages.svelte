@@ -50,6 +50,28 @@
     terms = await api.vocabulary();
   }
 
+  let checking = $state(false);
+  let updateStatus = $state<string | null>(null);
+
+  async function setAutoUpdate(on: boolean) {
+    app.updates = await api.updateSetConsent(on);
+  }
+
+  // « Vérifier maintenant » : une version plus récente ouvre la fenêtre de mise à jour.
+  async function checkUpdates() {
+    checking = true;
+    updateStatus = null;
+    try {
+      const u = await api.updateCheck();
+      app.updates = u;
+      updateStatus = u.available ? `Dicto ${u.available.tag} est disponible.` : "Dicto est à jour.";
+    } catch (e) {
+      updateStatus = String(e);
+    } finally {
+      checking = false;
+    }
+  }
+
   async function toggleCredits() {
     showCredits = !showCredits;
     if (showCredits && !credits.length) credits = await api.credits();
@@ -160,10 +182,28 @@
       </section>
     {/if}
 
+    <section class="card" aria-labelledby="majs">
+      <h2 id="majs" class="pad">Mises à jour</h2>
+      <label class="row">
+        <span class="label">
+          <span class="title">Vérifier automatiquement</span>
+          <span class="hint">Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.</span>
+        </span>
+        <input type="checkbox" class="switch" checked={app.updates?.consent === true} onchange={(e) => setAutoUpdate(e.currentTarget.checked)} />
+      </label>
+      <div class="row">
+        <span class="label">
+          <span class="title">Version {app.updates?.current ?? ""}</span>
+          {#if updateStatus}<span class="hint">{updateStatus}</span>{/if}
+        </span>
+        <button class="pill-btn tonal" disabled={checking} onclick={checkUpdates}>{checking ? "Vérification…" : "Vérifier maintenant"}</button>
+      </div>
+    </section>
+
     <section class="card about" aria-labelledby="apropos">
       <h2 id="apropos">À propos</h2>
       <p class="hint">
-        Dicto 0.1.0 · transcription locale par whisper.cpp et sherpa-onnx. Modèles de NVIDIA, Meta, OpenAI et Bofeng
+        Dicto {app.updates?.current ?? ""} · transcription locale par whisper.cpp et sherpa-onnx. Modèles de NVIDIA, Meta, OpenAI et Bofeng
         Huang.
       </p>
       <div><button class="pill-btn tonal" onclick={toggleCredits}>Crédits et licences</button></div>
