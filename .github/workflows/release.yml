@@ -201,26 +201,27 @@ jobs:
           node scripts/bundle-libs.mjs
           npx tauri build --bundles ${{ matrix.bundles }} --config src-tauri/libs.conf.json
       # Les noms que les apps cherchent dans une version (update.rs, asset_name).
+      # Pas dans dist/ : c'est le dossier de l'interface compilée par Vite.
       - name: Noms de publication
         run: |
           V="${GITHUB_REF_NAME#v}"
           B=src-tauri/target/release/bundle
-          mkdir -p dist
+          mkdir -p release
           case "$RUNNER_OS" in
-            Windows) cp "$(ls $B/nsis/*.exe | head -1)" "dist/Dicto-$V-setup.exe" ;;
+            Windows) cp "$(ls $B/nsis/*.exe | head -1)" "release/Dicto-$V-setup.exe" ;;
             Linux)
-              cp "$(ls $B/deb/*.deb | head -1)" "dist/dicto_${V}_amd64.deb"
-              cp "$(ls $B/rpm/*.rpm | head -1)" "dist/dicto-$V.x86_64.rpm"
-              cp "$(ls $B/appimage/*.AppImage | head -1)" "dist/Dicto-$V-x86_64.AppImage"
+              cp "$(ls $B/deb/*.deb | head -1)" "release/dicto_${V}_amd64.deb"
+              cp "$(ls $B/rpm/*.rpm | head -1)" "release/dicto-$V.x86_64.rpm"
+              cp "$(ls $B/appimage/*.AppImage | head -1)" "release/Dicto-$V-x86_64.AppImage"
               ;;
-            macOS) cp "$(ls $B/dmg/*.dmg | head -1)" "dist/Dicto-$V-macos-arm64.dmg" ;;
+            macOS) cp "$(ls $B/dmg/*.dmg | head -1)" "release/Dicto-$V-macos-arm64.dmg" ;;
           esac
-          ls -la dist
+          ls -la release
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           # Pas « desktop-* » : l'artifact du job des sommes (desktop-with-sums) ne doit pas entrer dans son propre motif.
           name: build-desktop-${{ runner.os }}
-          path: desktop/dist/*
+          path: desktop/release/*
           if-no-files-found: error
           overwrite: true
 

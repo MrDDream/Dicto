@@ -33,3 +33,4 @@ keystore.properties
 .DS_Store
 /desktop/src-tauri/libs/
 /desktop/src-tauri/libs.conf.json
+/desktop/release/

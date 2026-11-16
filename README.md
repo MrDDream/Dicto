@@ -1,70 +1,174 @@
-# Dicto
+<p align="center">
+  <img src="docs/logo.svg" alt="Dicto icon" width="112" height="112">
+</p>
 
-La dictée, chez toi. Application de reconnaissance vocale pour Android, Windows et Linux, avec des modèles locaux (whisper.cpp) ou des services en ligne (OpenAI, Mistral, Gemini, Grok, serveur personnel…).
+<h1 align="center">Dicto</h1>
 
-Design : canvas Claude Design « Dicto — Speech to text ». Couleurs, polices et rayons sont repris dans [design/tokens.json](design/tokens.json).
+<p align="center">
+  <b>Dictation that stays with you.</b><br>
+  Speech to text for Android, Windows, Linux and macOS.<br>
+  Models that run on your device, or the online service of your choice, with your own key.
+</p>
 
-## Organisation
+<p align="center">
+  <a href="https://github.com/MrDDream/Dicto/releases/latest"><img src="https://img.shields.io/github/v/release/MrDDream/Dicto?label=release&color=F0B44C" alt="Latest release"></a>
+  <a href="https://github.com/MrDDream/Dicto/releases"><img src="https://img.shields.io/github/downloads/MrDDream/Dicto/total?label=downloads&color=2F5D50" alt="Downloads"></a>
+  <a href="https://github.com/MrDDream/Dicto/actions/workflows/desktop.yml"><img src="https://img.shields.io/github/actions/workflow/status/MrDDream/Dicto/desktop.yml?branch=main&label=desktop%20build&logo=githubactions&logoColor=white" alt="Desktop build"></a>
+  <br>
+  <img src="https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&logoColor=white" alt="Android 10+">
+  <img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows">
+  <img src="https://img.shields.io/badge/Linux-x64-E95420?logo=linux&logoColor=white" alt="Linux">
+  <img src="https://img.shields.io/badge/macOS-Apple%20silicon-555555?logo=apple&logoColor=white" alt="macOS">
+</p>
 
-| Dossier | Contenu |
+<p align="center">
+  <a href="https://mrddream.github.io/Dicto/"><b>Website</b></a> ·
+  <a href="https://github.com/MrDDream/Dicto/releases/latest"><b>Download</b></a> ·
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/MrDDream/Dicto">Get it with Obtainium</a> ·
+  <a href="README.fr.md">Version française</a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/mockups/hero.png" alt="Dicto on a computer and a phone, while dictating" width="860">
+</p>
+
+<p align="center">
+  <a href="#%EF%B8%8F-why-dicto">Why</a> ·
+  <a href="#-what-it-does">Features</a> ·
+  <a href="#-on-android">Android</a> ·
+  <a href="#-on-your-computer">Desktop</a> ·
+  <a href="#-models">Models</a> ·
+  <a href="#-install">Install</a> ·
+  <a href="#-privacy">Privacy</a> ·
+  <a href="#%EF%B8%8F-build-from-source">Build</a>
+</p>
+
+---
+
+## 🎙️ Why Dicto?
+
+Typing on a phone is slow, and most dictation tools send every word you say to someone else's servers. Dicto runs the speech recognition **on your device**: download a model once, and your voice never leaves the phone or the computer. When you want the best accuracy without loading the phone, plug in the online service you already pay for (OpenAI, Mistral, Gemini, Grok, or your own Whisper server), with your own key.
+
+- **No account, no ads, no tracker.** Your history stays in a local database.
+- **One Rust core** for every platform: the same engines, modes and voice commands everywhere.
+- **It writes where you are**: the Dicto keyboard and a floating bubble on Android, a global shortcut on the desktop.
+
+> The apps are in French for now; English is on the way.
+
+## ✨ What it does
+
+| | |
 | --- | --- |
-| `core/dicto-core` | Cœur Rust partagé : audio, VAD, les 3 modes, moteurs STT, catalogue et téléchargement des modèles, SQLite, exports |
-| `core/dicto-ffi` | Bindings UniFFI (Kotlin) utilisés par l'app Android |
-| `core/catalog/models.json` | Modèles locaux proposés (URL, taille, SHA-256) |
-| `android/` | App Kotlin / Jetpack Compose : dictée, modèles, historique, clavier vocal |
-| `scripts/` | `env.sh` (JDK, SDK, NDK) et `build-android-libs.sh` |
-| `desktop/` | App Tauri 2 + Svelte 5 *(à venir)* |
+| **Three modes** | *On / off* (one press to start, another to stop), *Continuous* (each sentence is written as soon as you pause), *Hold* (walkie-talkie). |
+| **Local models** | 13 models through whisper.cpp and sherpa-onnx: Whisper, NVIDIA Parakeet, Canary and Nemotron, Meta Omnilingual. Downloaded once, checked by SHA-256. |
+| **Online services** | OpenAI, Mistral (Voxtral), Google Gemini, Grok (xAI) or any OpenAI-compatible server. The model list comes from each provider. |
+| **Live text** | With the streaming models, the sentence appears while you speak. |
+| **Voice commands** | “New line”, “new paragraph”, “delete that”, handled by the core without any LLM. |
+| **AI touch-up** | Clean-up, e-mail, notes, formal tone, translation or your own instruction, with Claude, OpenAI, Gemini, Ollama or an OpenAI-compatible server. Only the text is sent, never the audio. |
+| **Vocabulary and profiles** | Names and jargon the model should know; language, touch-up and mode per app. |
+| **Audio files** | Transcribe a voice message or a recording (shared from WhatsApp, Signal…), export to text, Markdown, SRT or WebVTT. |
+| **History** | Every dictation, searchable, in a SQLite database on the device. |
+| **Updates** | If you agree, the apps check GitHub once a day and install a new version only when its checksum matches. |
 
-## Cœur Rust
+## 📱 On Android
 
-```bash
-cd core
-cargo test
+<p align="center">
+  <img src="docs/assets/mockups/android-row.png" alt="Dictation, floating bubble and keyboard, triggers, history" width="860">
+</p>
+
+Dictate into any app without opening Dicto:
+
+- **Dicto keyboard**: switch to it, speak, and the text is typed into the field; your usual keyboard can come back by itself.
+- **Floating bubble**: tap to dictate, long-press to talk while holding, then “Insert the text”. The panel can be dragged.
+- **Quick-settings tile**, **edge swipe**, **“OK Dicto”** wake word (spotted on the phone by sherpa-onnx), and Dicto as the **assistant app**.
+- **Share an audio file** to Dicto to transcribe it.
+
+## 💻 On your computer
+
+<p align="center">
+  <img src="docs/assets/mockups/desktop-modeles.png" alt="Models on the desktop" width="49%">
+  <img src="docs/assets/mockups/desktop-raccourcis.png" alt="Shortcuts on the desktop" width="49%">
+</p>
+
+- **One global shortcut per mode** (Ctrl+Alt+Space, Ctrl+Alt+C, Ctrl+Shift+Space by default), held or pressed.
+- The text is **typed** into the active window, **pasted** (your clipboard is put back afterwards), or **kept in Dicto** to review.
+- A small **recording pill** at the bottom of the screen, an icon in the **system tray**; closing the window keeps Dicto running.
+- Online keys live in the system's keystore (Credential Manager, Keychain, Secret Service), never in plain text.
+
+## 🧠 Models
+
+| Model | Engine | Languages | Size | Android | Desktop |
+| --- | --- | --- | ---: | :---: | :---: |
+| Canary 180M | sherpa-onnx | fr, en, de, es | 154 MB | ✓ | ✓ |
+| Parakeet v3 | sherpa-onnx | 25 European languages | 487 MB | ✓ | ✓ |
+| Nemotron 3.5 streaming | sherpa-onnx | ~36 languages | 475 MB | ✓ | ✓ |
+| Omnilingual 300M | sherpa-onnx | 1,600 languages | 292 MB | ✓ | ✓ |
+| Whisper tiny / base | whisper.cpp | 99 languages | 32 / 60 MB | ✓ | |
+| Whisper small | whisper.cpp | 99 languages | 190 MB | ✓ | ✓ |
+| Whisper large-v3-turbo (compact) | whisper.cpp | 99 languages | 574 MB | ✓ | ✓ |
+| Whisper medium | whisper.cpp | 99 languages | 539 MB | | ✓ |
+| Whisper large-v3-turbo (q8 / full) | whisper.cpp | 99 languages | 874 MB / 1.6 GB | | ✓ |
+| Whisper French (distilled / full) | whisper.cpp | French | 791 MB / 1.1 GB | | ✓ |
+
+The catalogue, with URLs, licences and checksums, is [core/catalog/models.json](core/catalog/models.json). Models by NVIDIA, Meta, OpenAI and Bofeng Huang, under their own licences (CC-BY-4.0, OpenMDW-1.1, Apache-2.0, MIT).
+
+## 📦 Install
+
+Everything is on the [latest release](https://github.com/MrDDream/Dicto/releases/latest), with `SHA256SUMS.txt` (Android) and `SHA256SUMS-desktop.txt` (desktop).
+
+| System | File | Notes |
+| --- | --- | --- |
+| Android 10+ | `Dicto-vX.Y.Z-arm64-v8a.apk` | The universal `Dicto-vX.Y.Z.apk` if unsure. Package `app.dicto`. |
+| Windows 10 / 11 | `Dicto-X.Y.Z-setup.exe` | No administrator rights needed. Not signed yet: SmartScreen › *More info* › *Run anyway*. |
+| Debian, Ubuntu | `dicto_X.Y.Z_amd64.deb` | |
+| Fedora, openSUSE | `dicto-X.Y.Z.x86_64.rpm` | |
+| Other Linux | `Dicto-X.Y.Z-x86_64.AppImage` | Updates itself in place. |
+| macOS (Apple silicon) | `Dicto-X.Y.Z-macos-arm64.dmg` | Not notarised yet: open it once, then System Settings › Privacy & Security › *Open Anyway*. |
+
+On Android, [Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/MrDDream/Dicto) can follow the releases for you.
+
+## 🔒 Privacy
+
+- With a local model, **no audio and no text leaves the device**.
+- With an online service, the audio goes **only to the provider you picked**, with **your** key. AI touch-up sends the text only.
+- Keys are kept in the Android Keystore or the computer's keystore.
+- The update check is **opt-in**: one request to GitHub a day, nothing else. A new version is installed only if its SHA-256 matches the release's checksums (and, on Android, if it is signed with the same key).
+
+## 🛠️ Build from source
+
+```
+core/           shared Rust core (dicto-core) and its UniFFI bindings (dicto-ffi)
+android/        Kotlin / Jetpack Compose app
+desktop/        Tauri 2 + Svelte 5 app
+docs/           website (GitHub Pages), mockups and screenshots
+scripts/        build environment, Android native libraries, screenshots
 ```
 
-Moteurs locaux (features Cargo) :
-
-- `whisper` : whisper.cpp (il faut `cmake` et libclang, voir `scripts/env.sh`) ;
-- `sherpa` : sherpa-onnx (Parakeet, Canary, Nemotron, Omnilingual, mot d'activation). Ses bibliothèques officielles sont téléchargées à la compilation. Sur le bureau, avec whisper dans le même binaire, utiliser `sherpa-shared` (liaison dynamique : les deux runtimes C++ en statique entrent en conflit).
+**Rust core**
 
 ```bash
-source scripts/env.sh
-cargo build -p dicto-ffi --features whisper,sherpa-shared
-cargo run --release -p dicto-core --features whisper,sherpa-shared --example transcribe -- fichier.wav canary-180m-flash-int8 ./modeles fr
+cd core && cargo test
 ```
 
-Le catalogue des modèles ([core/catalog/models.json](core/catalog/models.json)) indique pour chacun ses plateformes, langues, licence et empreinte SHA-256. L'app Android ne propose que les modèles marqués `android`.
+Local engines are Cargo features: `whisper` (whisper.cpp, needs `cmake` and libclang) and `sherpa` (sherpa-onnx, its official libraries are downloaded at build time). On the desktop, with whisper in the same binary, use `sherpa-shared`.
 
-Générer les classes Kotlin :
-
-```bash
-cargo build -p dicto-ffi --features cli
-./target/debug/uniffi-bindgen generate --library target/debug/libdicto_ffi.so --language kotlin --out-dir ../android/app/src/main/java
-```
-
-## Android
-
-Les outils sont pris dans `~/android-tools` (JDK 21, SDK, NDK 29), modifiable par `ANDROID_TOOLS`, `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_NDK_HOME`.
+**Android**: the tools are read from `~/android-tools` (JDK 21, SDK, NDK 29), or from `ANDROID_TOOLS`, `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_NDK_HOME`.
 
 ```bash
-scripts/build-android-libs.sh                      # cœur Rust + whisper.cpp → jniLibs, classes Kotlin
+scripts/build-android-libs.sh        # Rust core + engines → jniLibs, Kotlin bindings
 source scripts/env.sh && cd android && ./gradlew :app:assembleDebug
 ```
 
-Les bibliothèques natives et les classes UniFFI sont générées (ignorées par git) : relance le script après chaque modification de `core/`.
-
-Tests du pont Kotlin ↔ Rust sur la JVM (bibliothèque de la machine, whisper inclus) :
+**Desktop**: Node 22 and Rust stable; on Linux, the WebKitGTK, appindicator, ALSA and libxdo development packages.
 
 ```bash
-(cd core && cargo build -p dicto-ffi --features whisper)
-cd android && ./gradlew :app:testDebugUnitTest \
-    -Pdicto.whisperModel=/chemin/ggml-tiny-q5_1.bin -Pdicto.sampleWav=/chemin/jfk.wav
+cd desktop && npm ci && npx tauri dev
 ```
 
-## Les trois modes
+**Screenshots and mockups** (`docs/assets/`): `scripts/screenshots.sh` renders the real Android screens with Robolectric and the desktop interface in Chromium, then frames them.
 
-- **Marche/arrêt** : un appui pour commencer, un second pour terminer.
-- **Continu** : écoute permanente, chaque phrase est transcrite dès qu'on fait une pause.
-- **Maintenu** : on parle tant que le bouton ou la touche est enfoncé.
+**Releases**: pushing a tag `vX.Y.Z` builds the signed APKs and the desktop packages on GitHub Actions and publishes them with their checksums ([release.yml](.github/workflows/release.yml)).
 
-La machine à états est dans [core/dicto-core/src/session.rs](core/dicto-core/src/session.rs). Toutes les plateformes lui envoient les mêmes déclencheurs (`Pressed`, `Released`, `Cancel`).
+## 🙏 Credits
+
+Dicto stands on [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [UniFFI](https://github.com/mozilla/uniffi-rs), [Tauri](https://tauri.app) and [Svelte](https://svelte.dev), and on the models published by NVIDIA, Meta, OpenAI and Bofeng Huang. Design: Bricolage Grotesque, Figtree and JetBrains Mono.

@@ -37,6 +37,48 @@ import org.robolectric.annotation.GraphicsMode
 class ScreenshotTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+    /**
+     * Un état d'exemple : la question des mises à jour déjà répondue, un modèle choisi, une dictée en cours
+     * et quelques dictées dans l'historique.
+     */
+    @org.junit.Before
+    fun seed() {
+        val d = app.dicto.DictoApp.instance
+        app.dicto.update.UpdateChecker.setEnabled(d, false)
+        d.settings.setMode(uniffi.dicto_ffi.Mode.CONTINUOUS)
+        d.settings.setEngine(app.dicto.data.EngineChoice.Local("parakeet-tdt-0.6b-v3-int8"))
+        // Le chargement (impossible ici : pas de modèle) se termine avant qu'on pose l'exemple.
+        val deadline = System.currentTimeMillis() + 3000
+        while (d.dictation.ui.value.engine.kind == app.dicto.dictation.EngineStatus.Kind.LOADING && System.currentTimeMillis() < deadline) {
+            org.robolectric.shadows.ShadowLooper.idleMainLooper()
+            Thread.sleep(50)
+        }
+        val history = listOf(
+            "Bonjour à tous, voici le compte rendu de la réunion de ce matin." to 5200uL,
+            "Penser à rappeler le garage avant 18 h pour le contrôle technique." to 3900uL,
+            "Liste de courses : tomates, feta, huile d'olive, citrons et basilic." to 4600uL,
+            "Je serai en retard d'un quart d'heure, commencez sans moi." to 2800uL,
+        )
+        for ((text, ms) in history) {
+            runCatching {
+                d.storage.addHistory(
+                    uniffi.dicto_ffi.DictationResult(text, emptyList(), text, "fr", "Parakeet v3", ms, null),
+                    "app.dicto",
+                )
+            }
+        }
+        d.dictation.showSample(
+            app.dicto.dictation.DictationUi(
+                mode = uniffi.dicto_ffi.Mode.CONTINUOUS,
+                state = uniffi.dicto_ffi.State.LISTENING,
+                startedAt = android.os.SystemClock.elapsedRealtime() - 42_000,
+                chunks = listOf("Bonjour à tous, voici le compte rendu de la réunion de ce matin."),
+                partial = "On commence par le planning de la semaine",
+                engine = app.dicto.dictation.EngineStatus(app.dicto.dictation.EngineStatus.Kind.READY, "Parakeet v3", "sur le téléphone"),
+            ),
+        )
+    }
+
     private fun shot(name: String) = compose.onRoot().captureRoboImage("build/screenshots/$name.png")
 
     @Test
@@ -134,6 +176,8 @@ class ScreenshotTest {
 
     @Test
     fun overlays() {
+        // La bulle montre son propre texte : pas de phrase en cours en plus.
+        app.dicto.DictoApp.instance.dictation.let { it.showSample(it.ui.value.copy(partial = "")) }
         compose.setContent {
             DictoTheme {
                 Column(Modifier.fillMaxSize().background(Color(0xFFEEF0F3))) {

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dicto · dictation that stays with you</title>
+<meta name="description" content="Dicto turns your voice into text on Android, Windows, Linux and macOS, with models that run on your device or the online service of your choice.">
+<meta property="og:title" content="Dicto · dictation that stays with you">
+<meta property="og:description" content="Speech to text on your phone and your computer, offline with local models or online with your own key.">
+<meta property="og:image" content="https://mrddream.github.io/Dicto/assets/mockups/hero.png">
+<meta name="theme-color" content="#F6F1EA">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<header class="top">
+  <nav class="wrap" aria-label="Main">
+    <a class="brand" href="#top"><img src="logo.svg" alt="" width="40" height="40"><span>Dicto</span></a>
+    <div class="links">
+      <a class="l" href="#screens"><span data-l="en">Screens</span><span data-l="fr">Écrans</span></a>
+      <a class="l" href="#modes">Modes</a>
+      <a class="l" href="#engines"><span data-l="en">Engines</span><span data-l="fr">Moteurs</span></a>
+      <a class="l" href="#models"><span data-l="en">Models</span><span data-l="fr">Modèles</span></a>
+      <a class="l" href="#download"><span data-l="en">Download</span><span data-l="fr">Télécharger</span></a>
+      <div class="lang" role="group" aria-label="Language / Langue">
+        <button type="button" data-set="en" aria-pressed="true">EN</button>
+        <button type="button" data-set="fr" aria-pressed="false">FR</button>
+      </div>
+      <a class="btn ghost small" href="https://github.com/MrDDream/Dicto">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+
+<section class="wrap hero">
+  <div class="text">
+    <div class="chips">
+      <span class="chip green"><span data-l="en">Free · no account</span><span data-l="fr">Gratuit · sans compte</span></span>
+      <span class="chip">Android · Windows · Linux · macOS</span>
+      <span class="chip" data-version>v0.1.0</span>
+    </div>
+    <h1><span data-l="en">Dictation that<br><em>stays with you.</em></span><span data-l="fr">La dictée,<br><em>chez toi.</em></span></h1>
+    <p class="lead" data-l="en">Dicto turns your voice into text on your phone and your computer. Models run on your device (whisper.cpp, sherpa-onnx), or you plug in the online service you prefer: OpenAI, Mistral, Gemini, Grok or your own server.</p>
+    <p class="lead" data-l="fr">Dicto transforme ta voix en texte sur ton téléphone et ton ordinateur. Avec des modèles qui tournent sur ta machine (whisper.cpp, sherpa-onnx), ou avec le service en ligne de ton choix : OpenAI, Mistral, Gemini, Grok ou ton propre serveur.</p>
+    <div class="actions">
+      <a class="btn primary" href="#download">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        <span data-l="en">Download</span><span data-l="fr">Télécharger</span>
+      </a>
+      <a class="btn ghost" href="https://github.com/MrDDream/Dicto"><span data-l="en">View the source</span><span data-l="fr">Voir le code source</span></a>
+    </div>
+    <p class="note" data-l="en">Signed APKs, Windows installer, .deb, .rpm, AppImage and .dmg, each with its SHA-256 checksum.</p>
+    <p class="note" data-l="fr">APK signés, installateur Windows, .deb, .rpm, AppImage et .dmg, chacun avec sa somme SHA-256.</p>
+  </div>
+
+  <div class="demo">
+    <div class="card" aria-label="Dicto demo">
+      <div class="row">
+        <span class="live"><span data-l="en">Listening</span><span data-l="fr">En écoute</span>&nbsp;·&nbsp;<span id="mode-name">Continuous</span></span>
+        <span class="engine"><span data-l="en">Parakeet v3 · on device</span><span data-l="fr">Parakeet v3 · local</span></span>
+      </div>
+      <div class="paper">
+        <p data-l="en">Hi everyone, here are the notes from this morning's meeting.</p>
+        <p data-l="fr">Bonjour à tous, voici le compte rendu de la réunion de ce matin.</p>
+        <p class="partial"><span data-l="en">Let's start with this week's schedule</span><span data-l="fr">On commence par le planning de la semaine</span><span class="caret"></span></p>
+      </div>
+      <div class="bars" aria-hidden="true"></div>
+      <div class="mic" aria-hidden="true">
+        <span><b><svg width="40" height="40" viewBox="0 0 100 100"><path d="M50,14a14,14 0 0 1 14,14v20a14,14 0 0 1 -28,0v-20a14,14 0 0 1 14,-14z" fill="#FFFCF8"/><path d="M26,50A24,24 0 0 0 74,50M50,74V86" stroke="#FFFCF8" stroke-width="8" stroke-linecap="round" fill="none"/></svg></b></span>
+      </div>
+      <div class="modes" role="group" aria-label="Mode">
+        <button type="button" data-mode="toggle" aria-pressed="false">On / off</button>
+        <button type="button" data-mode="continuous" aria-pressed="true">Continuous</button>
+        <button type="button" data-mode="hold" aria-pressed="false">Hold</button>
+      </div>
+      <p class="hint" id="mode-hint" aria-live="polite">Each sentence is written as soon as you pause.</p>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <div><strong><span data-l="en">Offline first</span><span data-l="fr">Tout en local</span></strong><span data-l="en">Your voice never leaves the device unless you choose a service.</span><span data-l="fr">Ta voix ne quitte pas l'appareil si tu ne le veux pas.</span></div>
+    <div><strong><span data-l="en">13 models</span><span data-l="fr">13 modèles</span></strong><span>Whisper, Parakeet, Canary, Nemotron, Omnilingual.</span></div>
+    <div><strong><span data-l="en">One core</span><span data-l="fr">Un seul cœur</span></strong><span data-l="en">The same Rust engine on mobile and desktop.</span><span data-l="fr">Le même moteur Rust sur mobile et sur bureau.</span></div>
+    <div><strong><span data-l="en">Verified</span><span data-l="fr">Vérifié</span></strong><span data-l="en">Models and updates are checked by SHA-256 before use.</span><span data-l="fr">Modèles et mises à jour vérifiés par SHA-256 avant usage.</span></div>
+  </div>
+</div>
+
+<!-- ÉCRANS -->
+<section class="wrap s" id="screens">
+  <div class="head">
+    <span class="eyebrow"><span data-l="en">See it</span><span data-l="fr">En images</span></span>
+    <h2><span data-l="en">On your phone and your computer.</span><span data-l="fr">Sur ton téléphone et ton ordinateur.</span></h2>
+    <p data-l="en">The same app, the same models and the same three modes. On Android a voice keyboard and a floating bubble write into any app; on the desktop, a global shortcut types into the active window.</p>
+    <p data-l="fr">La même app, les mêmes modèles et les trois mêmes modes. Sur Android, un clavier vocal et une bulle flottante écrivent dans n'importe quelle app ; sur l'ordinateur, un raccourci global écrit dans la fenêtre active.</p>
+  </div>
+  <img class="shot-hero" src="assets/mockups/hero.png" width="2100" height="1350" alt="Dicto on a computer and a phone, while dictating">
+  <div class="tabs" role="tablist" aria-label="Platform">
+    <button type="button" role="tab" id="tab-android" aria-controls="gal-android" aria-selected="true">Android</button>
+    <button type="button" role="tab" id="tab-desktop" aria-controls="gal-desktop" aria-selected="false" tabindex="-1">Windows · Linux · macOS</button>
+  </div>
+  <div class="gallery phones" id="gal-android" role="tabpanel" aria-labelledby="tab-android">
+    <figure><img src="assets/mockups/android-dictee.png" width="735" height="1530" loading="lazy" alt="Dictation screen"><figcaption><span data-l="en">Dictation</span><span data-l="fr">Dictée</span></figcaption></figure>
+    <figure><img src="assets/mockups/android-clavier.png" width="735" height="1530" loading="lazy" alt="Floating bubble and Dicto keyboard"><figcaption><span data-l="en">Bubble and keyboard</span><span data-l="fr">Bulle et clavier</span></figcaption></figure>
+    <figure><img src="assets/mockups/android-declencheurs.png" width="735" height="1530" loading="lazy" alt="Triggers"><figcaption><span data-l="en">Triggers</span><span data-l="fr">Déclencheurs</span></figcaption></figure>
+    <figure><img src="assets/mockups/android-en-ligne.png" width="735" height="1530" loading="lazy" alt="Online services"><figcaption><span data-l="en">Online services</span><span data-l="fr">Services en ligne</span></figcaption></figure>
+  </div>
+  <div class="gallery windows" id="gal-desktop" role="tabpanel" aria-labelledby="tab-desktop" hidden>
+    <figure><img src="assets/mockups/desktop-modeles.png" width="1550" height="1175" loading="lazy" alt="Models"><figcaption><span data-l="en">Models</span><span data-l="fr">Modèles</span></figcaption></figure>
+    <figure><img src="assets/mockups/desktop-raccourcis.png" width="1550" height="1175" loading="lazy" alt="Shortcuts"><figcaption><span data-l="en">Shortcuts</span><span data-l="fr">Raccourcis</span></figcaption></figure>
+    <figure><img src="assets/mockups/desktop-historique.png" width="1550" height="1175" loading="lazy" alt="History"><figcaption><span data-l="en">History</span><span data-l="fr">Historique</span></figcaption></figure>
+    <figure><img src="assets/mockups/desktop-reglages.png" width="1550" height="1175" loading="lazy" alt="Settings"><figcaption><span data-l="en">Settings</span><span data-l="fr">Réglages</span></figcaption></figure>
+  </div>
+  <p class="note" data-l="en">The apps are in French for now; English is on the way.</p>
+  <p class="note" data-l="fr">Les apps sont en français pour l'instant ; l'anglais arrive.</p>
+</section>
+
+<!-- MODES -->
+<section class="wrap s" id="modes">
+  <div class="head">
+    <span class="eyebrow"><span data-l="en">Three ways to talk</span><span data-l="fr">Trois façons de parler</span></span>
+    <h2><span data-l="en">Dictate the way you like.</span><span data-l="fr">Dicte comme tu en as envie.</span></h2>
+    <p data-l="en">One state machine drives the three modes on every platform: a button on screen, a keyboard shortcut or the wake word all send the same triggers.</p>
+    <p data-l="fr">Une même machine à états pilote les trois modes sur toutes les plateformes : un bouton à l'écran, un raccourci clavier ou le mot d'activation envoient les mêmes déclencheurs.</p>
+  </div>
+  <div class="grid3">
+    <div class="card">
+      <span class="icon" style="background: var(--accent-soft)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F5D50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></svg></span>
+      <h3><span data-l="en">On / off</span><span data-l="fr">Marche / arrêt</span></h3>
+      <p data-l="en">One press to start, another to finish. Ideal for a message or a note.</p>
+      <p data-l="fr">Un appui pour commencer, un second pour terminer. Idéal pour un message ou une note.</p>
+    </div>
+    <div class="card">
+      <span class="icon" style="background: var(--rec-soft)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A3F16" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10"/></svg></span>
+      <h3><span data-l="en">Continuous</span><span data-l="fr">Continu</span></h3>
+      <p data-l="en">Always listening: each sentence is transcribed as soon as you pause, detected by voice activity detection.</p>
+      <p data-l="fr">Écoute permanente : chaque phrase est transcrite dès que tu fais une pause, détectée par la VAD.</p>
+    </div>
+    <div class="card">
+      <span class="icon" style="background: var(--sunken)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4A3F37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="13" width="16" height="7" rx="2"/><path d="M12 13V4M9 7l3-3 3 3"/></svg></span>
+      <h3><span data-l="en">Hold</span><span data-l="fr">Maintenu</span></h3>
+      <p data-l="en">Walkie-talkie style: you speak while the button or key stays down.</p>
+      <p data-l="fr">Talkie-walkie : tu parles tant que le bouton ou la touche reste enfoncé.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FONCTIONS -->
+<section class="wrap s">
+  <div class="head">
+    <span class="eyebrow"><span data-l="en">Beyond transcription</span><span data-l="fr">Au-delà de la transcription</span></span>
+    <h2><span data-l="en">Text that is ready to use.</span><span data-l="fr">Du texte prêt à l'emploi.</span></h2>
+  </div>
+  <div class="features">
+    <div><h3><span data-l="en">“OK Dicto”</span><span data-l="fr">« OK Dicto »</span></h3><p data-l="en">A wake word, spotted on the phone by sherpa-onnx, starts dictation without touching the screen.</p><p data-l="fr">Un mot d'activation détecté en local par sherpa-onnx lance la dictée sans toucher l'écran.</p></div>
+    <div><h3><span data-l="en">Voice commands</span><span data-l="fr">Commandes vocales</span></h3><p data-l="en">“New line”, “new paragraph”, “delete that”: handled by the core, no LLM involved.</p><p data-l="fr">« Nouvelle ligne », « nouveau paragraphe », « efface ça » : directement dans le cœur, sans LLM.</p></div>
+    <div><h3><span data-l="en">AI touch-up</span><span data-l="fr">Retouche par IA</span></h3><p data-l="en">Clean-up, tone or translation with Claude, OpenAI, Gemini, Ollama or any OpenAI-compatible server. Only the text is sent, never the audio.</p><p data-l="fr">Nettoyage, style ou traduction avec Claude, OpenAI, Gemini, Ollama ou un serveur compatible OpenAI. Seul le texte est envoyé, jamais l'audio.</p></div>
+    <div><h3><span data-l="en">Android keyboard and bubble</span><span data-l="fr">Clavier et bulle Android</span></h3><p data-l="en">Dictate into any app from the Dicto keyboard, a floating bubble, a quick-settings tile or an edge swipe.</p><p data-l="fr">Dicte dans n'importe quelle app depuis le clavier Dicto, une bulle flottante, une tuile des réglages rapides ou un geste depuis le bord.</p></div>
+    <div><h3><span data-l="en">Global shortcuts</span><span data-l="fr">Raccourcis globaux</span></h3><p data-l="en">On the desktop, one shortcut per mode; the text is typed or pasted into the active window, or kept to review.</p><p data-l="fr">Sur ordinateur, un raccourci par mode ; le texte est tapé ou collé dans la fenêtre active, ou gardé pour relecture.</p></div>
+    <div><h3><span data-l="en">Audio files</span><span data-l="fr">Fichiers audio</span></h3><p data-l="en">Transcribe a voice message or a recording, then export it as text, Markdown, or timed SRT and WebVTT subtitles.</p><p data-l="fr">Transcris un message vocal ou un enregistrement, puis exporte-le en texte, Markdown, ou sous-titres SRT et WebVTT horodatés.</p></div>
+    <div><h3><span data-l="en">Vocabulary and profiles</span><span data-l="fr">Vocabulaire et profils</span></h3><p data-l="en">Teach it names and jargon; pick language, touch-up and mode per app.</p><p data-l="fr">Apprends-lui noms propres et jargon ; choisis langue, retouche et mode selon l'app.</p></div>
+    <div><h3><span data-l="en">History</span><span data-l="fr">Historique</span></h3><p data-l="en">Every dictation is kept in a local SQLite database, searchable, on your device only.</p><p data-l="fr">Toutes tes dictées sont gardées dans une base SQLite locale, avec recherche, sur ton appareil seulement.</p></div>
+    <div><h3><span data-l="en">Safe updates</span><span data-l="fr">Mises à jour sûres</span></h3><p data-l="en">If you agree, the apps check GitHub once a day and install a new version only when its checksum matches.</p><p data-l="fr">Si tu l'acceptes, les apps regardent GitHub une fois par jour et n'installent une version que si sa somme correspond.</p></div>
+  </div>
+</section>
+
+<!-- MOTEURS -->
+<section class="wrap s" id="engines">
+  <div class="head">
+    <span class="eyebrow"><span data-l="en">Engines</span><span data-l="fr">Moteurs</span></span>
+    <h2><span data-l="en">On your device, or in the cloud.</span><span data-l="fr">Sur ta machine, ou dans le nuage.</span></h2>
+  </div>
+  <div class="engines">
+    <div class="local">
+      <span class="tag"><span data-l="en">LOCAL · OFFLINE</span><span data-l="fr">LOCAL · HORS LIGNE</span></span>
+      <h3>whisper.cpp &amp; sherpa-onnx</h3>
+      <p data-l="en">Models are downloaded once, checked by SHA-256, then everything happens on the device. No key, no account.</p>
+      <p data-l="fr">Les modèles sont téléchargés une fois, vérifiés par SHA-256, puis tout se passe sur l'appareil. Aucune clé, aucun compte.</p>
+      <div class="pills"><span>Whisper</span><span>Parakeet</span><span>Canary</span><span>Nemotron</span><span>Omnilingual</span></div>
+    </div>
+    <div class="cloud">
+      <span class="tag"><span data-l="en">ONLINE · YOUR KEY</span><span data-l="fr">EN LIGNE · TA CLÉ</span></span>
+      <h3><span data-l="en">The services you already use</span><span data-l="fr">Les services que tu utilises déjà</span></h3>
+      <p data-l="en">Bring your own API key, or the address of your own server, when you want the best accuracy without loading the phone. Keys stay in the system's keystore.</p>
+      <p data-l="fr">Branche ta propre clé d'API, ou l'adresse de ton serveur, quand tu veux la meilleure précision sans charger le téléphone. Les clés restent dans le coffre du système.</p>
+      <div class="pills"><span>OpenAI</span><span>Mistral</span><span>Gemini</span><span>Grok</span><span data-l="en">Your server</span><span data-l="fr">Ton serveur</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODÈLES -->
+<section class="wrap s" id="models">
+  <div class="head">
+    <span class="eyebrow"><span data-l="en">Catalogue</span><span data-l="fr">Catalogue</span></span>
+    <h2><span data-l="en">The local models.</span><span data-l="fr">Les modèles locaux.</span></h2>
+    <p data-l="en">From <a href="https://github.com/MrDDream/Dicto/blob/main/core/catalog/models.json"><code>core/catalog/models.json</code></a>. Each app only offers the models that run well on it.</p>
+    <p data-l="fr">Tirés de <a href="https://github.com/MrDDream/Dicto/blob/main/core/catalog/models.json"><code>core/catalog/models.json</code></a>. Chaque app ne propose que ceux qui y tournent bien.</p>
+  </div>
+  <div class="table" tabindex="0" role="region" aria-label="Models">
+    <table>
+      <thead><tr>
+        <th scope="col"><span data-l="en">Model</span><span data-l="fr">Modèle</span></th>
+        <th scope="col"><span data-l="en">Engine</span><span data-l="fr">Moteur</span></th>
+        <th scope="col"><span data-l="en">Languages</span><span data-l="fr">Langues</span></th>
+        <th scope="col"><span data-l="en">Size</span><span data-l="fr">Taille</span></th>
+        <th scope="col">Android</th>
+        <th scope="col"><span data-l="en">Desktop</span><span data-l="fr">Bureau</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Canary 180M</td><td class="m">sherpa-onnx</td><td>fr, en, de, es</td><td>154 MB</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Parakeet v3</td><td class="m">sherpa-onnx</td><td><span data-l="en">25 European languages</span><span data-l="fr">25 langues européennes</span></td><td>487 MB</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td><span data-l="en">Nemotron 3.5 streaming</span><span data-l="fr">Nemotron 3.5 en direct</span></td><td class="m">sherpa-onnx</td><td><span data-l="en">~36 languages</span><span data-l="fr">~36 langues</span></td><td>475 MB</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Omnilingual 300M</td><td class="m">sherpa-onnx</td><td><span data-l="en">1,600 languages</span><span data-l="fr">1 600 langues</span></td><td>292 MB</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Whisper tiny</td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>32 MB</td><td class="y">✓</td><td class="n">—</td></tr>
+        <tr><td>Whisper base</td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>60 MB</td><td class="y">✓</td><td class="n">—</td></tr>
+        <tr><td>Whisper small</td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>190 MB</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Whisper large-v3-turbo <span data-l="en">(compact)</span><span data-l="fr">(compact)</span></td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>574 MB</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Whisper medium</td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>539 MB</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Whisper large-v3-turbo (q8)</td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>874 MB</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Whisper large-v3-turbo</td><td class="m">whisper.cpp</td><td><span data-l="en">99 languages</span><span data-l="fr">99 langues</span></td><td>1.6 GB</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td><span data-l="en">Whisper French (distilled)</span><span data-l="fr">Whisper français distillé</span></td><td class="m">whisper.cpp</td><td><span data-l="en">French</span><span data-l="fr">Français</span></td><td>791 MB</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td><span data-l="en">Whisper French</span><span data-l="fr">Whisper français</span></td><td class="m">whisper.cpp</td><td><span data-l="en">French</span><span data-l="fr">Français</span></td><td>1.1 GB</td><td class="n">—</td><td class="y">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note" data-l="en">Models by NVIDIA, Meta, OpenAI and Bofeng Huang, under their own licences (CC-BY-4.0, OpenMDW-1.1, Apache-2.0, MIT).</p>
+  <p class="note" data-l="fr">Modèles de NVIDIA, Meta, OpenAI et Bofeng Huang, sous leurs propres licences (CC-BY-4.0, OpenMDW-1.1, Apache-2.0, MIT).</p>
+</section>
+
+<!-- TÉLÉCHARGER -->
+<section class="wrap s" id="download">
+  <div class="head">
+    <span class="eyebrow"><span data-l="en">Download</span><span data-l="fr">Télécharger</span></span>
+    <h2><span data-l="en">Pick your system.</span><span data-l="fr">Choisis ton système.</span></h2>
+    <p data-l="en">Latest version: <strong data-version>v0.1.0</strong>. All files are on the <a href="https://github.com/MrDDream/Dicto/releases/latest">release page</a>, with <code>SHA256SUMS.txt</code> and <code>SHA256SUMS-desktop.txt</code>.</p>
+    <p data-l="fr">Dernière version : <strong data-version>v0.1.0</strong>. Tous les fichiers sont sur la <a href="https://github.com/MrDDream/Dicto/releases/latest">page de la version</a>, avec <code>SHA256SUMS.txt</code> et <code>SHA256SUMS-desktop.txt</code>.</p>
+  </div>
+  <div class="downloads">
+    <div class="card">
+      <h3>Android</h3>
+      <p data-l="en">Android 10 or later. The arm64 APK fits almost every recent phone; take the universal one if unsure.</p>
+      <p data-l="fr">Android 10 ou plus. L'APK arm64 va à presque tous les téléphones récents ; prends l'universel en cas de doute.</p>
+      <div class="files">
+        <a data-asset="apk" href="https://github.com/MrDDream/Dicto/releases/latest">APK arm64-v8a</a>
+        <a data-asset="apk-universal" href="https://github.com/MrDDream/Dicto/releases/latest"><span data-l="en">Universal APK</span><span data-l="fr">APK universel</span></a>
+        <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/MrDDream/Dicto"><span data-l="en">Get it with Obtainium</span><span data-l="fr">Avec Obtainium</span></a>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Windows</h3>
+      <p data-l="en">Windows 10 and 11, 64-bit. Installs for you only, no administrator rights needed.</p>
+      <p data-l="fr">Windows 10 et 11, 64 bits. S'installe pour toi seul, sans droits d'administrateur.</p>
+      <div class="files"><a data-asset="exe" href="https://github.com/MrDDream/Dicto/releases/latest"><span data-l="en">Installer (.exe)</span><span data-l="fr">Installateur (.exe)</span></a></div>
+      <small data-l="en">Not signed yet: SmartScreen › More info › Run anyway.</small>
+      <small data-l="fr">Pas encore signé : SmartScreen › Informations complémentaires › Exécuter quand même.</small>
+    </div>
+    <div class="card">
+      <h3>Linux</h3>
+      <p data-l="en">x86-64. The AppImage updates itself in place; the packages open in your software installer.</p>
+      <p data-l="fr">x86-64. L'AppImage se met à jour d'elle-même ; les paquets s'ouvrent dans l'installeur de logiciels.</p>
+      <div class="files">
+        <a data-asset="deb" href="https://github.com/MrDDream/Dicto/releases/latest">.deb (Debian, Ubuntu)</a>
+        <a data-asset="rpm" href="https://github.com/MrDDream/Dicto/releases/latest">.rpm (Fedora, openSUSE)</a>
+        <a data-asset="appimage" href="https://github.com/MrDDream/Dicto/releases/latest">AppImage</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3>macOS</h3>
+      <p data-l="en">Apple silicon. Not notarised yet: open it once, then System Settings › Privacy &amp; Security › Open Anyway.</p>
+      <p data-l="fr">Puces Apple. Pas encore notarisé : ouvre-le une fois, puis Réglages Système › Confidentialité et sécurité › Ouvrir quand même.</p>
+      <div class="files"><a data-asset="dmg" href="https://github.com/MrDDream/Dicto/releases/latest"><span data-l="en">Disk image (.dmg)</span><span data-l="fr">Image disque (.dmg)</span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPILER -->
+<section class="wrap s" id="build">
+  <div class="build">
+    <div>
+      <span class="eyebrow"><span data-l="en">For the curious</span><span data-l="fr">Pour les curieux</span></span>
+      <h2 style="font-size: clamp(32px, 4vw, 44px); line-height: 1.05; letter-spacing: -0.03em"><span data-l="en">Build it yourself.</span><span data-l="fr">Compiler soi-même.</span></h2>
+      <p style="font-size: 18px; color: var(--ink-2)" data-l="en">A shared Rust core (audio, VAD, modes, engines, SQLite, exports), UniFFI bindings for the Kotlin / Jetpack Compose app, and a Tauri 2 + Svelte 5 desktop app.</p>
+      <p style="font-size: 18px; color: var(--ink-2)" data-l="fr">Un cœur Rust partagé (audio, VAD, modes, moteurs, SQLite, exports), des bindings UniFFI pour l'app Kotlin / Jetpack Compose, et une app de bureau Tauri 2 + Svelte 5.</p>
+      <a href="https://github.com/MrDDream/Dicto#%EF%B8%8F-build-from-source" style="font-weight: 700"><span data-l="en">Read the full README</span><span data-l="fr">Lire le README complet</span></a>
+    </div>
+    <div class="term">
+      <div class="dots" aria-hidden="true"><i style="background:#D9622B"></i><i style="background:#F0B44C"></i><i style="background:#3E7D4F"></i></div>
+<pre><span class="c"># Rust core</span>
+cd core &amp;&amp; cargo test
+
+<span class="c"># Android: native libraries, then the APK</span>
+scripts/build-android-libs.sh
+cd android &amp;&amp; ./gradlew :app:assembleDebug
+
+<span class="c"># Desktop</span>
+cd desktop &amp;&amp; npm ci &amp;&amp; npx tauri dev</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="cta">
+    <div>
+      <h2><span data-l="en">Ready to put the keyboard down?</span><span data-l="fr">Prêt à poser le clavier ?</span></h2>
+      <p data-l="en">Get Dicto for Android, Windows, Linux or macOS. Once installed, it can keep itself up to date.</p>
+      <p data-l="fr">Télécharge Dicto pour Android, Windows, Linux ou macOS. Une fois installé, il peut se tenir à jour tout seul.</p>
+    </div>
+    <div class="actions">
+      <a class="btn dark" href="#download"><span data-l="en">Download</span><span data-l="fr">Télécharger</span></a>
+      <a class="btn outline" href="https://github.com/MrDDream/Dicto/issues"><span data-l="en">Report a problem</span><span data-l="fr">Signaler un souci</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="bottom">
+  <div class="wrap">
+    <span><span data-l="en">Dicto, made with care by</span><span data-l="fr">Dicto, fait avec soin par</span> <a href="https://github.com/MrDDream">MrDDream</a></span>
+    <span>Rust · Kotlin · Tauri · Svelte</span>
+  </div>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

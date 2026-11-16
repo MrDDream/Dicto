@@ -372,6 +372,12 @@ class DictationController(private val context: Context) : DictationListener {
         _ui.update { it.copy(pending = it.pending + 1) }
     }
 
+    /** Captures d'écran (tests seulement) : un état d'exemple, sans micro ni modèle. */
+    @androidx.annotation.VisibleForTesting
+    internal fun showSample(sample: DictationUi) {
+        _ui.value = sample
+    }
+
     override fun onResult(utteranceId: ULong, result: DictationResult) {
         _ui.update { it.copy(pending = (it.pending - 1).coerceAtLeast(0)) }
         result.warning?.let { showMessage(it) }

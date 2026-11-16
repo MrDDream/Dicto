@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Dicto">
+  <rect width="128" height="128" rx="40" fill="#F0B44C"/>
+  <g transform="translate(14 14)">
+    <rect x="36" y="14" width="28" height="48" rx="14" stroke="#2B231D" stroke-width="7" fill="#FFFCF8"/>
+    <path d="M44 32H56M44 44H52" stroke="#2B231D" stroke-width="6" stroke-linecap="round"/>
+    <path d="M26 50A24 24 0 0 0 74 50M50 74V86" stroke="#2B231D" stroke-width="7" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>
