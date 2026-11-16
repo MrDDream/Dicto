@@ -39,7 +39,7 @@ import uniffi.dicto_ffi.refinePresets
 
 private data class AppEntry(val pkg: String, val label: String)
 
-private val MODE_LABELS = listOf(null to "Habituel", Mode.PUSH_TO_TALK.name to "Push-to-talk", Mode.CONTINUOUS.name to "Continu", Mode.HOLD.name to "Maintenu")
+private val MODE_LABELS = listOf(null to "Habituel", Mode.PUSH_TO_TALK.name to "Marche/arrêt", Mode.CONTINUOUS.name to "Continu", Mode.HOLD.name to "Maintenu")
 
 /** Profils par app : langue, retouche et mode appliqués quand on dicte dans cette app. */
 @Composable

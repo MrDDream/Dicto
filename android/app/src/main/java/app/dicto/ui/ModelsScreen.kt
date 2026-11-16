@@ -58,6 +58,8 @@ import app.dicto.data.LANGUAGES
 import app.dicto.dictation.EngineStatus
 import app.dicto.models.DownloadState
 import app.dicto.models.ModelDownloads
+import app.dicto.ui.providers.Brand
+import app.dicto.ui.providers.ProviderLogo
 import app.dicto.ui.providers.TranscriptionProviders
 import app.dicto.ui.theme.Dicto
 import app.dicto.ui.theme.DictoIcons
@@ -358,13 +360,13 @@ private fun ModelCard(
 }
 
 /** Qui a créé le modèle : son nom et sa pastille. */
-private class Maker(val name: String, val mark: String, val bg: Color, val fg: Color, val openAi: Boolean = false)
+private class Maker(val name: String, val mark: String, val bg: Color, val fg: Color, val logo: Brand? = null)
 
 private fun makerOf(m: ModelInfo): Maker = when {
-    m.id.startsWith("whisper") -> Maker("OpenAI", "", Dicto.Background, Dicto.Ink, openAi = true)
+    m.id.startsWith("whisper") -> Maker("OpenAI", "", Dicto.Background, Dicto.Ink, logo = Brand.OPENAI)
     m.id.startsWith("canary") || m.id.startsWith("parakeet") || m.id.startsWith("nemotron") ->
-        Maker("NVIDIA", "NV", Color(0xFFE3F0D0), Color(0xFF3F6212))
-    m.id.startsWith("omnilingual") -> Maker("Meta", "M", Color(0xFFDCE8FB), Color(0xFF1D4E9E))
+        Maker("NVIDIA", "", Dicto.Background, Dicto.Ink, logo = Brand.NVIDIA)
+    m.id.startsWith("omnilingual") -> Maker("Meta", "", Dicto.Background, Dicto.Ink, logo = Brand.META)
     else -> Maker("", "?", Dicto.Background, Dicto.InkSecondary)
 }
 
@@ -374,8 +376,8 @@ private fun MakerBadge(maker: Maker) {
         Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(maker.bg),
         contentAlignment = Alignment.Center,
     ) {
-        if (maker.openAi) {
-            app.dicto.ui.providers.ProviderLogo(app.dicto.ui.providers.Brand.OPENAI, size = 22.dp, tint = maker.fg)
+        if (maker.logo != null) {
+            ProviderLogo(maker.logo, size = 24.dp, tint = maker.fg)
         } else {
             Text(maker.mark, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = maker.fg)
         }

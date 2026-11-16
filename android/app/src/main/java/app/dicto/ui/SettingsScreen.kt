@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.dicto.data.Journal
 import app.dicto.BuildConfig
 import app.dicto.DictoApp
 import app.dicto.data.LANGUAGES
@@ -135,6 +136,29 @@ fun SettingsScreen(onBack: () -> Unit) {
 
             SectionTitle("Profils par app", "Langue, retouche et mode selon l'app où tu écris.")
             ProfilesCard()
+
+            SectionTitle("Diagnostic", "Les derniers événements du clavier et de la bulle, gardés sur le téléphone.")
+            DictoCard {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val crashed = remember(refresh) { Journal.hasCrash() }
+                Text(
+                    if (crashed) "Dicto a planté récemment : le détail est dans le journal."
+                    else "Si quelque chose ne marche pas, copie le journal et colle-le dans ton message.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (crashed) Dicto.OnRecordingContainer else Dicto.InkMuted,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TonalButton("Copier le journal", {
+                        context.getSystemService(android.content.ClipboardManager::class.java)
+                            .setPrimaryClip(android.content.ClipData.newPlainText("Journal Dicto", Journal.export()))
+                        android.widget.Toast.makeText(context, "Journal copié", android.widget.Toast.LENGTH_SHORT).show()
+                    })
+                    TonalButton("Effacer", {
+                        Journal.clear()
+                        refresh++
+                    })
+                }
+            }
 
             SectionTitle("À propos")
             DictoCard {

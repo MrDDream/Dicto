@@ -2,6 +2,7 @@ package app.dicto.ime
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -33,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
@@ -54,10 +56,58 @@ import uniffi.dicto_ffi.Mode
 import uniffi.dicto_ffi.State
 
 private val MODE_LABELS = mapOf(
-    Mode.PUSH_TO_TALK to "Push-to-talk",
+    Mode.PUSH_TO_TALK to "Marche/arrêt",
     Mode.CONTINUOUS to "Continu",
     Mode.HOLD to "Maintenu",
 )
+
+/** Couleurs du clavier, claires ou sombres selon le thème du téléphone. */
+private class KeyboardColors(
+    val background: Color,
+    val key: Color,
+    val ink: Color,
+    val muted: Color,
+    val line: Color,
+    val recContainer: Color,
+    val recInk: Color,
+    val strong: Color,
+    val onStrong: Color,
+)
+
+private val DARK = KeyboardColors(
+    background = Dicto.OverlayBackground,
+    key = Dicto.OverlayLine,
+    ink = Dicto.OverlayInk,
+    muted = Dicto.OverlayMuted,
+    line = Dicto.OverlayLine,
+    recContainer = Dicto.OverlayRecordingContainer,
+    recInk = Dicto.OverlayRecordingInk,
+    strong = Dicto.OverlayInk,
+    onStrong = Dicto.Ink,
+)
+
+private val LIGHT = KeyboardColors(
+    background = Dicto.SurfaceSunken,
+    key = Dicto.Surface,
+    ink = Dicto.Ink,
+    muted = Dicto.InkMuted,
+    line = Dicto.Border,
+    recContainer = Dicto.RecordingContainer,
+    recInk = Dicto.OnRecordingContainer,
+    strong = Dicto.Accent,
+    onStrong = Dicto.OnAccent,
+)
+
+private val K: KeyboardColors
+    @Composable get() = if (isSystemInDarkTheme()) DARK else LIGHT
+
+/** Le clavier est-il sombre (barre de navigation assortie). */
+fun keyboardIsDark(context: android.content.Context): Boolean =
+    (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
+
+/** Fond du clavier, pour colorer la barre de navigation dessous. */
+fun keyboardBackground(dark: Boolean): Color = if (dark) DARK.background else LIGHT.background
 
 @Composable
 fun KeyboardPanel(
@@ -85,7 +135,7 @@ fun KeyboardPanel(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Dicto.OverlayBackground)
+            .background(K.background)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -101,7 +151,7 @@ fun KeyboardPanel(
             }
             Row(
                 Modifier.height(26.dp).clip(RoundedCornerShape(13.dp))
-                    .background(if (active) Dicto.OverlayRecordingContainer else Dicto.OverlayLine)
+                    .background(if (active) K.recContainer else K.line)
                     .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -111,7 +161,7 @@ fun KeyboardPanel(
                     text,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (active) Dicto.OverlayRecordingInk else Dicto.OverlayInk,
+                    color = if (active) K.recInk else K.ink,
                     maxLines = 1,
                 )
             }
@@ -123,44 +173,99 @@ fun KeyboardPanel(
                 },
                 enabled = !ui.isActive,
                 color = androidx.compose.ui.graphics.Color.Transparent,
-                contentColor = Dicto.OverlayMuted,
-                shape = RoundedCornerShape(12.dp),
+                contentColor = K.muted,
+                shape = RoundedCornerShape(13.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, K.line),
+                modifier = Modifier.height(26.dp),
             ) {
-                Text(
-                    MODE_LABELS.getValue(ui.mode) + " ▾",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        .semantics { contentDescription = "Mode : ${MODE_LABELS.getValue(ui.mode)}, toucher pour changer" },
-                )
-            }
-        }
-
-        Row(Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
-            for (b in bars) {
-                val h = (4 + b * 24).dp
-                Box(Modifier.width(4.dp).height(h).clip(RoundedCornerShape(2.dp)).background(if (b > 0.05f) Dicto.RecordingWave else Dicto.OverlayLine))
-            }
-        }
-
-        if (ui.partial.isNotBlank()) {
-            Text(ui.partial, style = MaterialTheme.typography.bodyMedium, color = Dicto.OverlayMuted, maxLines = 2)
-        }
-
-        if (!hasMicPermission) {
-            Surface(onClick = onOpenApp, color = Dicto.OverlayInk, contentColor = Dicto.Ink, shape = RoundedCornerShape(23.dp), modifier = Modifier.fillMaxWidth().height(46.dp)) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("Ouvrir Dicto pour autoriser le micro", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        MODE_LABELS.getValue(ui.mode) + "  ▾",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 10.dp)
+                            .semantics { contentDescription = "Mode : ${MODE_LABELS.getValue(ui.mode)}, toucher pour changer" },
+                    )
                 }
             }
         }
 
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            RoundKey(DictoIcons.Keyboard, "Changer de clavier", onSwitchKeyboard)
-            WideKey("espace", onSpace)
-            MicKey(ui.isActive, ui.mode, onPress, onRelease)
-            RepeatKey(DictoIcons.Backspace, "Effacer", onBackspace)
-            RoundKey(DictoIcons.Enter, "Entrée", onEnter)
+        // Zone de hauteur fixe : la phrase en direct, sinon l'onde ou une consigne. Le clavier ne saute pas.
+        Box(Modifier.fillMaxWidth().height(52.dp), contentAlignment = Alignment.Center) {
+            when {
+                !hasMicPermission -> Surface(
+                    onClick = onOpenApp, color = K.strong, contentColor = K.onStrong,
+                    shape = RoundedCornerShape(23.dp), modifier = Modifier.fillMaxWidth().height(46.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("Ouvrir Dicto pour autoriser le micro", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    }
+                }
+                ui.partial.isNotBlank() -> Text(
+                    ui.partial,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = K.ink,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ui.isActive -> Row(
+                    Modifier.fillMaxWidth().height(28.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+                ) {
+                    for (b in bars) {
+                        Box(
+                            Modifier.width(4.dp).height((4 + b * 24).dp).clip(RoundedCornerShape(2.dp))
+                                .background(if (b > 0.05f) Dicto.RecordingWave else K.line),
+                        )
+                    }
+                }
+                else -> Text(
+                    if (ui.pending > 0) "Le texte arrive…" else "Touche le micro et parle : le texte s'écrit tout seul.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = K.muted,
+                )
+            }
         }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Key(Modifier.width(52.dp), "Changer de clavier", onSwitchKeyboard) {
+                    Icon(DictoIcons.Keyboard, null, Modifier.size(22.dp))
+                }
+                Key(Modifier.weight(1f), "Espace", onSpace) {
+                    Box(Modifier.width(28.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(K.muted))
+                }
+            }
+            MicKey(ui.isActive, ui.mode, onPress, onRelease)
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RepeatKey(Modifier.weight(1f), DictoIcons.Backspace, "Effacer", onBackspace)
+                Key(Modifier.weight(1f), "Entrée", onEnter) {
+                    Icon(DictoIcons.Enter, null, Modifier.size(22.dp))
+                }
+            }
+        }
+    }
+}
+
+private val KEY_SHAPE = RoundedCornerShape(14.dp)
+private val KEY_HEIGHT = 52.dp
+
+/** Touche pleine, comme sur un clavier. */
+@Composable
+private fun Key(modifier: Modifier, description: String, onClick: () -> Unit, content: @Composable () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(KEY_HEIGHT).semantics { contentDescription = description },
+        shape = KEY_SHAPE,
+        color = K.key,
+        contentColor = K.ink,
+    ) {
+        Box(contentAlignment = Alignment.Center) { content() }
     }
 }
 
@@ -173,10 +278,10 @@ private fun MicKey(active: Boolean, mode: Mode, onPress: () -> Unit, onRelease: 
     }
     Box(
         Modifier
-            .size(72.dp)
+            .size(68.dp)
             .clip(CircleShape)
             .background(if (active) Dicto.Recording else Dicto.Accent)
-            .border(5.dp, if (active) Dicto.OverlayRecordingContainer else Dicto.OverlayLine, CircleShape)
+            .border(5.dp, if (active) K.recContainer else K.line, CircleShape)
             .semantics {
                 role = Role.Button
                 contentDescription = label
@@ -196,43 +301,15 @@ private fun MicKey(active: Boolean, mode: Mode, onPress: () -> Unit, onRelease: 
     }
 }
 
-@Composable
-private fun RoundKey(icon: ImageVector, description: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.size(48.dp),
-        shape = CircleShape,
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        contentColor = Dicto.OverlayInk,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Dicto.OverlayLine),
-    ) {
-        Box(contentAlignment = Alignment.Center) { Icon(icon, description, Modifier.size(20.dp)) }
-    }
-}
-
-@Composable
-private fun WideKey(text: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.width(72.dp).height(48.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        contentColor = Dicto.OverlayMuted,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Dicto.OverlayLine),
-    ) {
-        Box(contentAlignment = Alignment.Center) { Text(text, style = MaterialTheme.typography.labelMedium) }
-    }
-}
-
 /** Touche qui se répète tant qu'on la maintient (effacement). */
 @Composable
-private fun RepeatKey(icon: ImageVector, description: String, onAction: () -> Unit) {
+private fun RepeatKey(modifier: Modifier, icon: ImageVector, description: String, onAction: () -> Unit) {
     val scope = rememberCoroutineScope()
     Box(
-        Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .border(1.dp, Dicto.OverlayLine, CircleShape)
+        modifier
+            .height(KEY_HEIGHT)
+            .clip(KEY_SHAPE)
+            .background(K.key)
             .semantics {
                 role = Role.Button
                 contentDescription = description
@@ -256,7 +333,7 @@ private fun RepeatKey(icon: ImageVector, description: String, onAction: () -> Un
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = Dicto.OverlayInk, modifier = Modifier.size(20.dp))
+        Icon(icon, null, tint = K.ink, modifier = Modifier.size(22.dp))
     }
 }
 

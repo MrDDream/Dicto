@@ -31,3 +31,5 @@ keystore.properties
 .vscode/
 *.iml
 .DS_Store
+/desktop/src-tauri/libs/
+/desktop/src-tauri/libs.conf.json

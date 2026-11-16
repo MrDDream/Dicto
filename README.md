@@ -63,7 +63,7 @@ cd android && ./gradlew :app:testDebugUnitTest \
 
 ## Les trois modes
 
-- **Push-to-talk** : un appui pour commencer, un second pour terminer.
+- **Marche/arrêt** : un appui pour commencer, un second pour terminer.
 - **Continu** : écoute permanente, chaque phrase est transcrite dès qu'on fait une pause.
 - **Maintenu** : on parle tant que le bouton ou la touche est enfoncé.
 

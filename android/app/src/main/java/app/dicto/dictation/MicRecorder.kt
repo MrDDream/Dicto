@@ -17,10 +17,14 @@ class MicRecorder(
     private val onAudio: (ByteArray) -> Unit,
     private val onLevel: (Float) -> Unit,
 ) {
-    @Volatile private var running = false
+    /**
+     * Drapeau de la capture en cours. Chaque capture a le sien : un arrêt suivi d'un
+     * redémarrage rapide (changement de clavier) ne laisse pas l'ancien fil couper le nouveau.
+     */
+    @Volatile private var current: java.util.concurrent.atomic.AtomicBoolean? = null
     private var thread: Thread? = null
 
-    val isRunning get() = running
+    val isRunning get() = current?.get() == true
 
     /** Session audio de la capture en cours (0 sans capture), pour la reconnaître parmi celles d'Android. */
     @Volatile var sessionId = 0
@@ -29,7 +33,7 @@ class MicRecorder(
     @SuppressLint("MissingPermission") // vérifiée par l'appelant
     @Synchronized
     fun start(): Boolean {
-        if (running) return true
+        if (isRunning) return true
         val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val record = try {
             AudioRecord(
@@ -50,22 +54,31 @@ class MicRecorder(
         val suppressor = if (NoiseSuppressor.isAvailable()) NoiseSuppressor.create(record.audioSessionId) else null
         suppressor?.enabled = true
         sessionId = record.audioSessionId
-        record.startRecording()
-        running = true
-        thread = Thread({ loop(record, suppressor) }, "dicto-mic").apply { start() }
+        try {
+            record.startRecording()
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "démarrage du micro", e)
+            sessionId = 0
+            suppressor?.release()
+            record.release()
+            return false
+        }
+        val running = java.util.concurrent.atomic.AtomicBoolean(true)
+        current = running
+        thread = Thread({ loop(record, suppressor, running) }, "dicto-mic").apply { start() }
         return true
     }
 
     fun stop() {
-        running = false
+        current?.set(false)
     }
 
-    private fun loop(record: AudioRecord, suppressor: NoiseSuppressor?) {
+    private fun loop(record: AudioRecord, suppressor: NoiseSuppressor?, running: java.util.concurrent.atomic.AtomicBoolean) {
         val buf = ByteArray(CHUNK_BYTES)
         try {
-            while (running) {
+            while (running.get()) {
                 var read = 0
-                while (read < buf.size && running) {
+                while (read < buf.size && running.get()) {
                     val n = record.read(buf, read, buf.size - read)
                     if (n <= 0) break
                     read += n
@@ -78,12 +91,13 @@ class MicRecorder(
         } catch (e: Exception) {
             Log.e(TAG, "lecture du micro", e)
         } finally {
-            running = false
-            sessionId = 0
+            running.set(false)
+            // Une nouvelle capture a peut-être déjà démarré : on ne touche qu'à la sienne.
+            if (sessionId == record.audioSessionId) sessionId = 0
             runCatching { record.stop() }
-            suppressor?.release()
-            record.release()
-            onLevel(0f)
+            runCatching { suppressor?.release() }
+            runCatching { record.release() }
+            if (current === running) onLevel(0f)
         }
     }
 

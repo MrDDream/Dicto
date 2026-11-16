@@ -2,7 +2,7 @@
 <ul>
 <li>On-device models downloaded on demand: Canary, Parakeet (25 European languages with punctuation), live Nemotron, Whisper, Omnilingual (1,600 languages). Text appears as you speak with Nemotron and the fast models. Your voice never leaves the device.</li>
 <li>Or online: OpenAI, Mistral, Google Gemini, Grok (xAI), or your own OpenAI-compatible server, with your key.</li>
-<li>Push-to-talk, continuous listening or hold-to-talk.</li>
+<li>Tap to start and stop, continuous listening or hold-to-talk.</li>
 <li>Works everywhere: voice keyboard, floating bubble, quick settings tile, edge swipe, on-device "OK Dicto" wake phrase, default assistant.</li>
 <li>Voice commands, personal vocabulary, per-app profiles, text clean-up by Claude, OpenAI, Gemini or Ollama, transcription of voice messages and meetings with .srt/.vtt/.md export.</li>
 </ul>

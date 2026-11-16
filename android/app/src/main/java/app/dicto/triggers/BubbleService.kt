@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.Role
@@ -139,6 +140,7 @@ class BubbleService : Service(), DictationTarget {
      * barre de navigation. Sa fenêtre n'existe que pendant qu'il s'affiche, et elle est créée avec
      * son contenu, pour qu'Android la mesure à la bonne taille.
      */
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     private fun showPanel() {
         panelVisible = true
         if (panel != null) return
@@ -149,7 +151,7 @@ class BubbleService : Service(), DictationTarget {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP
-            y = statusBarHeight() + (8 * density).toInt()
+            y = panelY ?: (statusBarHeight() + (8 * density).toInt())
         }
         panelParams = params
         panelHeight = -1
@@ -166,6 +168,7 @@ class BubbleService : Service(), DictationTarget {
                     onMicPress = ::press,
                     onMicRelease = controller::release,
                     modifier = Modifier.padding(horizontal = 12.dp),
+                    dragModifier = Modifier.pointerInteropFilter(onTouchEvent = ::onHandleTouch),
                 )
             }
         }
@@ -185,6 +188,35 @@ class BubbleService : Service(), DictationTarget {
         }
 
     private var panelHeight = -1
+
+    /** Position choisie en faisant glisser le panneau, gardée tant que la bulle est active. */
+    private var panelY: Int? = null
+
+    private var lastRawY = 0f
+
+    /**
+     * Glisser la poignée du panneau. On suit la position du doigt sur l'écran (rawY) : elle ne
+     * dépend pas de la fenêtre, qui bouge sous le doigt pendant le glissement.
+     */
+    private fun onHandleTouch(e: MotionEvent): Boolean {
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> lastRawY = e.rawY
+            MotionEvent.ACTION_MOVE -> {
+                dragPanel(e.rawY - lastRawY)
+                lastRawY = e.rawY
+            }
+        }
+        return true
+    }
+
+    private fun dragPanel(dy: Float) {
+        val view = panel ?: return
+        val params = panelParams ?: return
+        val max = (screenHeight() - maxOf(panelHeight, 0)).coerceAtLeast(0)
+        params.y = (params.y + dy.toInt()).coerceIn(statusBarHeight(), maxOf(max, statusBarHeight()))
+        panelY = params.y
+        runCatching { wm.updateViewLayout(view, params) }
+    }
 
     private fun resizePanel(height: Int) {
         val view = panel ?: return
@@ -368,7 +400,7 @@ class BubbleService : Service(), DictationTarget {
             controller.press()
             controller.release()
         } else {
-            // Un simple toucher ne peut pas « maintenir » : push-to-talk dans ce cas.
+            // Un simple toucher ne peut pas « maintenir » : marche/arrêt dans ce cas.
             press(if (DictoApp.instance.settings.mode.value == Mode.HOLD) Mode.PUSH_TO_TALK else null)
             controller.release()
         }

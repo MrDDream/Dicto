@@ -28,6 +28,7 @@ class DictoApp : Application(), androidx.work.Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        app.dicto.data.Journal.init(this)
         createChannels()
         storage = Storage.open(File(filesDir, "dicto.db").path)
         models = ModelManager(File(filesDir, "models").apply { mkdirs() }.path, "android")

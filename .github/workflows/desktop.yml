@@ -1,0 +1,88 @@
+name: Bureau
+
+# App de bureau (Tauri) : vérifications puis installateurs Windows, Linux et macOS,
+# compilés sur les machines de GitHub. Les paquets sont dans les « artifacts » de chaque exécution.
+on:
+  push:
+    paths: ["desktop/**", "core/**", ".github/workflows/desktop.yml"]
+  pull_request:
+    paths: ["desktop/**", "core/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis
+          # La plus ancienne Ubuntu encore suivie : le .deb et l'AppImage tournent aussi sur les plus récentes.
+          - os: ubuntu-22.04
+            bundles: deb,rpm,appimage
+          - os: macos-latest
+            bundles: dmg
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Bibliothèques Linux (WebKitGTK, zone de notification, son, saisie)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev libxdo-dev patchelf cmake clang
+      - name: libclang (whisper.cpp)
+        if: runner.os == 'Windows'
+        run: echo "LIBCLANG_PATH=C:\\Program Files\\LLVM\\bin" >> "$GITHUB_ENV"
+
+      - name: Interface
+        run: |
+          npm ci
+          npm run check
+          npm run build
+      - name: Lint
+        working-directory: desktop/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
+      # Sans les moteurs : les tests (audio, réglages) n'en ont pas besoin, et leurs bibliothèques
+      # partagées ne sont pas à côté des exécutables de test.
+      - name: Tests
+        working-directory: desktop/src-tauri
+        run: cargo test --locked --no-default-features
+      - name: Compilation (bibliothèques natives)
+        working-directory: desktop/src-tauri
+        run: cargo build --release --locked
+      - name: Paquets
+        run: |
+          node scripts/bundle-libs.mjs
+          npx tauri build --bundles ${{ matrix.bundles }} --config src-tauri/libs.conf.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dicto-desktop-${{ runner.os }}
+          path: |
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
+            desktop/src-tauri/target/release/bundle/deb/*.deb
+            desktop/src-tauri/target/release/bundle/rpm/*.rpm
+            desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            desktop/src-tauri/target/release/bundle/dmg/*.dmg
+          retention-days: 14

@@ -69,7 +69,7 @@ fun TriggersScreen() {
         onPauseOrDispose { }
     }
     val imeEnabled = remember(resumed) { KeyboardLink.isEnabled(context) }
-    val imeCurrent = remember(resumed) { KeyboardLink.isCurrent() }
+    val imeCurrent = remember(resumed) { KeyboardLink.isCurrent(context) }
     val overlay = remember(resumed) { Settings.canDrawOverlays(context) }
     val bubble by settings.bubble.flow.collectAsStateWithLifecycle()
     val wake by settings.wakeWord.flow.collectAsStateWithLifecycle()
@@ -105,13 +105,14 @@ fun TriggersScreen() {
                 }
                 Text(
                     if (imeEnabled) {
-                        "Pour dicter dans n'importe quelle app : appui long sur la barre d'espace de ton clavier " +
-                            "(ou l'icône clavier en bas de l'écran), puis « Clavier Dicto ». Il écoute aussitôt ; " +
-                            "touche ■ quand tu as fini, le texte s'écrit et ton clavier revient. " +
-                            "La bulle, la tuile et « OK Dicto » écrivent aussi par lui."
+                        "Pour passer à Dicto en une touche depuis Gboard : dans ses paramètres, Préférences, active " +
+                            "« Afficher la touche de changement de langue ». Le globe 🌐 bascule alors sur le clavier Dicto, " +
+                            "qui écoute aussitôt ; touche ■ quand tu as fini, le texte s'écrit et Gboard revient. " +
+                            "Pour rester sur Dicto, coupe « Revenir à mon clavier » dans Réglages. " +
+                            "La bulle et « OK Dicto » écrivent aussi par lui."
                     } else {
                         "Active « Clavier Dicto » dans la liste des claviers d'Android. Sans lui, le texte dicté " +
-                            "depuis la bulle ou la tuile est copié, à coller toi-même."
+                            "depuis la bulle est copié, à coller toi-même."
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = Dicto.InkMuted,
@@ -191,7 +192,7 @@ fun TriggersScreen() {
                         }, "Geste depuis le bord")
                     }
                     HorizontalDivider(color = Dicto.SurfaceSunken)
-                    ListRow("Tuile Réglages rapides", "Dans le volet de notifications") {
+                    ListRow("Tuile Réglages rapides", "Affiche ou masque la bulle depuis le volet de notifications") {
                         TonalButton("Ajouter", { addTile(context) })
                     }
                     HorizontalDivider(color = Dicto.SurfaceSunken)
@@ -293,7 +294,7 @@ private fun addTile(context: Context) {
     if (Build.VERSION.SDK_INT >= 33) {
         context.getSystemService(StatusBarManager::class.java).requestAddTileService(
             ComponentName(context, DictoTileService::class.java),
-            "Dicto",
+            "Bulle Dicto",
             Icon.createWithResource(context, R.drawable.ic_launcher_monochrome),
             context.mainExecutor,
         ) { }

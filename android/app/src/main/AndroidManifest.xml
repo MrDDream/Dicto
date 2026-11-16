@@ -92,6 +92,14 @@
             android:taskAffinity="app.dicto.keyboard"
             android:theme="@style/Theme.Dicto.Translucent" />
 
+        <!-- Relais invisible de la tuile, quand Android refuse d'afficher la bulle depuis l'arrière-plan. -->
+        <activity
+            android:name=".triggers.BubbleToggleActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="app.dicto.bubble"
+            android:theme="@style/Theme.Dicto.Translucent" />
+
         <!-- Bulle flottante et geste depuis le bord. -->
         <service
             android:name=".triggers.BubbleService"

@@ -8,7 +8,7 @@
 
 <p><b>Ou en ligne</b> : OpenAI, Mistral, Google Gemini, Grok (xAI) ou ton propre serveur compatible OpenAI, avec ta clé.</p>
 
-<p><b>Trois façons de dicter</b> : push-to-talk, écoute continue (une phrase à chaque pause) ou bouton maintenu.</p>
+<p><b>Trois façons de dicter</b> : marche/arrêt (un appui pour commencer, un second pour finir), écoute continue (une phrase à chaque pause) ou bouton maintenu.</p>
 
 <p><b>Partout</b> : clavier vocal, bulle flottante, tuile des réglages rapides, geste depuis le bord, phrase d'appel « OK Dicto » (analysée sur le téléphone), assistant par défaut. Le texte s'écrit dans le champ où tu tapes.</p>
 

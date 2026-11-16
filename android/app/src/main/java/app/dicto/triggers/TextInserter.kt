@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import app.dicto.DictoApp
+import app.dicto.data.Journal
 import app.dicto.ime.KeyboardLink
 import app.dicto.ime.KeyboardSwitchActivity
 
@@ -19,14 +21,19 @@ object TextInserter {
     fun insert(context: Context, text: String) {
         if (text.isBlank()) return
         val app = context.applicationContext
+        val current = KeyboardLink.isCurrent(app)
+        val enabled = KeyboardLink.isEnabled(app)
+        Journal.add("bulle", "insérer : clavier Dicto ${if (current) "en cours" else if (enabled) "activé, pas en cours" else "non activé"}")
         when {
-            KeyboardLink.isCurrent() ->
-                KeyboardLink.write(text, switchBack = false, timeoutMs = 3_000) {
+            current ->
+                KeyboardLink.write(text, switchBack = false, timeoutMs = 3_000, current = true) {
                     copy(app, text, "Texte copié : aucun champ de saisie actif.")
                 }
-            KeyboardLink.isEnabled(app) -> {
-                KeyboardLink.write(text, switchBack = true, timeoutMs = 20_000) {
-                    copy(app, text, "Texte copié. Choisis « Clavier Dicto » pour qu'il s'écrive directement.")
+            enabled -> {
+                // « Revenir à mon clavier » coupé : le clavier Dicto reste, prêt pour la phrase suivante.
+                val back = DictoApp.instance.settings.imeAutoReturn.value
+                KeyboardLink.write(text, switchBack = back, timeoutMs = 20_000, current = false) {
+                    copy(app, text, "Texte copié. Choisis « Dicto » dans la liste des claviers pour qu'il s'écrive directement.")
                 }
                 KeyboardSwitchActivity.start(context)
             }

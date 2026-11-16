@@ -52,7 +52,7 @@ import kotlinx.coroutines.delay
 import uniffi.dicto_ffi.Mode
 import uniffi.dicto_ffi.State
 
-private val MODE_NAMES = mapOf(Mode.PUSH_TO_TALK to "Push-to-talk", Mode.CONTINUOUS to "Continu", Mode.HOLD to "Maintenu")
+private val MODE_NAMES = mapOf(Mode.PUSH_TO_TALK to "Marche/arrêt", Mode.CONTINUOUS to "Continu", Mode.HOLD to "Maintenu")
 
 /**
  * Panneau sombre « Je t'écoute » (écran « Bulle flottante en usage » du canvas) :
@@ -67,6 +67,8 @@ fun DictationPanel(
     onMicRelease: () -> Unit,
     modifier: Modifier = Modifier,
     insertLabel: String = "Insérer le texte",
+    /** Geste pour déplacer le panneau (bulle) ; affiche aussi une poignée. */
+    dragModifier: Modifier? = null,
 ) {
     val controller = DictoApp.instance.dictation
     val ui by controller.ui.collectAsStateWithLifecycle()
@@ -86,9 +88,16 @@ fun DictationPanel(
             .shadow(18.dp, RoundedCornerShape(26.dp))
             .clip(RoundedCornerShape(26.dp))
             .background(Dicto.OverlayBackground)
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = if (dragModifier == null) 16.dp else 0.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (dragModifier != null) {
+            // Poignée : le panneau se déplace en le faisant glisser vers le haut ou le bas.
+            // Zone de prise large (toute la largeur) pour attraper la poignée facilement.
+            Box(Modifier.fillMaxWidth().height(22.dp).then(dragModifier), contentAlignment = Alignment.Center) {
+                Box(Modifier.width(40.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(Dicto.OverlayMuted))
+            }
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             StatusPill(ui)
             Spacer(Modifier.weight(1f))

@@ -1,0 +1,42 @@
+[package]
+name = "dicto-desktop"
+version = "0.1.0"
+description = "Dicto : dictée vocale pour Windows, Linux et macOS"
+edition = "2024"
+rust-version = "1.85"
+
+# Projet à part du workspace du cœur (core/) : il en dépend par chemin.
+[workspace]
+
+[lib]
+name = "dicto_desktop_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "macos-private-api"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dicto-ffi = { path = "../../core/dicto-ffi" }
+# Capture du micro (WASAPI, CoreAudio, ALSA/PulseAudio/PipeWire).
+cpal = "0.18"
+# Écriture dans la fenêtre active (SendInput, CGEvent, X11).
+enigo = "0.6"
+arboard = "3"
+log = "0.4"
+
+[features]
+default = ["engines"]
+# Moteurs locaux : whisper.cpp et sherpa-onnx (Parakeet, Canary, Nemotron…).
+# Sans eux, l'app compile vite (vérifications) mais ne propose que les services en ligne.
+engines = ["dicto-ffi/whisper", "dicto-ffi/sherpa-shared"]
+vulkan = ["engines", "dicto-ffi/whisper-vulkan"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

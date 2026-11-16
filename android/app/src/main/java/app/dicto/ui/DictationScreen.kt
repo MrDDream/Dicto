@@ -85,7 +85,7 @@ import uniffi.dicto_ffi.State
 private data class ModeInfo(val mode: Mode, val label: String, val hint: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 private val MODES = listOf(
-    ModeInfo(Mode.PUSH_TO_TALK, "Push-to-talk", "Un appui pour commencer, un second pour terminer.", DictoIcons.PushToTalk),
+    ModeInfo(Mode.PUSH_TO_TALK, "Marche/arrêt", "Un appui pour commencer, un second pour terminer.", DictoIcons.PushToTalk),
     ModeInfo(Mode.CONTINUOUS, "Continu", "J’écoute en continu et transcris chaque phrase dès que tu fais une pause.", DictoIcons.Continuous),
     ModeInfo(Mode.HOLD, "Maintenu", "Garde le doigt appuyé pendant que tu parles, relâche pour transcrire.", DictoIcons.Hold),
 )

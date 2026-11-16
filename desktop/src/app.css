@@ -1,0 +1,242 @@
+/* Couleurs et polices du canvas « Dicto » (design/tokens.json). Polices embarquées : rien n'est chargé en ligne. */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("./assets/fonts/bricolage_grotesque.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: block;
+}
+@font-face {
+  font-family: "Figtree";
+  src: url("./assets/fonts/figtree.ttf") format("truetype");
+  font-weight: 300 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains_mono.ttf") format("truetype");
+  font-weight: 100 800;
+  font-display: block;
+}
+
+:root {
+  --bg: #f6f1ea;
+  --surface: #fffcf8;
+  --sunken: #efe7dc;
+  --border: #e4d9cb;
+  --ink: #2b231d;
+  --ink-2: #4a3f37;
+  --ink-nav: #5a4d43;
+  --muted: #6f6258;
+  --disabled: #a0948a;
+  --accent: #2f5d50;
+  --accent-soft: #e3ece7;
+  --on-accent: #fffcf8;
+  --rec: #d9622b;
+  --rec-container: #fbe5d8;
+  --on-rec-container: #9a3f16;
+  --wave: #f08a55;
+  --success: #3e7d4f;
+  --success-ink: #2f6b3f;
+  --brand: #f0b44c;
+  --overlay: #2b231d;
+  --overlay-ink: #f6f1ea;
+  --overlay-muted: #bfb3a7;
+  --overlay-line: #3d332c;
+  --overlay-rec: #4a2a1a;
+  --shadow-card: 0 1px 2px rgba(43, 35, 29, 0.06), 0 12px 32px rgba(43, 35, 29, 0.07);
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100%;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lead {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.card {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.pill-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  border: none;
+  background: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pill-btn.tonal {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pill-btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.pill-btn.ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
+.pill-btn.danger {
+  background: transparent;
+  color: var(--on-rec-container);
+}
+
+kbd {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--border);
+  color: var(--ink);
+}
+
+.field {
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 12px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--sunken);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row .label {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.row .title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.row .hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Interrupteur accessible : une case à cocher stylée. */
+.switch {
+  appearance: none;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex: none;
+  margin: 0;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(43, 35, 29, 0.2);
+  transition: transform 0.15s;
+}
+
+.switch:checked {
+  background: var(--accent);
+}
+
+.switch:checked::after {
+  transform: translateX(18px);
+}

@@ -89,10 +89,10 @@ class QuickDictateActivity : ComponentActivity(), DictationTarget {
             return
         }
         if (controller.ui.value.isActive) return
-        // Sans les mains : le mode maintenu n'a pas de sens ici, on passe en push-to-talk.
+        // Sans les mains : le mode maintenu n'a pas de sens ici, on passe en marche/arrêt.
         val mode = DictoApp.instance.settings.mode.value
         controller.pressWithMode(if (mode == Mode.HOLD) Mode.PUSH_TO_TALK else mode)
-        // Push-to-talk : dès que la phrase est transcrite, on insère et on ferme.
+        // Marche/arrêt : dès que la phrase est transcrite, on insère et on ferme.
         if (controller.ui.value.isActive && mode != Mode.CONTINUOUS) {
             lifecycleScope.launch {
                 controller.ui.first { it.isActive }
@@ -131,7 +131,7 @@ class QuickDictateActivity : ComponentActivity(), DictationTarget {
         }
         finishing = true
         val text = joinChunks(chunks)
-        if (KeyboardLink.isCurrent()) {
+        if (KeyboardLink.isCurrent(this)) {
             // Clavier Dicto en cours : on écrit une fois le champ d'origine revenu au premier plan.
             val app = applicationContext
             finish()
