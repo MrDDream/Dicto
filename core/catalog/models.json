@@ -1,0 +1,451 @@
+{
+  "version": 3,
+  "models": [
+    {
+      "id": "canary-180m-flash-int8",
+      "name": "Canary 180M",
+      "engine": "sherpa",
+      "sherpa": "canary",
+      "description": "Très léger et rapide, avec ponctuation. Français, anglais, allemand, espagnol.",
+      "license": "CC-BY-4.0",
+      "languages": [
+        "fr",
+        "en",
+        "de",
+        "es"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 4,
+      "accuracy": 3,
+      "platforms": [
+        "android",
+        "desktop"
+      ],
+      "recommended": [
+        "android"
+      ],
+      "files": [
+        {
+          "name": "sherpa-onnx-nemo-canary-180m-flash-en-es-de-fr-int8.tar.bz2",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-canary-180m-flash-en-es-de-fr-int8.tar.bz2",
+          "sha256": "7a38ed8b13f014ad632b09ff8d22e0c6f1359dd046af9235d281dfae841b9ab9",
+          "size": 153692328,
+          "archive": true
+        }
+      ],
+      "credit": "NVIDIA (nvidia/canary-180m-flash), converti en ONNX par k2-fsa/sherpa-onnx",
+      "source_url": "https://huggingface.co/nvidia/canary-180m-flash"
+    },
+    {
+      "id": "parakeet-tdt-0.6b-v3-int8",
+      "name": "Parakeet v3",
+      "engine": "sherpa",
+      "sherpa": "nemo_transducer",
+      "description": "Excellente précision dans 25 langues européennes, ponctuation incluse. Plus rapide que Whisper à précision égale.",
+      "license": "CC-BY-4.0",
+      "languages": [
+        "fr",
+        "en",
+        "de",
+        "es",
+        "it",
+        "pt",
+        "nl",
+        "pl",
+        "ro",
+        "sv",
+        "da",
+        "fi",
+        "cs",
+        "sk",
+        "sl",
+        "hr",
+        "hu",
+        "bg",
+        "el",
+        "et",
+        "lv",
+        "lt",
+        "mt",
+        "ru",
+        "uk"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 3,
+      "accuracy": 4,
+      "platforms": [
+        "android",
+        "desktop"
+      ],
+      "recommended": [
+        "android",
+        "desktop"
+      ],
+      "files": [
+        {
+          "name": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+          "sha256": "1495e91b59d7fc53ddca91f3431758ec99f8fa253fdb0e1e851be0f72b14b0f9",
+          "size": 487211443,
+          "archive": true
+        }
+      ],
+      "credit": "NVIDIA (nvidia/parakeet-tdt-0.6b-v3), converti en ONNX par k2-fsa/sherpa-onnx",
+      "source_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3"
+    },
+    {
+      "id": "nemotron-3.5-streaming-560ms-int8",
+      "name": "Nemotron 3.5 en direct",
+      "engine": "sherpa",
+      "sherpa": "online_transducer",
+      "description": "Le texte s'affiche pendant que tu parles. Environ 36 langues.",
+      "license": "OpenMDW-1.1",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "streaming": true,
+      "speed": 3,
+      "accuracy": 3,
+      "platforms": [
+        "android",
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-560ms-int8-2026-06-11.tar.bz2",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-560ms-int8-2026-06-11.tar.bz2",
+          "sha256": "c6bf5e0df765f9d5b43bc9e0536d4b4b3e7d40bdf5ecf13e45f134c51c05ae3a",
+          "size": 475271763,
+          "archive": true
+        }
+      ],
+      "credit": "NVIDIA (nvidia/nemotron-3.5-asr-streaming-0.6b), converti en ONNX par k2-fsa/sherpa-onnx",
+      "source_url": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b"
+    },
+    {
+      "id": "omnilingual-300m-int8",
+      "name": "Omnilingual 300M",
+      "engine": "sherpa",
+      "sherpa": "omnilingual_ctc",
+      "description": "1 600 langues, dont beaucoup de langues rares. Sans ponctuation.",
+      "license": "Apache-2.0",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": false,
+      "speed": 3,
+      "accuracy": 2,
+      "platforms": [
+        "android",
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-v2-int8-2026-02-05.tar.bz2",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-v2-int8-2026-02-05.tar.bz2",
+          "sha256": "951b32409aade32bd525310bb39e9666773ba3fc611a39e817f620936d76c631",
+          "size": 292313120,
+          "archive": true
+        }
+      ],
+      "credit": "Meta (facebook/omniASR-CTC-300M), converti en ONNX par k2-fsa/sherpa-onnx",
+      "source_url": "https://huggingface.co/facebook/omniASR-CTC-300M"
+    },
+    {
+      "id": "whisper-tiny-q5_1",
+      "name": "Whisper tiny",
+      "engine": "whisper",
+      "description": "Très rapide, précision simple. Pour les vieux téléphones.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 4,
+      "accuracy": 1,
+      "platforms": [
+        "android"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-tiny-q5_1.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin",
+          "sha256": "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7",
+          "size": 32152673
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-base-q5_1",
+      "name": "Whisper base",
+      "engine": "whisper",
+      "description": "Rapide, correct pour des messages courts. 99 langues.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 4,
+      "accuracy": 2,
+      "platforms": [
+        "android"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-base-q5_1.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin",
+          "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+          "size": 59707625
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-small-q5_1",
+      "name": "Whisper small",
+      "engine": "whisper",
+      "description": "Bon compromis dans 99 langues.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 3,
+      "accuracy": 3,
+      "platforms": [
+        "android",
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-small-q5_1.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin",
+          "sha256": "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb",
+          "size": 190085487
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-large-v3-turbo-q5_0",
+      "name": "Whisper large-v3-turbo (compact)",
+      "engine": "whisper",
+      "description": "Très précis dans 99 langues. Lent sur téléphone sans GPU.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 2,
+      "accuracy": 4,
+      "platforms": [
+        "android",
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-large-v3-turbo-q5_0.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin",
+          "sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
+          "size": 574041195
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-medium-q5_0",
+      "name": "Whisper medium",
+      "engine": "whisper",
+      "description": "Très précis, plus lent.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 2,
+      "accuracy": 4,
+      "platforms": [
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-medium-q5_0.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q5_0.bin",
+          "sha256": "19fea4b380c3a618ec4723c3eef2eb785ffba0d0538cf43f8f235e7b3b34220f",
+          "size": 539212467
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-large-v3-turbo-q8_0",
+      "name": "Whisper large-v3-turbo (q8)",
+      "engine": "whisper",
+      "description": "Quasi identique à la version complète, deux fois plus léger.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 2,
+      "accuracy": 4,
+      "platforms": [
+        "desktop"
+      ],
+      "recommended": [
+        "desktop"
+      ],
+      "files": [
+        {
+          "name": "ggml-large-v3-turbo-q8_0.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q8_0.bin",
+          "sha256": "317eb69c11673c9de1e1f0d459b253999804ec71ac4c23c17ecf5fbe24e259a1",
+          "size": 874188075
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-large-v3-turbo",
+      "name": "Whisper large-v3-turbo",
+      "engine": "whisper",
+      "description": "Précision maximale. Conseillé avec un GPU.",
+      "license": "MIT",
+      "languages": [
+        "multi"
+      ],
+      "multilingual": true,
+      "punctuation": true,
+      "speed": 2,
+      "accuracy": 4,
+      "platforms": [
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-large-v3-turbo.bin",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
+          "sha256": "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69",
+          "size": 1624555275
+        }
+      ],
+      "credit": "OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    },
+    {
+      "id": "whisper-large-v3-french-distil-dec16-q5_0",
+      "name": "Whisper français distillé",
+      "engine": "whisper",
+      "description": "Whisper large-v3 spécialisé en français (bofenghuang), allégé. Pour le bureau.",
+      "license": "MIT",
+      "languages": [
+        "fr"
+      ],
+      "multilingual": false,
+      "punctuation": true,
+      "speed": 2,
+      "accuracy": 4,
+      "platforms": [
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-model-q5_0.bin",
+          "url": "https://huggingface.co/bofenghuang/whisper-large-v3-french-distil-dec16/resolve/main/ggml-model-q5_0.bin",
+          "sha256": "a804330f5cd369fb7447ad2935eb7bf5b1d628ba246a067255ac70775df720e4",
+          "size": 791369259
+        }
+      ],
+      "credit": "Bofeng Huang, à partir de Whisper large-v3 (OpenAI)",
+      "source_url": "https://huggingface.co/bofenghuang/whisper-large-v3-french-distil-dec16"
+    },
+    {
+      "id": "whisper-large-v3-french-q5_0",
+      "name": "Whisper français",
+      "engine": "whisper",
+      "description": "Whisper large-v3 spécialisé en français (bofenghuang). Le plus précis en français, lent.",
+      "license": "MIT",
+      "languages": [
+        "fr"
+      ],
+      "multilingual": false,
+      "punctuation": true,
+      "speed": 1,
+      "accuracy": 4,
+      "platforms": [
+        "desktop"
+      ],
+      "recommended": [],
+      "files": [
+        {
+          "name": "ggml-model-q5_0.bin",
+          "url": "https://huggingface.co/bofenghuang/whisper-large-v3-french/resolve/main/ggml-model-q5_0.bin",
+          "sha256": "d8da7cb6cdadfac47829abf46fe8cd36fcfef06db5601bfd8acbcd40579010a5",
+          "size": 1081140203
+        }
+      ],
+      "credit": "Bofeng Huang, à partir de Whisper large-v3 (OpenAI)",
+      "source_url": "https://huggingface.co/bofenghuang/whisper-large-v3-french"
+    }
+  ],
+  "support": [
+    {
+      "id": "silero-vad",
+      "name": "Détection de la voix (Silero)",
+      "license": "MIT",
+      "files": [
+        {
+          "name": "silero_vad.int8.onnx",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.int8.onnx",
+          "sha256": "c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20",
+          "size": 212860
+        }
+      ],
+      "credit": "Silero Team (Silero VAD)",
+      "source_url": "https://github.com/snakers4/silero-vad"
+    },
+    {
+      "id": "kws-gigaspeech",
+      "name": "Mot d'activation",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "name": "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01.tar.bz2",
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01.tar.bz2",
+          "sha256": "f170013b4716e41b62b9bfd809687c207cef798ef9bc6534d524e17af9b6561a",
+          "size": 17626723,
+          "archive": true
+        }
+      ],
+      "credit": "k2-fsa/icefall. Entraîné sur le corpus GigaSpeech, dont les données sont réservées à la recherche et à l'éducation.",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/tag/kws-models"
+    }
+  ]
+}

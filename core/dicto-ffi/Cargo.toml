@@ -1,0 +1,33 @@
+[package]
+name = "dicto-ffi"
+description = "Bindings UniFFI du cœur Dicto (Kotlin pour Android)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "dicto_ffi"
+crate-type = ["cdylib", "staticlib", "lib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["cli"]
+
+[features]
+default = []
+cli = ["uniffi/cli"]
+whisper = ["dicto-core/whisper"]
+whisper-vulkan = ["dicto-core/whisper-vulkan"]
+sherpa = ["dicto-core/sherpa"]
+# Bureau : sherpa-onnx en bibliothèques partagées (indispensable avec whisper.cpp).
+sherpa-shared = ["dicto-core/sherpa-shared"]
+
+[dependencies]
+dicto-core.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+uniffi = { workspace = true, features = ["tokio"] }
+
+[dev-dependencies]
+async-trait.workspace = true

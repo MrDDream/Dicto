@@ -1,0 +1,160 @@
+package app.dicto.screenshots
+
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
+import app.dicto.ime.KeyboardPanel
+import app.dicto.triggers.DictationPanel
+import app.dicto.ui.DictoRoot
+import app.dicto.ui.theme.Dicto
+import app.dicto.ui.theme.DictoTheme
+import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/**
+ * Rend les vrais écrans de l'app en PNG (build/screenshots/), au format du canvas
+ * (390 × 844 dp), pour les comparer au design sans téléphone.
+ */
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35], qualifiers = "w390dp-h844dp-xxhdpi")
+class ScreenshotTest {
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    private fun shot(name: String) = compose.onRoot().captureRoboImage("build/screenshots/$name.png")
+
+    @Test
+    fun mainScreens() {
+        compose.setContent { DictoTheme { DictoRoot() } }
+        compose.waitForIdle()
+        shot("01-dictee")
+        compose.onNodeWithText("Modèles").performClick()
+        compose.waitForIdle()
+        shot("02-modeles")
+        compose.onNodeWithText("Canary 180M").performClick()
+        compose.waitForIdle()
+        shot("02b-modeles-details")
+        compose.onNodeWithText("En ligne").performClick()
+        compose.waitForIdle()
+        shot("02c-modeles-en-ligne")
+        compose.onNodeWithText("Déclencheurs").performClick()
+        compose.waitForIdle()
+        shot("03-declencheurs")
+        compose.onNodeWithText("Historique").performClick()
+        compose.waitForIdle()
+        shot("04-historique")
+    }
+
+    @Test
+    fun settingsAndFiles() {
+        compose.setContent { DictoTheme { DictoRoot() } }
+        compose.waitForIdle()
+        compose.onNodeWithText("Fichier audio").performClick()
+        compose.waitForIdle()
+        shot("05-fichiers")
+    }
+
+    @Test
+    fun credits() {
+        compose.setContent { DictoTheme { app.dicto.ui.CreditsScreen(onBack = {}) } }
+        compose.waitForIdle()
+        shot("07-credits")
+    }
+
+    @Test
+    fun providers() {
+        compose.setContent {
+            DictoTheme {
+                Column(Modifier.fillMaxSize().background(Dicto.Background).padding(20.dp)) {
+                    androidx.compose.material3.Text("Retouche par IA", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(8.dp))
+                    app.dicto.ui.RefineSettingsCard()
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(8.dp))
+                    app.dicto.ui.providers.TranscriptionProviders()
+                }
+            }
+        }
+        compose.waitForIdle()
+        shot("08-fournisseurs")
+    }
+
+    @Test
+    fun providerSheet() {
+        compose.setContent {
+            DictoTheme {
+                Column(Modifier.fillMaxSize().background(Color(0xFF8A847D)), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Bottom) {
+                    androidx.compose.material3.Surface(color = Dicto.Surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
+                        Column(Modifier.padding(top = 24.dp)) {
+                            app.dicto.ui.providers.ProviderSheetContent(
+                                app.dicto.ui.providers.refineSpec(uniffi.dicto_ffi.RefineProvider.ANTHROPIC), onSaved = {}, onDismiss = {},
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        shot("09-panneau-fournisseur")
+    }
+
+    @Test
+    fun modelPicker() {
+        val models = listOf(
+            "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-2", "claude-opus-5",
+            "claude-sonnet-5", "claude-opus-4-8", "claude-haiku-4-5",
+        )
+        compose.setContent {
+            DictoTheme {
+                Box(Modifier.fillMaxSize().background(Color(0xFF8A847D)).padding(12.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Surface(color = Dicto.Surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)) {
+                        app.dicto.ui.providers.ModelPickerContent(models, null, "claude-opus-5-5", true, onRetry = {}, onPick = {}, onClose = {})
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        shot("10-choix-modele")
+    }
+
+    @Test
+    fun overlays() {
+        compose.setContent {
+            DictoTheme {
+                Column(Modifier.fillMaxSize().background(Color(0xFFEEF0F3))) {
+                    Box(Modifier.weight(1f).padding(12.dp), contentAlignment = Alignment.BottomCenter) {
+                        DictationPanel(
+                            text = "Vers 19 h 30, je ramène le dessert",
+                            onCancel = {}, onInsert = {}, onMicPress = {}, onMicRelease = {},
+                        )
+                    }
+                    KeyboardPanel(
+                        hasMicPermission = true,
+                        onPress = {}, onRelease = {}, onBackspace = {}, onEnter = {}, onSpace = {},
+                        onSwitchKeyboard = {}, onOpenApp = {},
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        shot("06-panneau-et-clavier")
+    }
+}
+
+@Suppress("unused")
+private val keep = Dicto.Background

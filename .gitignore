@@ -1,0 +1,33 @@
+# Rust
+/core/target/
+**/target/
+
+# Android
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/app/src/main/jniLibs/
+/android/app/src/main/java/uniffi/
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+
+# Desktop (Tauri / Svelte)
+/desktop/node_modules/
+/desktop/dist/
+/desktop/src-tauri/target/
+/desktop/src-tauri/gen/
+
+# Models and local data
+*.bin
+*.onnx
+*.part
+
+# Editors / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store

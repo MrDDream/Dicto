@@ -1,0 +1,6 @@
+# Configuration des classes Kotlin générées pour Android.
+[bindings.kotlin]
+package_name = "uniffi.dicto_ffi"
+# Nettoyage des objets natifs compatible avec Android < 13 (vérifie la version d'API).
+android = true
+android_cleaner = true

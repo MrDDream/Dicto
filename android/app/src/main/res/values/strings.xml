@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dicto</string>
+    <string name="ime_label">Dicto · dictée vocale</string>
+    <string name="ime_subtype">Dictée</string>
+    <string name="share_label">Transcrire avec Dicto</string>
+</resources>

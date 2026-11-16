@@ -1,0 +1,40 @@
+[package]
+name = "dicto-core"
+description = "Cœur partagé de Dicto : audio, VAD, modes de dictée, moteurs STT, modèles, stockage."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+# Moteur local whisper.cpp (nécessite cmake + clang/libclang pour compiler).
+whisper = ["dep:whisper-rs"]
+whisper-vulkan = ["whisper", "whisper-rs/vulkan"]
+whisper-cuda = ["whisper", "whisper-rs/cuda"]
+# Moteurs sherpa-onnx (Parakeet, Canary, Nemotron…), VAD Silero et mot d'activation.
+# Les bibliothèques natives sont téléchargées depuis les versions officielles de sherpa-onnx.
+sherpa = ["dep:sherpa-onnx"]
+# Liaison dynamique (obligatoire sur Android) : évite le conflit entre le runtime C++ statique
+# de sherpa-onnx et celui de whisper.cpp quand les deux moteurs sont dans le même binaire.
+sherpa-shared = ["sherpa", "sherpa-onnx/shared"]
+
+[dependencies]
+async-trait.workspace = true
+base64.workspace = true
+bzip2.workspace = true
+futures-util.workspace = true
+hex.workspace = true
+hound.workspace = true
+reqwest.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sherpa-onnx = { workspace = true, optional = true }
+tar.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+whisper-rs = { version = "0.16", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

@@ -1,0 +1,17 @@
+<p>Dicto transforme ta voix en texte, directement sur ton téléphone ou avec le service de ton choix.</p>
+
+<p><b>Sur le téléphone, sans Internet</b></p>
+<ul>
+<li>Modèles libres téléchargés à la demande : Canary, Parakeet (25 langues européennes, ponctuation incluse), Nemotron en direct, Whisper, Omnilingual (1 600 langues). Le texte s'affiche pendant que tu parles avec Nemotron et les modèles rapides.</li>
+<li>Ta voix ne quitte pas l'appareil.</li>
+</ul>
+
+<p><b>Ou en ligne</b> : OpenAI, Mistral, Google Gemini, Grok (xAI) ou ton propre serveur compatible OpenAI, avec ta clé.</p>
+
+<p><b>Trois façons de dicter</b> : push-to-talk, écoute continue (une phrase à chaque pause) ou bouton maintenu.</p>
+
+<p><b>Partout</b> : clavier vocal, bulle flottante, tuile des réglages rapides, geste depuis le bord, phrase d'appel « OK Dicto » (analysée sur le téléphone), assistant par défaut. Le texte s'écrit dans le champ où tu tapes.</p>
+
+<p><b>Et aussi</b> : commandes vocales (« nouvelle ligne », « efface ça »), vocabulaire personnel, profils par app, retouche du texte par Claude, OpenAI, Gemini ou Ollama, transcription de messages vocaux et de réunions avec export .srt, .vtt, .md.</p>
+
+<p>Les clés d'API sont chiffrées par le Keystore Android. Aucun compte, aucune publicité, aucun traceur.</p>

@@ -1,0 +1,1 @@
+First release: on-device (sherpa-onnx, whisper.cpp) and cloud dictation, three modes, voice keyboard, bubble, tile, edge swipe, "OK Dicto", AI clean-up, profiles, audio files.

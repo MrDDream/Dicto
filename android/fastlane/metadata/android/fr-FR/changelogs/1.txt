@@ -1,0 +1,1 @@
+Première version : dictée locale (sherpa-onnx, whisper.cpp) et en ligne, trois modes, clavier vocal, bulle, tuile, geste depuis le bord, « OK Dicto », retouche par IA, profils, fichiers audio.

@@ -1,0 +1,61 @@
+package app.dicto
+
+import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import app.dicto.data.Secrets
+import app.dicto.data.Settings
+import app.dicto.dictation.DictationController
+import uniffi.dicto_ffi.ModelManager
+import uniffi.dicto_ffi.Storage
+import java.io.File
+
+class DictoApp : Application(), androidx.work.Configuration.Provider {
+    lateinit var storage: Storage
+        private set
+    lateinit var models: ModelManager
+        private set
+    lateinit var settings: Settings
+        private set
+    lateinit var secrets: Secrets
+        private set
+    lateinit var dictation: DictationController
+        private set
+
+    override val workManagerConfiguration: androidx.work.Configuration
+        get() = androidx.work.Configuration.Builder().build()
+
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+        createChannels()
+        storage = Storage.open(File(filesDir, "dicto.db").path)
+        models = ModelManager(File(filesDir, "models").apply { mkdirs() }.path, "android")
+        settings = Settings(storage)
+        secrets = Secrets(this)
+        dictation = DictationController(this).also { it.init() }
+    }
+
+    private fun createChannels() {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_DICTATION, "Dictée en cours", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Affichée tant que le micro est ouvert."
+                setShowBadge(false)
+            },
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_DOWNLOADS, "Téléchargement des modèles", NotificationManager.IMPORTANCE_LOW).apply {
+                setShowBadge(false)
+            },
+        )
+    }
+
+    companion object {
+        const val CHANNEL_DICTATION = "dictation"
+        const val CHANNEL_DOWNLOADS = "downloads"
+
+        lateinit var instance: DictoApp
+            private set
+    }
+}
