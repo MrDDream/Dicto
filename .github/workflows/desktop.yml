@@ -45,6 +45,13 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: desktop/src-tauri
+      # Le cache rend le dossier des bibliothèques de sherpa-onnx sans les bibliothèques elles-mêmes :
+      # on efface sa trace pour que son script de compilation les télécharge de nouveau.
+      - name: Bibliothèques sherpa-onnx fraîches
+        working-directory: desktop/src-tauri
+        run: |
+          rm -rf target/sherpa-onnx-prebuilt
+          rm -rf target/*/build/sherpa-onnx-sys-* target/*/.fingerprint/sherpa-onnx-sys-*
 
       - name: Bibliothèques Linux (WebKitGTK, zone de notification, son, saisie)
         if: runner.os == 'Linux'
