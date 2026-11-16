@@ -1,0 +1,3 @@
+- The app in English or French (Settings › Appearance › App language).
+- Dark theme: automatic (follows the phone), light or dark.
+- Dicto is now licensed under GPL-3.0.
