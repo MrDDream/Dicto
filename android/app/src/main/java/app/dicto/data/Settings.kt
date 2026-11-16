@@ -1,5 +1,6 @@
 package app.dicto.data
 
+import app.dicto.i18n.tr
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,7 +47,7 @@ val CloudProvider.label: String
         CloudProvider.MISTRAL -> "Mistral"
         CloudProvider.GEMINI -> "Google Gemini"
         CloudProvider.XAI -> "Grok (xAI)"
-        CloudProvider.CUSTOM -> "Mon serveur"
+        CloudProvider.CUSTOM -> app.dicto.i18n.tr("Mon serveur")
     }
 
 val RefineProvider.slug: String
@@ -64,7 +65,7 @@ val RefineProvider.label: String
         RefineProvider.OPEN_AI -> "OpenAI"
         RefineProvider.GEMINI -> "Gemini"
         RefineProvider.OLLAMA -> "Ollama"
-        RefineProvider.OPEN_AI_COMPATIBLE -> "Serveur"
+        RefineProvider.OPEN_AI_COMPATIBLE -> app.dicto.i18n.tr("Serveur")
     }
 
 /** Clé d'API d'un fournisseur de retouche (partagée avec la transcription quand c'est le même compte). */
@@ -147,6 +148,10 @@ class Settings(private val storage: Storage) {
     val imeAutoStart = flag("ime.auto_start", true)
     /** Clavier Dicto : remet le clavier précédent une fois la dictée écrite. */
     val imeAutoReturn = flag("ime.auto_return", true)
+    /** Langue de l'interface : « auto » (celle du téléphone), « fr » ou « en ». */
+    val appLanguage = text("ui.language", "auto")
+    /** Thème : « auto » (celui du téléphone), « light » ou « dark ». */
+    val theme = text("ui.theme", "auto")
 
     fun setRefineProvider(p: RefineProvider?) {
         storage.setSetting("refine.provider", p?.slug.orEmpty())

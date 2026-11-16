@@ -6,6 +6,7 @@
   import BrandLogo from "./BrandLogo.svelte";
   import ProviderDialog from "./ProviderDialog.svelte";
   import { app } from "./store.svelte";
+  import { t, tr } from "./i18n.svelte";
 
   let { kind }: { kind: ProviderKind } = $props();
 
@@ -54,14 +55,14 @@
       <span class="brand"><BrandLogo brand={p.brand} size={24} /></span>
       <div class="label">
         <div class="title">
-          {p.label}
-          {#if p.active}<span class="tag">{kind === "transcription" ? "En service" : "Actif"}</span>{/if}
+          {tr(p.label)}
+          {#if p.active}<span class="tag">{kind === "transcription" ? t("En service") : t("Actif")}</span>{/if}
         </div>
         <div class="hint">
-          {#if p.configured}{prettyModel(p.model ?? "")}{:else if p.hasKey}Choisis un modèle{:else}Non configuré{/if}
+          {#if p.configured}{prettyModel(p.model ?? "")}{:else if p.hasKey}{t("Choisis un modèle")}{:else}{t("Non configuré")}{/if}
         </div>
       </div>
-      <button class="gear" aria-label="Régler {p.label}" onclick={() => { enableAfter = false; editing = p; }}>
+      <button class="gear" aria-label={t("Régler %1", tr(p.label))} onclick={() => { enableAfter = false; editing = p; }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"
           ><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg
         >
@@ -69,7 +70,7 @@
       <input
         type="checkbox"
         class="switch"
-        aria-label="Activer {p.label}"
+        aria-label={t("Activer %1", tr(p.label))}
         checked={p.active && p.configured}
         onchange={(e) => toggle(p, e.currentTarget.checked)}
       />
@@ -112,7 +113,7 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 10px;
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--on-accent);
   }
 

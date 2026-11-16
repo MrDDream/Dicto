@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import { api, events, formatDuration, type FileResult } from "../lib/api";
   import { app } from "../lib/store.svelte";
+  import { t } from "../lib/i18n.svelte";
 
   let path = $state<string | null>(null);
   let progress = $state<number | null>(null);
@@ -43,7 +44,7 @@
 
   async function exportAs(format: "txt" | "srt" | "vtt" | "md") {
     try {
-      if (await api.exportFile(format)) app.show(`Transcription enregistrée (${format.toUpperCase()}).`);
+      if (await api.exportFile(format)) app.show(t("Transcription enregistrée (%1).", format.toUpperCase()));
     } catch (e) {
       app.show(String(e));
     }
@@ -52,14 +53,14 @@
   async function copy() {
     if (!result) return;
     await api.copyText(result.text);
-    app.show("Texte copié.");
+    app.show(t("Texte copié."));
   }
 </script>
 
 <div class="screen">
   <div>
-    <h1>Fichiers audio</h1>
-    <p class="lead">Un message vocal, une réunion, une interview : Dicto le transcrit avec le moteur en service.</p>
+    <h1>{t("Fichiers audio")}</h1>
+    <p class="lead">{t("Un message vocal, une réunion, une interview : Dicto le transcrit avec le moteur en service.")}</p>
   </div>
 
   <section class="card drop">
@@ -71,16 +72,16 @@
         </div>
         <div class="row-actions">
           <span class="muted">{Math.round(progress * 100)} %</span>
-          <button class="pill-btn" onclick={() => api.cancelFile()}>Annuler</button>
+          <button class="pill-btn" onclick={() => api.cancelFile()}>{t("Annuler")}</button>
         </div>
       </div>
     {:else}
-      <p class="muted">MP3, M4A, WAV, FLAC, OGG… Le fichier est découpé aux silences et transcrit morceau par morceau.</p>
+      <p class="muted">{t("MP3, M4A, WAV, FLAC, OGG… Le fichier est découpé aux silences et transcrit morceau par morceau.")}</p>
       <div>
-        <button class="pill-btn primary" onclick={pick} disabled={app.snapshot.engine.kind !== "ready"}>Choisir un fichier</button>
+        <button class="pill-btn primary" onclick={pick} disabled={app.snapshot.engine.kind !== "ready"}>{t("Choisir un fichier")}</button>
       </div>
       {#if app.snapshot.engine.kind !== "ready"}
-        <p class="muted">Choisis d'abord un modèle ou un service dans Modèles.</p>
+        <p class="muted">{t("Choisis d'abord un modèle ou un service dans Modèles.")}</p>
       {/if}
     {/if}
   </section>
@@ -93,10 +94,10 @@
       </div>
       <p class="text">{result.text}</p>
       <div class="row-actions">
-        <button class="pill-btn" onclick={copy}>Copier</button>
-        <button class="pill-btn" onclick={() => exportAs("txt")}>Texte (.txt)</button>
-        <button class="pill-btn" onclick={() => exportAs("srt")} disabled={!result.segments}>Sous-titres (.srt)</button>
-        <button class="pill-btn" onclick={() => exportAs("vtt")} disabled={!result.segments}>Sous-titres (.vtt)</button>
+        <button class="pill-btn" onclick={copy}>{t("Copier")}</button>
+        <button class="pill-btn" onclick={() => exportAs("txt")}>{t("Texte (.txt)")}</button>
+        <button class="pill-btn" onclick={() => exportAs("srt")} disabled={!result.segments}>{t("Sous-titres (.srt)")}</button>
+        <button class="pill-btn" onclick={() => exportAs("vtt")} disabled={!result.segments}>{t("Sous-titres (.vtt)")}</button>
         <button class="pill-btn" onclick={() => exportAs("md")}>Markdown (.md)</button>
       </div>
     </section>
@@ -145,7 +146,7 @@
   .progress span {
     display: block;
     height: 100%;
-    background: var(--accent);
+    background: var(--accent-fill);
     transition: width 0.3s;
   }
 

@@ -6,6 +6,7 @@
   import type { Brand } from "../lib/logos";
   import ProviderList from "../lib/ProviderList.svelte";
   import { app } from "../lib/store.svelte";
+  import { t, tr } from "../lib/i18n.svelte";
 
   let models = $state<ModelView[]>([]);
   /** Téléchargements en cours : octets reçus / total. */
@@ -24,7 +25,7 @@
         return;
       }
       delete progress[d.id];
-      if (d.status === "error") app.show(`Téléchargement impossible : ${d.error}`);
+      if (d.status === "error") app.show(t("Téléchargement impossible : %1", tr(d.error)));
       refresh();
     });
   });
@@ -40,7 +41,7 @@
   }
 
   async function remove(m: ModelView) {
-    if (!confirm(`Supprimer ${m.name} (${formatSize(m.sizeBytes)}) ?`)) return;
+    if (!confirm(t("Supprimer %1 (%2) ?", m.name, formatSize(m.sizeBytes)))) return;
     try {
       await api.deleteModel(m.id);
     } catch (e) {
@@ -58,7 +59,7 @@
   }
 
   function languages(m: ModelView): string {
-    if (m.multilingual || m.languages.includes("multi")) return "multilingue";
+    if (m.multilingual || m.languages.includes("multi")) return t("multilingue");
     return m.languages.map((l) => l.toUpperCase()).join(", ");
   }
 
@@ -69,7 +70,7 @@
 </script>
 
 {#snippet dots(value: number, label: string)}
-  <span class="meter" aria-label="{label} : {value} sur 5">
+  <span class="meter" aria-label={t("%1 : %2 sur 5", label, value)}>
     {label}
     {#each [1, 2, 3, 4, 5] as i (i)}<span class="pip" class:on={i <= value}></span>{/each}
   </span>
@@ -85,42 +86,42 @@
     </div>
     <div class="info">
       <div class="name">
-        {m.name}
-        {#if m.recommended}<span class="tag">Conseillé</span>{/if}
-        {#if m.streaming || m.livePreview}<span class="tag live">En direct</span>{/if}
+        {tr(m.name)}
+        {#if m.recommended}<span class="tag">{t("Conseillé")}</span>{/if}
+        {#if m.streaming || m.livePreview}<span class="tag live">{t("En direct")}</span>{/if}
       </div>
-      <div class="desc">{m.description}</div>
+      <div class="desc">{tr(m.description)}</div>
       <div class="meta">
-        {@render dots(m.speed, "Vitesse")}
-        {@render dots(m.accuracy, "Précision")}
+        {@render dots(m.speed, t("Vitesse"))}
+        {@render dots(m.accuracy, t("Précision"))}
         <span>{languages(m)}</span>
-        <span>{m.punctuation ? "ponctuation" : "sans ponctuation"}</span>
+        <span>{m.punctuation ? t("ponctuation") : t("sans ponctuation")}</span>
         <span>{formatSize(m.sizeBytes)}</span>
-        <span>licence {m.license}</span>
+        <span>{t("licence %1", m.license)}</span>
       </div>
       {#if p}
         <div class="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p.total ? Math.round((p.downloaded / p.total) * 100) : 0}>
           <span style:width="{p.total ? (p.downloaded / p.total) * 100 : 0}%"></span>
         </div>
-        <div class="desc">{formatSize(p.downloaded)} sur {formatSize(p.total || m.sizeBytes)}</div>
+        <div class="desc">{t("%1 sur %2", formatSize(p.downloaded), formatSize(p.total || m.sizeBytes))}</div>
       {/if}
     </div>
     <div class="act">
       {#if inUse}
-        <span class="in-use"><Icon name="check" size={16} />En service</span>
+        <span class="in-use"><Icon name="check" size={16} />{t("En service")}</span>
       {:else if m.installed}
         <button class="pill-btn tonal" onclick={() => api.useModel(m.id).then(() => app.update({ model: m.id }))}
-          >Utiliser</button
+          >{t("Utiliser")}</button
         >
       {:else if p}
-        <button class="pill-btn" onclick={() => api.cancelDownload(m.id)}>Annuler</button>
+        <button class="pill-btn" onclick={() => api.cancelDownload(m.id)}>{t("Annuler")}</button>
       {:else}
         <button class="pill-btn primary" onclick={() => download(m)}
-          ><Icon name="download" size={16} />Télécharger</button
+          ><Icon name="download" size={16} />{t("Télécharger")}</button
         >
       {/if}
       {#if m.installed}
-        <button class="pill-btn danger" aria-label="Supprimer {m.name}" onclick={() => remove(m)}
+        <button class="pill-btn danger" aria-label={t("Supprimer %1", m.name)} onclick={() => remove(m)}
           ><Icon name="trash" size={16} /></button
         >
       {/if}
@@ -130,27 +131,26 @@
 
 <div class="screen">
   <div>
-    <h1>Modèles</h1>
-    <p class="lead">Les modèles locaux tournent sur cet ordinateur : ta voix ne quitte pas la machine.</p>
+    <h1>{t("Modèles")}</h1>
+    <p class="lead">{t("Les modèles locaux tournent sur cet ordinateur : ta voix ne quitte pas la machine.")}</p>
   </div>
 
   {#if installed.length}
     <section class="card list" aria-labelledby="installed">
-      <h2 id="installed">Sur cet ordinateur</h2>
+      <h2 id="installed">{t("Sur cet ordinateur")}</h2>
       {#each installed as m (m.id)}{@render model(m)}{/each}
     </section>
   {/if}
 
   <section class="card list" aria-labelledby="catalog">
-    <h2 id="catalog">À télécharger</h2>
+    <h2 id="catalog">{t("À télécharger")}</h2>
     {#each available as m (m.id)}{@render model(m)}{/each}
   </section>
 
   <section class="card list" aria-labelledby="online">
-    <h2 id="online">Services en ligne</h2>
+    <h2 id="online">{t("Services en ligne")}</h2>
     <p class="section-hint">
-      L'audio part chez le fournisseur choisi. Un seul moteur sert à la fois : activer un service le met en service à
-      la place du modèle local.
+      {t("L'audio part chez le fournisseur choisi. Un seul moteur sert à la fois : activer un service le met en service à la place du modèle local.")}
     </p>
     <ProviderList kind="transcription" />
   </section>
@@ -163,8 +163,8 @@
       onchange={(e) => app.update({ useGpu: e.currentTarget.checked })}
     />
     <span>
-      <span class="title">Utiliser la carte graphique</span>
-      <span class="hint">Plus rapide pour Whisper quand elle est prise en charge ; sinon le processeur prend le relais.</span>
+      <span class="title">{t("Utiliser la carte graphique")}</span>
+      <span class="hint">{t("Plus rapide pour Whisper quand elle est prise en charge ; sinon le processeur prend le relais.")}</span>
     </span>
   </label>
 </div>
@@ -277,7 +277,7 @@
   }
 
   .pip.on {
-    background: var(--accent);
+    background: var(--accent-fill);
   }
 
   .progress {
@@ -291,7 +291,7 @@
   .progress span {
     display: block;
     height: 100%;
-    background: var(--accent);
+    background: var(--accent-fill);
     transition: width 0.2s;
   }
 
@@ -318,7 +318,7 @@
     height: 40px;
     padding: 0 14px;
     border-radius: 20px;
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--on-accent);
     font-size: 14px;
     font-weight: 700;

@@ -1,5 +1,6 @@
 package app.dicto
 
+import app.dicto.i18n.tr
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -34,6 +35,8 @@ class DictoApp : Application(), androidx.work.Configuration.Provider {
         storage = Storage.open(File(filesDir, "dicto.db").path)
         models = ModelManager(File(filesDir, "models").apply { mkdirs() }.path, "android")
         settings = Settings(storage)
+        app.dicto.i18n.I18n.setMode(settings.appLanguage.value)
+        app.dicto.ui.theme.ThemeMode.set(settings.theme.value)
         secrets = Secrets(this)
         dictation = DictationController(this).also { it.init() }
     }
@@ -41,13 +44,13 @@ class DictoApp : Application(), androidx.work.Configuration.Provider {
     private fun createChannels() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_DICTATION, "Dictée en cours", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Affichée tant que le micro est ouvert."
+            NotificationChannel(CHANNEL_DICTATION, tr("Dictée en cours"), NotificationManager.IMPORTANCE_LOW).apply {
+                description = tr("Affichée tant que le micro est ouvert.")
                 setShowBadge(false)
             },
         )
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_DOWNLOADS, "Téléchargement des modèles", NotificationManager.IMPORTANCE_LOW).apply {
+            NotificationChannel(CHANNEL_DOWNLOADS, tr("Téléchargement des modèles"), NotificationManager.IMPORTANCE_LOW).apply {
                 setShowBadge(false)
             },
         )

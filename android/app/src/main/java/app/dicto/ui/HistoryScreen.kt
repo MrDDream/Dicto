@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,12 +55,12 @@ fun HistoryScreen() {
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Historique")
+        ScreenHeader(tr("Historique"))
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp),
-            placeholder = { Text("Rechercher") },
+            placeholder = { Text(tr("Rechercher")) },
             leadingIcon = { Icon(DictoIcons.Search, null, Modifier.size(18.dp)) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
@@ -71,7 +72,7 @@ fun HistoryScreen() {
         )
         if (items.isEmpty()) {
             Text(
-                if (query.isBlank()) "Tes dictées s'afficheront ici, y compris celles faites avec le clavier Dicto." else "Aucun résultat.",
+                if (query.isBlank()) tr("Tes dictées s'afficheront ici, y compris celles faites avec le clavier Dicto.") else tr("Aucun résultat."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Dicto.InkMuted,
                 modifier = Modifier.padding(24.dp),
@@ -91,11 +92,11 @@ fun HistoryScreen() {
                             color = Dicto.InkMuted,
                             modifier = Modifier.weight(1f),
                         )
-                        GhostButton(null, DictoIcons.Copy, { copy(context, item.text) }, contentDescription = "Copier")
+                        GhostButton(null, DictoIcons.Copy, { copy(context, item.text) }, contentDescription = tr("Copier"))
                         GhostButton(null, DictoIcons.Trash, {
                             runCatching { app.storage.deleteHistory(item.id) }
                             refresh++
-                        }, contentDescription = "Supprimer", tint = Dicto.InkMuted)
+                        }, contentDescription = tr("Supprimer"), tint = Dicto.InkMuted)
                     }
                 }
             }

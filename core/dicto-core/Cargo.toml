@@ -4,6 +4,7 @@ description = "Cœur partagé de Dicto : audio, VAD, modes de dictée, moteurs S
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
 
 [features]
 default = []

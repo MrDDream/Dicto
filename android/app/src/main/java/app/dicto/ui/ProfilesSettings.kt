@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.compose.foundation.clickable
@@ -51,8 +52,7 @@ fun ProfilesCard() {
 
     DictoCard {
         Text(
-            "Quand tu dictes dans une app, ses réglages remplacent les réglages généraux. " +
-                "L'app est reconnue quand le clavier Dicto est ton clavier en cours.",
+            tr("Quand tu dictes dans une app, ses réglages remplacent les réglages généraux. L'app est reconnue quand le clavier Dicto est ton clavier en cours."),
             style = MaterialTheme.typography.bodySmall,
             color = Dicto.InkMuted,
         )
@@ -65,10 +65,10 @@ fun ProfilesCard() {
                 GhostButton(null, DictoIcons.Trash, {
                     p.id?.let { runCatching { app.storage.deleteProfile(it) } }
                     refresh++
-                }, contentDescription = "Supprimer le profil", tint = Dicto.InkMuted)
+                }, contentDescription = tr("Supprimer le profil"), tint = Dicto.InkMuted)
             }
         }
-        TonalButton("Ajouter un profil", { editing = AppProfile(null, "", null, null, null, null, null) }, icon = DictoIcons.Plus)
+        TonalButton(tr("Ajouter un profil"), { editing = AppProfile(null, "", null, null, null, null, null) }, icon = DictoIcons.Plus)
     }
 
     editing?.let { p ->
@@ -82,9 +82,9 @@ fun ProfilesCard() {
 
 private fun describe(p: AppProfile): String = listOfNotNull(
     p.language?.let { code -> LANGUAGES.firstOrNull { it.first == code }?.second },
-    p.refinePreset?.let { id -> if (id == "none") "sans retouche" else refinePresets().firstOrNull { it.id == id }?.name },
-    MODE_LABELS.firstOrNull { it.first == p.mode && p.mode != null }?.second,
-).joinToString(" · ").ifBlank { "réglages généraux" }
+    p.refinePreset?.let { id -> if (id == "none") tr("sans retouche") else refinePresets().firstOrNull { it.id == id }?.name?.let { tr(it) } },
+    MODE_LABELS.firstOrNull { it.first == p.mode && p.mode != null }?.second?.let { tr(it) },
+).joinToString(" · ").ifBlank { tr("réglages généraux") }
 
 @Composable
 private fun ProfileDialog(initial: AppProfile, onDismiss: () -> Unit, onSave: (AppProfile) -> Unit) {
@@ -102,11 +102,11 @@ private fun ProfileDialog(initial: AppProfile, onDismiss: () -> Unit, onSave: (A
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (profile.appId.isBlank()) "Choisir une app" else profile.label ?: profile.appId) },
+        title = { Text(if (profile.appId.isBlank()) tr("Choisir une app") else profile.label ?: profile.appId) },
         text = {
             if (profile.appId.isBlank()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = query, onValueChange = { query = it }, placeholder = { Text("Rechercher") }, singleLine = true, shape = RoundedCornerShape(14.dp))
+                    OutlinedTextField(value = query, onValueChange = { query = it }, placeholder = { Text(tr("Rechercher")) }, singleLine = true, shape = RoundedCornerShape(14.dp))
                     LazyColumn(Modifier.heightIn(max = 360.dp)) {
                         items(apps.filter { query.isBlank() || it.label.contains(query, ignoreCase = true) }, key = { it.pkg }) { a ->
                             Text(a.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().clickable {
@@ -118,33 +118,33 @@ private fun ProfileDialog(initial: AppProfile, onDismiss: () -> Unit, onSave: (A
                 }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Langue", style = MaterialTheme.typography.titleSmall)
+                    Text(tr("Langue"), style = MaterialTheme.typography.titleSmall)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ChipButton({ profile = profile.copy(language = null) }, accent = profile.language == null) { Text("Habituelle", style = MaterialTheme.typography.labelMedium) }
+                        ChipButton({ profile = profile.copy(language = null) }, accent = profile.language == null) { Text(tr("Habituelle"), style = MaterialTheme.typography.labelMedium) }
                         for ((code, name) in LANGUAGES.drop(1)) {
                             ChipButton({ profile = profile.copy(language = code) }, accent = profile.language == code) { Text(name, style = MaterialTheme.typography.labelMedium) }
                         }
                     }
-                    Text("Retouche", style = MaterialTheme.typography.titleSmall)
+                    Text(tr("Retouche"), style = MaterialTheme.typography.titleSmall)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ChipButton({ profile = profile.copy(refinePreset = null) }, accent = profile.refinePreset == null) { Text("Habituelle", style = MaterialTheme.typography.labelMedium) }
-                        ChipButton({ profile = profile.copy(refinePreset = "none") }, accent = profile.refinePreset == "none") { Text("Aucune", style = MaterialTheme.typography.labelMedium) }
+                        ChipButton({ profile = profile.copy(refinePreset = null) }, accent = profile.refinePreset == null) { Text(tr("Habituelle"), style = MaterialTheme.typography.labelMedium) }
+                        ChipButton({ profile = profile.copy(refinePreset = "none") }, accent = profile.refinePreset == "none") { Text(tr("Aucune"), style = MaterialTheme.typography.labelMedium) }
                         for (pr in refinePresets()) {
-                            ChipButton({ profile = profile.copy(refinePreset = pr.id) }, accent = profile.refinePreset == pr.id) { Text(pr.name, style = MaterialTheme.typography.labelMedium) }
+                            ChipButton({ profile = profile.copy(refinePreset = pr.id) }, accent = profile.refinePreset == pr.id) { Text(tr(pr.name), style = MaterialTheme.typography.labelMedium) }
                         }
                     }
-                    Text("Mode", style = MaterialTheme.typography.titleSmall)
+                    Text(tr("Mode"), style = MaterialTheme.typography.titleSmall)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         for ((m, name) in MODE_LABELS) {
-                            ChipButton({ profile = profile.copy(mode = m) }, accent = profile.mode == m) { Text(name, style = MaterialTheme.typography.labelMedium) }
+                            ChipButton({ profile = profile.copy(mode = m) }, accent = profile.mode == m) { Text(tr(name), style = MaterialTheme.typography.labelMedium) }
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            if (profile.appId.isNotBlank()) TextButton(onClick = { onSave(profile) }) { Text("Enregistrer") }
+            if (profile.appId.isNotBlank()) TextButton(onClick = { onSave(profile) }) { Text(tr("Enregistrer")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Annuler")) } },
     )
 }

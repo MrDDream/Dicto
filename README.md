@@ -14,6 +14,7 @@
   <a href="https://github.com/MrDDream/Dicto/releases/latest"><img src="https://img.shields.io/github/v/release/MrDDream/Dicto?label=release&color=F0B44C" alt="Latest release"></a>
   <a href="https://github.com/MrDDream/Dicto/releases"><img src="https://img.shields.io/github/downloads/MrDDream/Dicto/total?label=downloads&color=2F5D50" alt="Downloads"></a>
   <a href="https://github.com/MrDDream/Dicto/actions/workflows/desktop.yml"><img src="https://img.shields.io/github/actions/workflow/status/MrDDream/Dicto/desktop.yml?branch=main&label=desktop%20build&logo=githubactions&logoColor=white" alt="Desktop build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-7AA2F7" alt="GPL-3.0"></a>
   <br>
   <img src="https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&logoColor=white" alt="Android 10+">
   <img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows">
@@ -29,7 +30,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/mockups/hero.png" alt="Dicto on a computer and a phone, while dictating" width="860">
+  <img src="docs/assets/mockups/en/hero.png" alt="Dicto on a computer and a phone, while dictating" width="860">
 </p>
 
 <p align="center">
@@ -49,11 +50,11 @@
 
 Typing on a phone is slow, and most dictation tools send every word you say to someone else's servers. Dicto runs the speech recognition **on your device**: download a model once, and your voice never leaves the phone or the computer. When you want the best accuracy without loading the phone, plug in the online service you already pay for (OpenAI, Mistral, Gemini, Grok, or your own Whisper server), with your own key.
 
-- **No account, no ads, no tracker.** Your history stays in a local database.
+- **Free and open source** (GPL-3.0), no account, no ads, no tracker. Your history stays in a local database.
 - **One Rust core** for every platform: the same engines, modes and voice commands everywhere.
 - **It writes where you are**: the Dicto keyboard and a floating bubble on Android, a global shortcut on the desktop.
 
-> The apps are in French for now; English is on the way.
+- **In English and French**, with a light and a dark theme that can follow your device.
 
 ## ✨ What it does
 
@@ -73,7 +74,7 @@ Typing on a phone is slow, and most dictation tools send every word you say to s
 ## 📱 On Android
 
 <p align="center">
-  <img src="docs/assets/mockups/android-row.png" alt="Dictation, floating bubble and keyboard, triggers, history" width="860">
+  <img src="docs/assets/mockups/en/android-row.png" alt="Dictation, floating bubble and keyboard, triggers, history" width="860">
 </p>
 
 Dictate into any app without opening Dicto:
@@ -86,8 +87,8 @@ Dictate into any app without opening Dicto:
 ## 💻 On your computer
 
 <p align="center">
-  <img src="docs/assets/mockups/desktop-modeles.png" alt="Models on the desktop" width="49%">
-  <img src="docs/assets/mockups/desktop-raccourcis.png" alt="Shortcuts on the desktop" width="49%">
+  <img src="docs/assets/mockups/en/desktop-modeles.png" alt="Models on the desktop" width="49%">
+  <img src="docs/assets/mockups/en/desktop-raccourcis.png" alt="Shortcuts on the desktop" width="49%">
 </p>
 
 - **One global shortcut per mode** (Ctrl+Alt+Space, Ctrl+Alt+C, Ctrl+Shift+Space by default), held or pressed.
@@ -169,6 +170,6 @@ cd desktop && npm ci && npx tauri dev
 
 **Releases**: pushing a tag `vX.Y.Z` builds the signed APKs and the desktop packages on GitHub Actions and publishes them with their checksums ([release.yml](.github/workflows/release.yml)).
 
-## 🙏 Credits
+## 🙏 Credits and licence
 
-Dicto stands on [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [UniFFI](https://github.com/mozilla/uniffi-rs), [Tauri](https://tauri.app) and [Svelte](https://svelte.dev), and on the models published by NVIDIA, Meta, OpenAI and Bofeng Huang. Design: Bricolage Grotesque, Figtree and JetBrains Mono.
+Dicto is free software under the [GNU GPL v3](LICENSE). It stands on [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [UniFFI](https://github.com/mozilla/uniffi-rs), [Tauri](https://tauri.app) and [Svelte](https://svelte.dev), and on the models published by NVIDIA, Meta, OpenAI and Bofeng Huang. Design: Bricolage Grotesque, Figtree and JetBrains Mono.

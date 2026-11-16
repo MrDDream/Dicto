@@ -4,7 +4,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -18,25 +24,108 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.dicto.R
 
-/** Couleurs du canvas « Dicto » (design/tokens.json). */
+/** Une palette de Dicto : claire (canvas « Dicto », design/tokens.json) ou sombre. */
+data class DictoPalette(
+    val dark: Boolean,
+    val background: Color,
+    val surface: Color,
+    val surfaceSunken: Color,
+    val border: Color,
+    val ink: Color,
+    val inkSecondary: Color,
+    val inkMuted: Color,
+    val inkDisabled: Color,
+    val accent: Color,
+    val accentContainer: Color,
+    val onAccent: Color,
+    val recording: Color,
+    val recordingContainer: Color,
+    val onRecordingContainer: Color,
+    val success: Color,
+)
+
+val LightPalette = DictoPalette(
+    dark = false,
+    background = Color(0xFFF6F1EA),
+    surface = Color(0xFFFFFCF8),
+    surfaceSunken = Color(0xFFEFE7DC),
+    border = Color(0xFFE4D9CB),
+    ink = Color(0xFF2B231D),
+    inkSecondary = Color(0xFF4A3F37),
+    inkMuted = Color(0xFF6F6258),
+    inkDisabled = Color(0xFFA0948A),
+    accent = Color(0xFF2F5D50),
+    accentContainer = Color(0xFFE3ECE7),
+    onAccent = Color(0xFFFFFCF8),
+    recording = Color(0xFFD9622B),
+    recordingContainer = Color(0xFFFBE5D8),
+    onRecordingContainer = Color(0xFF9A3F16),
+    success = Color(0xFF3E7D4F),
+)
+
+/** Le même papier chaud, de nuit : encre claire sur brun profond, vert éclairci pour garder le contraste. */
+val DarkPalette = DictoPalette(
+    dark = true,
+    background = Color(0xFF1A1512),
+    surface = Color(0xFF241E19),
+    surfaceSunken = Color(0xFF2F2721),
+    border = Color(0xFF3D332B),
+    ink = Color(0xFFF3ECE3),
+    inkSecondary = Color(0xFFD9CDBF),
+    inkMuted = Color(0xFFB3A597),
+    inkDisabled = Color(0xFF85786C),
+    accent = Color(0xFF8ACBB5),
+    accentContainer = Color(0xFF22392F),
+    onAccent = Color(0xFF10231D),
+    recording = Color(0xFFE2723D),
+    recordingContainer = Color(0xFF4A2A1A),
+    onRecordingContainer = Color(0xFFFFB48F),
+    success = Color(0xFF6FBF85),
+)
+
+/** Thème choisi : « auto » (celui du téléphone), « light » ou « dark ». Observable par Compose. */
+object ThemeMode {
+    var mode by mutableStateOf("auto")
+        private set
+
+    fun set(value: String) {
+        mode = value.takeIf { it == "light" || it == "dark" } ?: "auto"
+    }
+}
+
+/** Si Dicto doit être sombre maintenant (le réglage, ou le téléphone en « auto »). */
+@Composable
+fun dictoIsDark(): Boolean = when (ThemeMode.mode) {
+    "dark" -> true
+    "light" -> false
+    else -> isSystemInDarkTheme()
+}
+
+/** Couleurs de Dicto : celles de la palette active, lues par Compose (changer de thème redessine tout). */
 object Dicto {
-    val Background = Color(0xFFF6F1EA)
-    val Surface = Color(0xFFFFFCF8)
-    val SurfaceSunken = Color(0xFFEFE7DC)
-    val Border = Color(0xFFE4D9CB)
-    val Ink = Color(0xFF2B231D)
-    val InkSecondary = Color(0xFF4A3F37)
-    val InkMuted = Color(0xFF6F6258)
-    val InkDisabled = Color(0xFFA0948A)
-    val Accent = Color(0xFF2F5D50)
-    val AccentContainer = Color(0xFFE3ECE7)
-    val OnAccent = Color(0xFFFFFCF8)
-    val Recording = Color(0xFFD9622B)
-    val RecordingContainer = Color(0xFFFBE5D8)
-    val OnRecordingContainer = Color(0xFF9A3F16)
+    var palette by mutableStateOf(LightPalette)
+        internal set
+
+    val Background get() = palette.background
+    val Surface get() = palette.surface
+    val SurfaceSunken get() = palette.surfaceSunken
+    val Border get() = palette.border
+    val Ink get() = palette.ink
+    val InkSecondary get() = palette.inkSecondary
+    val InkMuted get() = palette.inkMuted
+    val InkDisabled get() = palette.inkDisabled
+    val Accent get() = palette.accent
+    val AccentContainer get() = palette.accentContainer
+    val OnAccent get() = palette.onAccent
+    val Recording get() = palette.recording
+    /** Sur le bouton d'enregistrement orange : toujours clair. */
+    val OnRecording = Color(0xFFFFFCF8)
+    val RecordingContainer get() = palette.recordingContainer
+    val OnRecordingContainer get() = palette.onRecordingContainer
     val RecordingWave = Color(0xFFF08A55)
-    val Success = Color(0xFF3E7D4F)
+    val Success get() = palette.success
     val Brand = Color(0xFFF0B44C)
+    // La bulle et son panneau restent sombres dans les deux thèmes.
     val OverlayBackground = Color(0xFF2B231D)
     val OverlayInk = Color(0xFFF6F1EA)
     val OverlayMuted = Color(0xFFBFB3A7)
@@ -68,34 +157,36 @@ private val typography = Typography(
     labelSmall = TextStyle(fontFamily = Body, fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
 )
 
-private val colors = lightColorScheme(
-    primary = Dicto.Accent,
-    onPrimary = Dicto.OnAccent,
-    primaryContainer = Dicto.AccentContainer,
-    onPrimaryContainer = Dicto.Accent,
-    secondary = Dicto.InkSecondary,
-    onSecondary = Dicto.Surface,
-    secondaryContainer = Dicto.SurfaceSunken,
-    onSecondaryContainer = Dicto.Ink,
-    tertiary = Dicto.Recording,
-    onTertiary = Dicto.Surface,
-    tertiaryContainer = Dicto.RecordingContainer,
-    onTertiaryContainer = Dicto.OnRecordingContainer,
-    background = Dicto.Background,
-    onBackground = Dicto.Ink,
-    surface = Dicto.Surface,
-    onSurface = Dicto.Ink,
-    surfaceVariant = Dicto.SurfaceSunken,
-    onSurfaceVariant = Dicto.InkMuted,
-    surfaceContainerLowest = Dicto.Surface,
-    surfaceContainerLow = Dicto.Surface,
-    surfaceContainer = Dicto.Surface,
-    surfaceContainerHigh = Dicto.Surface,
-    surfaceContainerHighest = Dicto.SurfaceSunken,
-    outline = Dicto.Border,
-    outlineVariant = Dicto.SurfaceSunken,
-    error = Dicto.OnRecordingContainer,
-    errorContainer = Dicto.RecordingContainer,
+private fun colorsOf(p: DictoPalette) = (if (p.dark) darkColorScheme() else lightColorScheme()).copy(
+    primary = p.accent,
+    onPrimary = p.onAccent,
+    primaryContainer = p.accentContainer,
+    onPrimaryContainer = p.accent,
+    secondary = p.inkSecondary,
+    onSecondary = p.surface,
+    secondaryContainer = p.surfaceSunken,
+    onSecondaryContainer = p.ink,
+    tertiary = p.recording,
+    onTertiary = p.surface,
+    tertiaryContainer = p.recordingContainer,
+    onTertiaryContainer = p.onRecordingContainer,
+    background = p.background,
+    onBackground = p.ink,
+    surface = p.surface,
+    onSurface = p.ink,
+    surfaceVariant = p.surfaceSunken,
+    onSurfaceVariant = p.inkMuted,
+    surfaceContainerLowest = p.surface,
+    surfaceContainerLow = p.surface,
+    surfaceContainer = p.surface,
+    surfaceContainerHigh = p.surface,
+    surfaceContainerHighest = p.surfaceSunken,
+    outline = p.border,
+    outlineVariant = p.surfaceSunken,
+    error = p.onRecordingContainer,
+    errorContainer = p.recordingContainer,
+    inverseSurface = p.ink,
+    inverseOnSurface = p.surface,
 )
 
 private val shapes = Shapes(
@@ -106,8 +197,15 @@ private val shapes = Shapes(
     extraLarge = RoundedCornerShape(26.dp),
 )
 
-/** Le canvas ne définit pas encore de thème sombre : Dicto reste en clair pour l'instant. */
+/** Le thème de Dicto, clair ou sombre selon [ThemeMode] ; [dark] le force (captures d'écran). */
 @Composable
-fun DictoTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = colors, typography = typography, shapes = shapes, content = content)
+fun DictoTheme(dark: Boolean = dictoIsDark(), content: @Composable () -> Unit) {
+    val palette = if (dark) DarkPalette else LightPalette
+    // Écrit avant que les écrans ne lisent leurs couleurs : tout le contenu suit dans la même composition.
+    if (Dicto.palette !== palette) Dicto.palette = palette
+    val colors = remember(palette) { colorsOf(palette) }
+    MaterialTheme(colorScheme = colors, typography = typography, shapes = shapes) {
+        // Les textes sans couleur explicite prennent l'encre de la palette (sinon : noir, illisible en sombre).
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides palette.ink, content = content)
+    }
 }

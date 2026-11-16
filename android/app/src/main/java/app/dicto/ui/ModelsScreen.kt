@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -71,7 +72,7 @@ private enum class ModelsTab(val label: String) { LOCAL("Sur le téléphone"), O
 fun ModelsScreen() {
     var tab by rememberSaveable { mutableStateOf(ModelsTab.LOCAL) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader("Modèles")
+        ScreenHeader(tr("Modèles"))
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             ActiveEngineCard()
             Tabs(tab) { tab = it }
@@ -108,12 +109,12 @@ private fun ActiveEngineCard() {
         }
         Column(Modifier.weight(1f)) {
             Text(
-                if (engine == null) "Aucun moteur choisi" else "En service",
+                if (engine == null) tr("Aucun moteur choisi") else tr("En service"),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (onAccent) Dicto.OnAccent.copy(alpha = 0.8f) else Dicto.InkMuted,
             )
             Text(
-                if (engine == null) "Choisis un modèle ci-dessous" else status.label,
+                if (engine == null) tr("Choisis un modèle ci-dessous") else status.label,
                 style = MaterialTheme.typography.titleMedium,
                 color = if (onAccent) Dicto.OnAccent else Dicto.Ink,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -121,9 +122,9 @@ private fun ActiveEngineCard() {
             if (engine != null) {
                 Text(
                     when (status.kind) {
-                        EngineStatus.Kind.READY -> if (engine is EngineChoice.Local) "Hors ligne · prêt" else "En ligne · prêt"
-                        EngineStatus.Kind.LOADING -> "Chargement du modèle…"
-                        EngineStatus.Kind.ERROR -> "Indisponible : ${status.detail}"
+                        EngineStatus.Kind.READY -> if (engine is EngineChoice.Local) tr("Hors ligne · prêt") else tr("En ligne · prêt")
+                        EngineStatus.Kind.LOADING -> tr("Chargement du modèle…")
+                        EngineStatus.Kind.ERROR -> tr("Indisponible : %1\$s", status.detail)
                         EngineStatus.Kind.NONE -> ""
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -153,7 +154,7 @@ private fun Tabs(current: ModelsTab, onSelect: (ModelsTab) -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    t.label, style = MaterialTheme.typography.labelLarge,
+                    tr(t.label), style = MaterialTheme.typography.labelLarge,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
                     color = if (selected) Dicto.Accent else Dicto.InkSecondary,
                 )
@@ -183,48 +184,48 @@ private fun LocalModels() {
     val installed = models.filter { it.installed }
 
     Text(
-        "Hors ligne, ta voix reste sur le téléphone. Touche une carte pour ses détails.",
+        tr("Hors ligne, ta voix reste sur le téléphone. Touche une carte pour ses détails."),
         style = MaterialTheme.typography.bodySmall,
         color = Dicto.InkMuted,
         modifier = Modifier.padding(horizontal = 4.dp),
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        ChipButton(onClick = { onlyMyLanguage = true }, accent = onlyMyLanguage) { Text(langName, style = MaterialTheme.typography.labelMedium) }
-        ChipButton(onClick = { onlyMyLanguage = false }, accent = !onlyMyLanguage) { Text("Toutes les langues", style = MaterialTheme.typography.labelMedium) }
+        ChipButton(onClick = { onlyMyLanguage = true }, accent = onlyMyLanguage) { Text(tr(langName), style = MaterialTheme.typography.labelMedium) }
+        ChipButton(onClick = { onlyMyLanguage = false }, accent = !onlyMyLanguage) { Text(tr("Toutes les langues"), style = MaterialTheme.typography.labelMedium) }
     }
 
     val recommended = shown.filter { it.recommended }
     val others = shown.filterNot { it.recommended }
     if (recommended.isNotEmpty()) {
-        SectionTitle("Conseillés")
+        SectionTitle(tr("Conseillés"))
         ModelList(recommended, engine, downloads, expanded, { expanded = if (expanded == it) null else it }, wifiOnly, onDelete = { toDelete = it })
     }
     if (others.isNotEmpty()) {
-        SectionTitle("Autres modèles")
+        SectionTitle(tr("Autres modèles"))
         ModelList(others, engine, downloads, expanded, { expanded = if (expanded == it) null else it }, wifiOnly, onDelete = { toDelete = it })
     }
 
     DictoCard(padding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         SettingRow(
-            "Wi-Fi seulement",
-            if (installed.isEmpty()) "Aucun modèle installé" else "${installed.size} installé(s) · ${size(installed.sumOf { it.sizeBytes.toLong() })} utilisés",
-        ) { DictoSwitch(wifiOnly, app.settings::setWifiOnly, "Télécharger en Wi-Fi seulement") }
+            tr("Wi-Fi seulement"),
+            if (installed.isEmpty()) tr("Aucun modèle installé") else tr("%1\$s installé(s) · %2\$s utilisés", installed.size, size(installed.sumOf { it.sizeBytes.toLong() })),
+        ) { DictoSwitch(wifiOnly, app.settings::setWifiOnly, tr("Télécharger en Wi-Fi seulement")) }
     }
 
     toDelete?.let { m ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
-            title = { Text("Supprimer ${m.name} ?") },
-            text = { Text("${size(m.sizeBytes.toLong())} seront libérés. Tu pourras le retélécharger.") },
+            title = { Text(tr("Supprimer %1\$s ?", tr(m.name))) },
+            text = { Text(tr("%1\$s seront libérés. Tu pourras le retélécharger.", size(m.sizeBytes.toLong()))) },
             confirmButton = {
                 TextButton(onClick = {
                     if (engine == EngineChoice.Local(m.id)) app.settings.setEngine(null)
                     runCatching { app.models.delete(m.id) }
                     toDelete = null
                     refresh++
-                }) { Text("Supprimer", color = Dicto.OnRecordingContainer) }
+                }) { Text(tr("Supprimer"), color = Dicto.OnRecordingContainer) }
             },
-            dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { toDelete = null }) { Text(tr("Annuler")) } },
         )
     }
 }
@@ -288,7 +289,7 @@ private fun ModelCard(
             .clip(RoundedCornerShape(20.dp))
             .background(if (inUse) Dicto.AccentContainer.copy(alpha = 0.45f) else Dicto.Surface)
             .border(if (inUse) 1.5.dp else 1.dp, if (inUse) Dicto.Accent else Dicto.SurfaceSunken, RoundedCornerShape(20.dp))
-            .clickable(onClickLabel = if (expanded) "Masquer les détails" else "Voir les détails", onClick = onToggle)
+            .clickable(onClickLabel = if (expanded) tr("Masquer les détails") else tr("Voir les détails"), onClick = onToggle)
             .animateContentSize()
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -296,15 +297,15 @@ private fun ModelCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             MakerBadge(maker)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(model.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(tr(model.name), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
                     when {
-                        active && download?.queued == true -> "En attente du réseau${if (wifiOnlyHint) " (Wi-Fi)" else ""}…"
-                        active -> "${(fraction * 100).toInt()} % · ${size(done)} sur ${size(total)}"
-                        download?.failed != null -> "Échec, touche ↓ pour réessayer"
-                        inUse -> "En service · ${languagesLabel(model)}"
-                        model.installed -> "Installé · ${languagesLabel(model)}"
-                        done > 0 -> "Interrompu à ${(fraction * 100).toInt()} %"
+                        active && download?.queued == true -> if (wifiOnlyHint) tr("En attente du réseau (Wi-Fi)…") else tr("En attente du réseau…")
+                        active -> tr("%1\$s %% · %2\$s sur %3\$s", (fraction * 100).toInt(), size(done), size(total))
+                        download?.failed != null -> tr("Échec, touche ↓ pour réessayer")
+                        inUse -> tr("En service · %1\$s", languagesLabel(model))
+                        model.installed -> tr("Installé · %1\$s", languagesLabel(model))
+                        done > 0 -> tr("Interrompu à %1\$s %%", (fraction * 100).toInt())
                         else -> listOf(maker.name, languagesLabel(model)).filter { it.isNotEmpty() }.joinToString(" · ")
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -322,26 +323,26 @@ private fun ModelCard(
 
         // L'essentiel pour choisir, sans ouvrir la carte.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            MiniMeter("Rapide", model.speed.toInt())
-            MiniMeter("Précis", model.accuracy.toInt())
+            MiniMeter(tr("Rapide"), model.speed.toInt())
+            MiniMeter(tr("Précis"), model.accuracy.toInt())
             Spacer(Modifier.weight(1f))
             // Streaming natif, ou modèle rapide retranscrit en continu (réglage « Texte en direct »).
             val livePreview by DictoApp.instance.settings.livePreview.flow.collectAsStateWithLifecycle()
             if (model.streaming || (livePreview && model.livePreview)) {
-                MiniPill("En direct", Dicto.RecordingContainer, Dicto.OnRecordingContainer)
+                MiniPill(tr("En direct"), Dicto.RecordingContainer, Dicto.OnRecordingContainer)
             }
         }
 
         AnimatedVisibility(expanded) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 HorizontalDivider(color = Dicto.SurfaceSunken)
-                Text(model.description, style = MaterialTheme.typography.bodySmall, color = Dicto.InkSecondary)
+                Text(tr(model.description), style = MaterialTheme.typography.bodySmall, color = Dicto.InkSecondary)
                 Text(
                     listOf(
                         languagesLabel(model, full = true),
-                        if (model.punctuation) "ponctuation et majuscules" else "sans ponctuation",
+                        if (model.punctuation) tr("ponctuation et majuscules") else tr("sans ponctuation"),
                         if (model.engine == "sherpa") "sherpa-onnx" else "whisper.cpp",
-                        "licence ${model.license}",
+                        tr("licence %1\$s", model.license),
                         size(total),
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.labelSmall,
@@ -349,9 +350,9 @@ private fun ModelCard(
                 )
                 if (model.installed) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (!inUse) TonalButton("Utiliser", onUse, icon = DictoIcons.Check)
+                        if (!inUse) TonalButton(tr("Utiliser"), onUse, icon = DictoIcons.Check)
                         Spacer(Modifier.weight(1f))
-                        GhostButton("Supprimer", DictoIcons.Trash, onDelete, tint = Dicto.OnRecordingContainer)
+                        GhostButton(tr("Supprimer"), DictoIcons.Trash, onDelete, tint = Dicto.OnRecordingContainer)
                     }
                 }
             }
@@ -398,13 +399,13 @@ private fun ModelAction(
 ) {
     when {
         inUse -> Box(
-            Modifier.size(36.dp).clip(CircleShape).background(Dicto.Accent).semantics { contentDescription = "En service" },
+            Modifier.size(36.dp).clip(CircleShape).background(Dicto.Accent).semantics { contentDescription = tr("En service") },
             contentAlignment = Alignment.Center,
         ) { Icon(DictoIcons.Check, null, tint = Dicto.OnAccent, modifier = Modifier.size(18.dp)) }
 
         active -> Surface(
             onClick = onCancel, shape = CircleShape, color = Color.Transparent, modifier = Modifier.size(44.dp)
-                .semantics { contentDescription = "Annuler le téléchargement de ${model.name}" },
+                .semantics { contentDescription = tr("Annuler le téléchargement de %1\$s", tr(model.name)) },
         ) {
             Box(contentAlignment = Alignment.Center) {
                 if (queued) CircularProgressIndicator(Modifier.size(40.dp), color = Dicto.Accent, trackColor = Dicto.SurfaceSunken, strokeWidth = 3.dp)
@@ -418,7 +419,7 @@ private fun ModelAction(
             modifier = Modifier.heightIn(min = 36.dp),
         ) {
             Box(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
-                Text("Utiliser", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text(tr("Utiliser"), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -426,7 +427,7 @@ private fun ModelAction(
         else -> Surface(
             onClick = onGet, shape = RoundedCornerShape(18.dp), color = Dicto.AccentContainer, contentColor = Dicto.Accent,
             modifier = Modifier.heightIn(min = 36.dp)
-                .semantics { contentDescription = "Télécharger ${model.name}, ${size(model.sizeBytes.toLong())}" },
+                .semantics { contentDescription = tr("Télécharger %1\$s, %2\$s", tr(model.name), size(model.sizeBytes.toLong())) },
         ) {
             Row(
                 Modifier.padding(start = 10.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
@@ -446,7 +447,7 @@ private fun MiniMeter(label: String, value: Int) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "$label : $value sur 4" },
+        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = tr("%1\$s : %2\$s sur 4", label, value) },
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted)
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -467,18 +468,16 @@ private fun MiniPill(text: String, bg: Color, fg: Color) {
 @Composable
 private fun OnlineServices() {
     Text(
-        "L'audio est envoyé au service choisi. Le service activé remplace le modèle local ; la roue dentée règle la clé, " +
-            "l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore).",
+        tr("L'audio est envoyé au service choisi. Le service activé remplace le modèle local ; la roue dentée règle la clé, l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore)."),
         style = MaterialTheme.typography.bodySmall,
         color = Dicto.InkMuted,
         modifier = Modifier.padding(horizontal = 4.dp),
     )
     TranscriptionProviders()
     DictoCard {
-        Text("Claude, Ollama et la retouche", style = MaterialTheme.typography.titleSmall)
+        Text(tr("Claude, Ollama et la retouche"), style = MaterialTheme.typography.titleSmall)
         Text(
-            "Claude, OpenAI, Gemini et Ollama peuvent retoucher le texte (ponctuation, style, traduction) : " +
-                "Réglages › Retouche par IA. Claude ne transcrit pas l'audio lui-même.",
+            tr("Claude, OpenAI, Gemini et Ollama peuvent retoucher le texte (ponctuation, style, traduction) : Réglages › Retouche par IA. Claude ne transcrit pas l'audio lui-même."),
             style = MaterialTheme.typography.bodySmall,
             color = Dicto.InkMuted,
         )
@@ -490,15 +489,15 @@ private fun languagesLabel(m: ModelInfo, full: Boolean = false): String {
     val codes = m.languages
     if (codes.isEmpty() || codes == listOf("multi")) {
         return when {
-            m.id.startsWith("whisper") -> "99 langues"
-            m.id.startsWith("omnilingual") -> "1 600+ langues"
-            m.id.startsWith("nemotron") -> "36 langues"
-            else -> "multilingue"
+            m.id.startsWith("whisper") -> tr("99 langues")
+            m.id.startsWith("omnilingual") -> tr("1 600+ langues")
+            m.id.startsWith("nemotron") -> tr("36 langues")
+            else -> tr("multilingue")
         }
     }
     return when {
-        codes.size > 4 && !full -> "${codes.size} langues"
-        codes.size > 6 -> "${codes.size} langues dont ${codes.take(4).joinToString(", ") { it.uppercase() }}"
+        codes.size > 4 && !full -> tr("%1\$s langues", codes.size)
+        codes.size > 6 -> tr("%1\$s langues dont %2\$s", codes.size, codes.take(4).joinToString(", ") { it.uppercase() })
         else -> codes.joinToString(", ") { it.uppercase() }
     }
 }

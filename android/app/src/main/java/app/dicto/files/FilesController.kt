@@ -1,5 +1,6 @@
 package app.dicto.files
 
+import app.dicto.i18n.tr
 import android.app.Notification
 import android.app.Service
 import android.content.Context
@@ -82,7 +83,7 @@ object FilesController {
         val app = DictoApp.instance
         currentId = id
         try {
-            val engine = app.dictation.currentEngine() ?: throw IllegalStateException("choisis d'abord un modèle")
+            val engine = app.dictation.currentEngine() ?: throw IllegalStateException(tr("choisis d'abord un modèle"))
             update(id) { it.copy(status = FileItem.Status.DECODING, progress = 0f) }
             val decoded = AudioDecoder.decode(app, item.uri) { p -> update(id) { it.copy(progress = p) } }
             update(id) { it.copy(status = FileItem.Status.TRANSCRIBING, progress = 0f, durationMs = decoded.durationMs) }
@@ -132,8 +133,8 @@ class FileWorkService : Service() {
     private fun notification(): Notification =
         NotificationCompat.Builder(this, DictoApp.CHANNEL_DOWNLOADS)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle("Transcription de fichiers")
-            .setContentText("Dicto transcrit tes enregistrements sur le téléphone.")
+            .setContentTitle(tr("Transcription de fichiers"))
+            .setContentText(tr("Dicto transcrit tes enregistrements sur le téléphone."))
             .setOngoing(true)
             .setSilent(true)
             .setProgress(0, 0, true)

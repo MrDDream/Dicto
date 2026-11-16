@@ -3,6 +3,7 @@
   import { api, type HistoryView } from "../lib/api";
   import Icon from "../lib/Icon.svelte";
   import { app } from "../lib/store.svelte";
+  import { i18n, t } from "../lib/i18n.svelte";
 
   const PAGE = 50;
   let items = $state<HistoryView[]>([]);
@@ -25,7 +26,7 @@
 
   async function copy(text: string) {
     await api.copyText(text);
-    app.show("Texte copié.");
+    app.show(t("Texte copié."));
   }
 
   async function remove(id: number) {
@@ -34,48 +35,48 @@
   }
 
   async function clearAll() {
-    if (!confirm("Effacer tout l'historique ?")) return;
+    if (!confirm(t("Effacer tout l'historique ?"))) return;
     await api.clearHistory();
     items = [];
   }
 
-  const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+  const dateFormat = $derived(new Intl.DateTimeFormat(i18n.locale, { dateStyle: "medium", timeStyle: "short" }));
 </script>
 
 <div class="screen">
   <div class="top">
     <div>
-      <h1>Historique</h1>
-      <p class="lead">Tout ce que tu as dicté, gardé sur cet ordinateur.</p>
+      <h1>{t("Historique")}</h1>
+      <p class="lead">{t("Tout ce que tu as dicté, gardé sur cet ordinateur.")}</p>
     </div>
     <label class="search">
       <Icon name="search" size={16} />
-      <span class="sr-only">Rechercher</span>
-      <input type="search" placeholder="Rechercher" bind:value={query} oninput={search} />
+      <span class="sr-only">{t("Rechercher")}</span>
+      <input type="search" placeholder={t("Rechercher")} bind:value={query} oninput={search} />
     </label>
   </div>
 
-  <section class="card list" aria-label="Dictées">
+  <section class="card list" aria-label={t("Dictées")}>
     {#each items as item (item.id)}
       <article>
         <p>{item.text}</p>
         <div class="meta">
           <span>{dateFormat.format(new Date(item.createdAtMs))}</span>
           <span>{item.engine}</span>
-          <button class="pill-btn ghost" onclick={() => copy(item.text)}><Icon name="copy" size={15} />Copier</button>
-          <button class="pill-btn ghost" aria-label="Supprimer cette dictée" onclick={() => remove(item.id)}
+          <button class="pill-btn ghost" onclick={() => copy(item.text)}><Icon name="copy" size={15} />{t("Copier")}</button>
+          <button class="pill-btn ghost" aria-label={t("Supprimer cette dictée")} onclick={() => remove(item.id)}
             ><Icon name="trash" size={15} /></button
           >
         </div>
       </article>
     {:else}
-      <p class="empty">{query ? "Aucun résultat." : "Rien pour l'instant : tes dictées apparaîtront ici."}</p>
+      <p class="empty">{query ? t("Aucun résultat.") : t("Rien pour l'instant : tes dictées apparaîtront ici.")}</p>
     {/each}
   </section>
 
   <div class="foot">
-    {#if more}<button class="pill-btn" onclick={() => load(false)}>Plus ancien</button>{/if}
-    {#if items.length}<button class="pill-btn danger" onclick={clearAll}>Tout effacer</button>{/if}
+    {#if more}<button class="pill-btn" onclick={() => load(false)}>{t("Plus ancien")}</button>{/if}
+    {#if items.length}<button class="pill-btn danger" onclick={clearAll}>{t("Tout effacer")}</button>{/if}
   </div>
 </div>
 

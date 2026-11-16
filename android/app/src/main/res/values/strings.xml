@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Anglais par défaut ; le français est dans values-fr. Le reste de l'interface passe par tr() (app/dicto/i18n). -->
 <resources>
-    <string name="app_name">Dicto</string>
-    <string name="ime_label">Dicto</string>
-    <string name="ime_subtype">Dictée</string>
-    <string name="share_label">Transcrire avec Dicto</string>
+    <string name="app_name" translatable="false">Dicto</string>
+    <string name="ime_label" translatable="false">Dicto</string>
+    <string name="ime_subtype">Dictation</string>
+    <string name="share_label">Transcribe with Dicto</string>
 </resources>

@@ -1,5 +1,6 @@
 package app.dicto.triggers
 
+import app.dicto.i18n.tr
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -27,17 +28,17 @@ object TextInserter {
         when {
             current ->
                 KeyboardLink.write(text, switchBack = false, timeoutMs = 3_000, current = true) {
-                    copy(app, text, "Texte copié : aucun champ de saisie actif.")
+                    copy(app, text, tr("Texte copié : aucun champ de saisie actif."))
                 }
             enabled -> {
                 // « Revenir à mon clavier » coupé : le clavier Dicto reste, prêt pour la phrase suivante.
                 val back = DictoApp.instance.settings.imeAutoReturn.value
                 KeyboardLink.write(text, switchBack = back, timeoutMs = 20_000, current = false) {
-                    copy(app, text, "Texte copié. Choisis « Dicto » dans la liste des claviers pour qu'il s'écrive directement.")
+                    copy(app, text, tr("Texte copié. Choisis « Dicto » dans la liste des claviers pour qu'il s'écrive directement."))
                 }
                 KeyboardSwitchActivity.start(context)
             }
-            else -> copy(app, text, "Texte copié. Active le clavier Dicto dans Déclencheurs pour l'écrire directement.")
+            else -> copy(app, text, tr("Texte copié. Active le clavier Dicto dans Déclencheurs pour l'écrire directement."))
         }
     }
 

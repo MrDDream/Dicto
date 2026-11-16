@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
@@ -52,20 +53,19 @@ private val FONTS = listOf(
 fun CreditsScreen(onBack: () -> Unit) {
     val models = remember { runCatching { DictoApp.instance.models.credits() }.getOrDefault(emptyList()) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader("Crédits et licences", onBack)
+        ScreenHeader(tr("Crédits et licences"), onBack)
         Text(
-            "Dicto est fait de travaux ouverts. Les modèles se téléchargent depuis leurs dépôts d'origine ; " +
-                "touche une ligne pour ouvrir sa source et sa licence.",
+            tr("Dicto est fait de travaux ouverts. Les modèles se téléchargent depuis leurs dépôts d'origine ; touche une ligne pour ouvrir sa source et sa licence."),
             style = MaterialTheme.typography.bodyMedium,
             color = Dicto.InkMuted,
             modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 6.dp),
         )
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle("Modèles de reconnaissance vocale")
+            SectionTitle(tr("Modèles de reconnaissance vocale"))
             CreditList(models)
-            SectionTitle("Logiciels")
+            SectionTitle(tr("Logiciels"))
             CreditList(LIBRARIES)
-            SectionTitle("Polices")
+            SectionTitle(tr("Polices"))
             CreditList(FONTS)
         }
     }
@@ -81,7 +81,7 @@ private fun CreditList(items: List<Credit>) {
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .clickable(role = Role.Button, onClickLabel = "Ouvrir la source") {
+                        .clickable(role = Role.Button, onClickLabel = tr("Ouvrir la source")) {
                             runCatching {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(c.url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                             }
@@ -90,11 +90,11 @@ private fun CreditList(items: List<Credit>) {
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(c.name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        Text(tr(c.name), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                         Spacer(Modifier.width(8.dp))
-                        Pill(c.license, Dicto.AccentContainer, Dicto.Accent)
+                        Pill(tr(c.license), Dicto.AccentContainer, Dicto.Accent)
                     }
-                    Text(c.credit, style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted)
+                    Text(tr(c.credit), style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted)
                 }
             }
         }

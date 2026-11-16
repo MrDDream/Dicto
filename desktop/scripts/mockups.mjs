@@ -1,7 +1,7 @@
-// Maquettes pour le README et le site : les vraies captures (docs/assets/shots/) mises dans un téléphone ou une
-// fenêtre, puis composées. Écrit dans docs/assets/mockups/.
+// Maquettes pour le README et le site : les vraies captures (docs/assets/shots/<langue>/) mises dans un
+// téléphone ou une fenêtre, puis composées. Écrit dans docs/assets/mockups/<langue>/.
 //
-//   node scripts/mockups.mjs
+//   node scripts/mockups.mjs --lang en|fr
 //
 // Chromium : comme scripts/screenshots.mjs (CHROMIUM=/chemin/vers/chrome sinon celui de Playwright).
 import { existsSync, readFileSync } from "node:fs";
@@ -10,8 +10,9 @@ import { join, resolve } from "node:path";
 import { chromium } from "playwright-core";
 
 const root = resolve(import.meta.dirname, "..");
-const shots = join(root, "../docs/assets/shots");
-const out = join(root, "../docs/assets/mockups");
+const lang = process.argv.includes("--lang") ? process.argv[process.argv.indexOf("--lang") + 1] : "fr";
+const shots = join(root, "../docs/assets/shots", lang);
+const out = join(root, "../docs/assets/mockups", lang);
 const fonts = join(root, "src/assets/fonts");
 
 const img = (name) => `data:image/png;base64,${readFileSync(join(shots, `${name}.png`)).toString("base64")}`;

@@ -1,5 +1,6 @@
 package app.dicto.triggers
 
+import app.dicto.i18n.tr
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
@@ -238,7 +239,7 @@ class BubbleService : Service(), DictationTarget {
         if (edge != null) return
         val density = resources.displayMetrics.density
         val view = View(this).apply {
-            contentDescription = "Zone de geste Dicto : glisser vers la gauche pour dicter"
+            contentDescription = tr("Zone de geste Dicto : glisser vers la gauche pour dicter")
             var downX = 0f
             setOnTouchListener { _, e ->
                 when (e.action) {
@@ -279,7 +280,7 @@ class BubbleService : Service(), DictationTarget {
                     .background(Dicto.Surface)
                     .semantics {
                         role = Role.Button
-                        contentDescription = if (active) "Arrêter la dictée" else "Dicter avec Dicto"
+                        contentDescription = if (active) tr("Arrêter la dictée") else tr("Dicter avec Dicto")
                         onClick { tap(); true }
                     }
                     .pointerInput(Unit) { gestures() },
@@ -346,7 +347,7 @@ class BubbleService : Service(), DictationTarget {
         if (inDismissZone()) {
             DictoApp.instance.settings.bubble.set(false)
             refresh(this)
-            android.widget.Toast.makeText(this, "Bulle masquée. Réactive-la dans Dicto › Déclencheurs.", android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(this, tr("Bulle masquée. Réactive-la dans Dicto › Déclencheurs."), android.widget.Toast.LENGTH_LONG).show()
         } else {
             saveY()
         }
@@ -381,7 +382,7 @@ class BubbleService : Service(), DictationTarget {
                     Modifier.size(if (nearDismiss) 64.dp else 52.dp).clip(CircleShape)
                         .background(if (nearDismiss) Dicto.Recording else Dicto.Ink.copy(alpha = 0.75f)),
                     contentAlignment = Alignment.Center,
-                ) { Icon(DictoIcons.Close, "Masquer la bulle", tint = Dicto.OnAccent, modifier = Modifier.size(22.dp)) }
+                ) { Icon(DictoIcons.Close, tr("Masquer la bulle"), tint = Dicto.OnAccent, modifier = Modifier.size(22.dp)) }
             }
         }
         runCatching { wm.addView(view, params) }.onSuccess { dismissTarget = view }
@@ -443,10 +444,10 @@ class BubbleService : Service(), DictationTarget {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, DictoApp.CHANNEL_DICTATION)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle(if (withBubble) "Bulle Dicto active" else "Geste Dicto actif")
+            .setContentTitle(if (withBubble) tr("Bulle Dicto active") else tr("Geste Dicto actif"))
             .setContentText(
-                if (withBubble) "Touche la bulle pour dicter dans n'importe quelle app."
-                else "Glisse depuis le bord droit de l'écran pour dicter.",
+                if (withBubble) tr("Touche la bulle pour dicter dans n'importe quelle app.")
+                else tr("Glisse depuis le bord droit de l'écran pour dicter."),
             )
             .setOngoing(true)
             .setSilent(true)
@@ -457,7 +458,7 @@ class BubbleService : Service(), DictationTarget {
                         this@BubbleService, 1, Intent(this@BubbleService, BubbleService::class.java).setAction(ACTION_HIDE_BUBBLE),
                         PendingIntent.FLAG_IMMUTABLE,
                     )
-                    addAction(0, "Masquer la bulle", hide)
+                    addAction(0, tr("Masquer la bulle"), hide)
                 }
             }
             .build()

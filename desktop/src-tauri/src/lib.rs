@@ -5,6 +5,7 @@ mod commands;
 mod core;
 mod decode;
 mod insert;
+mod locale;
 mod providers;
 mod secrets;
 mod settings;
@@ -66,6 +67,7 @@ pub fn run() {
             commands::cancel,
             commands::copy_text,
             commands::pause_shortcuts,
+            commands::set_ui_locale,
             commands::list_models,
             commands::download_model,
             commands::cancel_download,

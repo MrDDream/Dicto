@@ -1,5 +1,6 @@
 package app.dicto.triggers
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -66,7 +67,7 @@ fun DictationPanel(
     onMicPress: () -> Unit,
     onMicRelease: () -> Unit,
     modifier: Modifier = Modifier,
-    insertLabel: String = "Insérer le texte",
+    insertLabel: String = tr("Insérer le texte"),
     /** Geste pour déplacer le panneau (bulle) ; affiche aussi une poignée. */
     dragModifier: Modifier? = null,
 ) {
@@ -101,7 +102,7 @@ fun DictationPanel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             StatusPill(ui)
             Spacer(Modifier.weight(1f))
-            Text(MODE_NAMES.getValue(ui.mode), style = MaterialTheme.typography.labelSmall, color = Dicto.OverlayMuted)
+            Text(tr(MODE_NAMES.getValue(ui.mode)), style = MaterialTheme.typography.labelSmall, color = Dicto.OverlayMuted)
         }
         Row(Modifier.height(26.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             for (b in bars) {
@@ -121,7 +122,7 @@ fun DictationPanel(
             }
         } else if (!ui.engine.isReady) {
             Text(
-                ui.message ?: "Choisis un modèle dans l'onglet Modèles de Dicto.",
+                ui.message ?: tr("Choisis un modèle dans l'onglet Modèles de Dicto."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Dicto.OverlayRecordingInk,
             )
@@ -134,7 +135,7 @@ fun DictationPanel(
                 color = Color.Transparent,
                 contentColor = Dicto.OverlayInk,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Dicto.OverlayLine),
-            ) { Box(contentAlignment = Alignment.Center) { Icon(DictoIcons.Close, "Annuler la dictée", Modifier.size(18.dp)) } }
+            ) { Box(contentAlignment = Alignment.Center) { Icon(DictoIcons.Close, tr("Annuler la dictée"), Modifier.size(18.dp)) } }
             PanelMic(ui, onMicPress, onMicRelease)
             Surface(
                 onClick = onInsert,
@@ -165,13 +166,13 @@ private fun StatusPill(ui: DictationUi) {
         }
     }
     val label = when {
-        active && ui.state == State.LISTENING -> "En écoute"
+        active && ui.state == State.LISTENING -> tr("En écoute")
         active -> {
             val s = ((now - ui.startedAt) / 1000).coerceAtLeast(0)
-            "Je t'écoute · %02d:%02d".format(s / 60, s % 60)
+            tr("Je t'écoute · %1\$s", "%02d:%02d".format(s / 60, s % 60))
         }
-        ui.pending > 0 -> "Transcription…"
-        else -> "Prêt"
+        ui.pending > 0 -> tr("Transcription…")
+        else -> tr("Prêt")
     }
     Row(
         Modifier.height(26.dp).clip(RoundedCornerShape(13.dp))
@@ -195,7 +196,7 @@ private fun PanelMic(ui: DictationUi, onPress: () -> Unit, onRelease: () -> Unit
             .background(if (active) Dicto.Recording else Dicto.Accent)
             .semantics {
                 role = Role.Button
-                contentDescription = if (active) "Arrêter" else "Dicter"
+                contentDescription = if (active) tr("Arrêter") else tr("Dicter")
                 onClick { onPress(); onRelease(); true }
             }
             .pointerInput(Unit) {

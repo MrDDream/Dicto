@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -128,19 +129,19 @@ fun DictationScreen(onOpenSettings: () -> Unit, onOpenModels: () -> Unit, onOpen
                             // Transcrire un fichier audio : une action à part, pas un réglage de la dictée.
                             ChipButton(onClick = onOpenFiles, accent = true) {
                                 Icon(DictoIcons.Share, null, Modifier.size(15.dp))
-                                Text("Fichier audio", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text(tr("Fichier audio"), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(
                                 onClick = onOpenSettings,
                                 modifier = Modifier.size(44.dp),
                                 colors = IconButtonDefaults.iconButtonColors(containerColor = Dicto.SurfaceSunken, contentColor = Dicto.Ink),
-                            ) { Icon(DictoIcons.Settings, contentDescription = "Réglages", modifier = Modifier.size(20.dp)) }
+                            ) { Icon(DictoIcons.Settings, contentDescription = tr("Réglages"), modifier = Modifier.size(20.dp)) }
                     }
 
                     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp)) {
-                        Text("Bonjour", style = MaterialTheme.typography.displaySmall)
-                        Text("Que veux-tu dicter aujourd'hui ?", style = MaterialTheme.typography.bodyMedium, color = Dicto.InkMuted, modifier = Modifier.padding(top = 6.dp))
+                        Text(tr("Bonjour"), style = MaterialTheme.typography.displaySmall)
+                        Text(tr("Que veux-tu dicter aujourd'hui ?"), style = MaterialTheme.typography.bodyMedium, color = Dicto.InkMuted, modifier = Modifier.padding(top = 6.dp))
                     }
 
                     // Moteur (s'abrège si le nom est long) et langue, toujours sur une ligne.
@@ -155,7 +156,7 @@ fun DictationScreen(onOpenSettings: () -> Unit, onOpenModels: () -> Unit, onOpen
 
                     ModeSelector(ui.mode, enabled = !ui.isActive) { controller.setMode(it) }
                     Text(
-                        MODES.first { it.mode == ui.mode }.hint,
+                        tr(MODES.first { it.mode == ui.mode }.hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = Dicto.InkMuted,
                         modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp),
@@ -208,7 +209,7 @@ private fun EngineChip(status: EngineStatus, onClick: () -> Unit, modifier: Modi
         }
         Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
         Text(
-            if (status.kind == EngineStatus.Kind.NONE) "Choisir un modèle" else status.label,
+            if (status.kind == EngineStatus.Kind.NONE) tr("Choisir un modèle") else status.label,
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -230,13 +231,13 @@ private fun EngineSwitcher(status: EngineStatus, onOpenModels: () -> Unit, modif
     val choices = remember(open) {
         if (!open) emptyList()
         else {
-            val local = app.models.models().filter { it.installed }.map { EngineChoice.Local(it.id) to it.name }
+            val local = app.models.models().filter { it.installed }.map { EngineChoice.Local(it.id) to tr(it.name) }
             val cloud = uniffi.dicto_ffi.CloudProvider.entries
                 .filter { p ->
                     if (p == uniffi.dicto_ffi.CloudProvider.CUSTOM) app.settings.cloud.value[p]?.baseUrl != null
                     else app.secrets.has(secretKeyFor(p))
                 }
-                .map { p -> EngineChoice.Cloud(p) to "${p.label} · en ligne" }
+                .map { p -> EngineChoice.Cloud(p) to tr("%1\$s · en ligne", p.label) }
             local + cloud
         }
     }
@@ -245,7 +246,7 @@ private fun EngineSwitcher(status: EngineStatus, onOpenModels: () -> Unit, modif
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             if (choices.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text("Aucun modèle installé ni service configuré", color = Dicto.InkMuted) },
+                    text = { Text(tr("Aucun modèle installé ni service configuré"), color = Dicto.InkMuted) },
                     onClick = { open = false; onOpenModels() },
                 )
             }
@@ -262,7 +263,7 @@ private fun EngineSwitcher(status: EngineStatus, onOpenModels: () -> Unit, modif
             }
             HorizontalDivider(color = Dicto.SurfaceSunken)
             DropdownMenuItem(
-                text = { Text("Gérer les modèles…", color = Dicto.Accent, fontWeight = FontWeight.Bold) },
+                text = { Text(tr("Gérer les modèles…"), color = Dicto.Accent, fontWeight = FontWeight.Bold) },
                 onClick = { open = false; onOpenModels() },
             )
         }
@@ -275,16 +276,16 @@ private fun LanguageChip(code: String?, onSelect: (String?) -> Unit) {
     Box {
         ChipButton(onClick = { open = true }) {
             Text(
-                code?.uppercase() ?: "Auto",
+                code?.uppercase() ?: tr("Auto"),
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 softWrap = false,
-                modifier = Modifier.semantics { contentDescription = "Langue : ${LANGUAGES.first { it.first == code }.second}" },
+                modifier = Modifier.semantics { contentDescription = tr("Langue : %1\$s", tr(LANGUAGES.first { it.first == code }.second)) },
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             for ((c, name) in LANGUAGES) {
-                DropdownMenuItem(text = { Text(name) }, onClick = { onSelect(c); open = false })
+                DropdownMenuItem(text = { Text(tr(name)) }, onClick = { onSelect(c); open = false })
             }
         }
     }
@@ -311,7 +312,7 @@ private fun ModeSelector(current: Mode, enabled: Boolean, onSelect: (Mode) -> Un
             ) {
                 val color = if (selected) Dicto.OnAccent else Dicto.Ink
                 Icon(m.icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-                Text(m.label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+                Text(tr(m.label), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
             }
         }
     }
@@ -325,7 +326,7 @@ private fun MessageBanner(text: String, onDismiss: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text, style = MaterialTheme.typography.bodySmall, color = Dicto.OnRecordingContainer, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
-        GhostButton(null, DictoIcons.Close, onDismiss, contentDescription = "Fermer", tint = Dicto.OnRecordingContainer)
+        GhostButton(null, DictoIcons.Close, onDismiss, contentDescription = tr("Fermer"), tint = Dicto.OnRecordingContainer)
     }
 }
 
@@ -343,17 +344,17 @@ private fun TranscriptCard(ui: DictationUi, modifier: Modifier, context: Context
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Transcription", style = MaterialTheme.typography.labelMedium, color = Dicto.InkMuted, modifier = Modifier.weight(1f))
+            Text(tr("Transcription"), style = MaterialTheme.typography.labelMedium, color = Dicto.InkMuted, modifier = Modifier.weight(1f))
             if (ui.isActive) {
-                Pill("Je t'écoute · ${elapsed(ui.startedAt)}", Dicto.RecordingContainer, Dicto.OnRecordingContainer, dot = Dicto.Recording)
+                Pill(tr("Je t'écoute · %1\$s", elapsed(ui.startedAt)), Dicto.RecordingContainer, Dicto.OnRecordingContainer, dot = Dicto.Recording)
             } else if (ui.pending > 0) {
-                Pill("Transcription…", Dicto.AccentContainer, Dicto.Accent)
+                Pill(tr("Transcription…"), Dicto.AccentContainer, Dicto.Accent)
             }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             if (ui.chunks.isEmpty() && ui.pending == 0 && ui.partial.isBlank()) {
                 Text(
-                    "Le texte dicté apparaîtra ici.",
+                    tr("Le texte dicté apparaîtra ici."),
                     style = MaterialTheme.typography.bodyLarge,
                     color = Dicto.InkDisabled,
                 )
@@ -368,11 +369,11 @@ private fun TranscriptCard(ui: DictationUi, modifier: Modifier, context: Context
         HorizontalDivider(color = Dicto.SurfaceSunken)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             val text = ui.transcript
-            GhostButton("Copier", DictoIcons.Copy, onClick = { copy(context, text) })
-            GhostButton("Partager", DictoIcons.Share, onClick = { share(context, text) })
+            GhostButton(tr("Copier"), DictoIcons.Copy, onClick = { copy(context, text) })
+            GhostButton(tr("Partager"), DictoIcons.Share, onClick = { share(context, text) })
             RefineButton(enabled = text.isNotBlank())
             Spacer(Modifier.weight(1f))
-            GhostButton(null, DictoIcons.Trash, onClick = controller::clearTranscript, contentDescription = "Effacer", tint = Dicto.InkMuted)
+            GhostButton(null, DictoIcons.Trash, onClick = controller::clearTranscript, contentDescription = tr("Effacer"), tint = Dicto.InkMuted)
         }
     }
 }
@@ -387,15 +388,15 @@ private fun RefineButton(enabled: Boolean) {
     var open by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     Box {
-        GhostButton(if (busy) "…" else "Reformuler", DictoIcons.Wave, onClick = { if (enabled && !busy) open = true })
+        GhostButton(if (busy) "…" else tr("Reformuler"), DictoIcons.Wave, onClick = { if (enabled && !busy) open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             for (p in uniffi.dicto_ffi.refinePresets()) {
-                DropdownMenuItem(text = { Text(p.name) }, onClick = {
+                DropdownMenuItem(text = { Text(tr(p.name)) }, onClick = {
                     open = false
                     busy = true
                     scope.launch {
                         app.dictation.refineTranscript(p.id).onFailure {
-                            android.widget.Toast.makeText(app, "Retouche impossible : ${it.userMessage()}", android.widget.Toast.LENGTH_LONG).show()
+                            android.widget.Toast.makeText(app, tr("Retouche impossible : %1\$s", it.userMessage()), android.widget.Toast.LENGTH_LONG).show()
                         }
                         busy = false
                     }
@@ -410,13 +411,13 @@ private fun MicButton(ui: DictationUi, onPress: () -> Unit, onRelease: () -> Uni
     val level by DictoApp.instance.dictation.level.collectAsStateWithLifecycle()
     val recording = ui.isActive
     val label = when (ui.mode) {
-        Mode.PUSH_TO_TALK -> if (recording) "Appuie pour terminer" else "Appuie pour parler"
+        Mode.PUSH_TO_TALK -> if (recording) tr("Appuie pour terminer") else tr("Appuie pour parler")
         Mode.CONTINUOUS -> when (ui.state) {
-            State.SPEAKING -> "Je transcris dès que tu fais une pause"
-            State.LISTENING -> "Écoute continue · appuie pour couper"
-            else -> "Démarrer l’écoute continue"
+            State.SPEAKING -> tr("Je transcris dès que tu fais une pause")
+            State.LISTENING -> tr("Écoute continue · appuie pour couper")
+            else -> tr("Démarrer l’écoute continue")
         }
-        Mode.HOLD -> if (recording) "Relâche pour transcrire" else "Maintiens pour parler"
+        Mode.HOLD -> if (recording) tr("Relâche pour transcrire") else tr("Maintiens pour parler")
     }
     Column(
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 14.dp),
@@ -454,7 +455,7 @@ private fun MicButton(ui: DictationUi, onPress: () -> Unit, onRelease: () -> Uni
                 Icon(
                     if (recording && ui.mode != Mode.HOLD) DictoIcons.Stop else DictoIcons.MicBold,
                     contentDescription = null,
-                    tint = Dicto.OnAccent,
+                    tint = if (recording) Dicto.OnRecording else Dicto.OnAccent,
                     modifier = Modifier.size(36.dp),
                 )
             }

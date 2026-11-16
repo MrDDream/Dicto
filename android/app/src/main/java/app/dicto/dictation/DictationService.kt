@@ -1,5 +1,6 @@
 package app.dicto.dictation
 
+import app.dicto.i18n.tr
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -63,12 +64,12 @@ class DictationService : Service() {
         )
         return NotificationCompat.Builder(this, DictoApp.CHANNEL_DICTATION)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle("Je t'écoute")
-            .setContentText("Dicto transcrit ce que tu dis.")
+            .setContentTitle(tr("Je t'écoute"))
+            .setContentText(tr("Dicto transcrit ce que tu dis."))
             .setOngoing(true)
             .setSilent(true)
             .setContentIntent(open)
-            .addAction(0, "Annuler", stop)
+            .addAction(0, tr("Annuler"), stop)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }

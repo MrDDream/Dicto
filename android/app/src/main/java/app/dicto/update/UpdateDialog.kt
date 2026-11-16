@@ -1,5 +1,6 @@
 package app.dicto.update
 
+import app.dicto.i18n.tr
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -44,23 +45,22 @@ private fun ConsentDialog() {
     AlertDialog(
         onDismissRequest = {},
         containerColor = Dicto.Surface,
-        title = { Text("Vérifier les mises à jour ?") },
+        title = { Text(tr("Vérifier les mises à jour ?")) },
         text = {
             Text(
-                "Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. " +
-                    "Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour.",
+                tr("Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour."),
                 color = Dicto.InkMuted,
                 style = MaterialTheme.typography.bodyMedium,
             )
         },
         dismissButton = {
-            TextButton(onClick = { UpdateChecker.setEnabled(context, false) }) { Text("Non merci", color = Dicto.InkMuted) }
+            TextButton(onClick = { UpdateChecker.setEnabled(context, false) }) { Text(tr("Non merci"), color = Dicto.InkMuted) }
         },
         confirmButton = {
             Button(
                 onClick = { UpdateChecker.setEnabled(context, true) },
                 colors = ButtonDefaults.buttonColors(containerColor = Dicto.Accent, contentColor = Dicto.OnAccent),
-            ) { Text("Oui, vérifier") }
+            ) { Text(tr("Oui, vérifier")) }
         },
     )
 }
@@ -80,12 +80,12 @@ private fun UpdateDialog() {
     AlertDialog(
         onDismissRequest = { if (!busy) UpdateChecker.later() },
         containerColor = Dicto.Surface,
-        title = { Text("Dicto ${r.tag} est disponible") },
+        title = { Text(tr("Dicto %1\$s est disponible", r.tag)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Tu as la version ${BuildConfig.VERSION_NAME}", color = Dicto.InkMuted, style = MaterialTheme.typography.bodySmall)
+                Text(tr("Tu as la version %1\$s", BuildConfig.VERSION_NAME), color = Dicto.InkMuted, style = MaterialTheme.typography.bodySmall)
                 Text(
-                    plain(r.notes).ifBlank { "Pas de notes pour cette version." },
+                    plain(r.notes).ifBlank { tr("Pas de notes pour cette version.") },
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()),
                 )
@@ -100,7 +100,7 @@ private fun UpdateDialog() {
                 error?.let { Text(it, color = Dicto.OnRecordingContainer, style = MaterialTheme.typography.bodySmall) }
                 if (downloaded != null) {
                     Text(
-                        "Autorise Dicto à installer des applis, puis touche « Installer ».",
+                        tr("Autorise Dicto à installer des applis, puis touche « Installer »."),
                         color = Dicto.InkMuted,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -109,8 +109,8 @@ private fun UpdateDialog() {
         },
         dismissButton = {
             if (!busy) {
-                TextButton(onClick = { UpdateChecker.skip(context) }) { Text("Ignorer", color = Dicto.InkMuted) }
-                TextButton(onClick = { UpdateChecker.later() }) { Text("Plus tard", color = Dicto.Ink) }
+                TextButton(onClick = { UpdateChecker.skip(context) }) { Text(tr("Ignorer"), color = Dicto.InkMuted) }
+                TextButton(onClick = { UpdateChecker.later() }) { Text(tr("Plus tard"), color = Dicto.Ink) }
             }
         },
         confirmButton = {
@@ -134,10 +134,10 @@ private fun UpdateDialog() {
             ) {
                 Text(
                     when {
-                        downloaded != null -> "Installer"
-                        busy -> "Téléchargement…"
-                        apk == null -> "Ouvrir la page"
-                        else -> "Télécharger et installer"
+                        downloaded != null -> tr("Installer")
+                        busy -> tr("Téléchargement…")
+                        apk == null -> tr("Ouvrir la page")
+                        else -> tr("Télécharger et installer")
                     },
                 )
             }

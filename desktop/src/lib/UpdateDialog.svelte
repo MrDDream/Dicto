@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { api, events } from "./api";
   import { app } from "./store.svelte";
+  import { t, tr } from "./i18n.svelte";
 
   let dialog = $state<HTMLDialogElement>();
   let progress = $state<number | null>(null);
@@ -56,10 +57,10 @@
     progress = 0;
     try {
       const msg = await api.updateInstall();
-      if (msg) app.show(msg);
+      if (msg) app.show(tr(msg));
       app.updates = await api.updateState();
     } catch (e) {
-      error = String(e);
+      error = tr(String(e));
     } finally {
       busy = false;
       progress = null;
@@ -78,36 +79,35 @@
 <dialog bind:this={dialog} oncancel={(e) => { e.preventDefault(); if (!asking && !busy) later(); }} aria-labelledby="update-title">
   {#if asking}
     <div class="body">
-      <h2 id="update-title">Vérifier les mises à jour ?</h2>
+      <h2 id="update-title">{t("Vérifier les mises à jour ?")}</h2>
       <p class="muted">
-        Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien
-        d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour.
+        {t("Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour.")}
       </p>
       <footer>
         <span class="spacer"></span>
-        <button class="pill-btn" onclick={() => consent(false)}>Non merci</button>
-        <button class="pill-btn primary" onclick={() => consent(true)}>Oui, vérifier</button>
+        <button class="pill-btn" onclick={() => consent(false)}>{t("Non merci")}</button>
+        <button class="pill-btn primary" onclick={() => consent(true)}>{t("Oui, vérifier")}</button>
       </footer>
     </div>
   {:else if release}
     <div class="body">
-      <h2 id="update-title">Dicto {release.tag} est disponible</h2>
-      <p class="muted">Tu as la version {u?.current}</p>
-      <div class="notes">{plain(release.notes) || "Pas de notes pour cette version."}</div>
+      <h2 id="update-title">{t("Dicto %1 est disponible", release.tag)}</h2>
+      <p class="muted">{t("Tu as la version %1", u?.current ?? "")}</p>
+      <div class="notes">{plain(release.notes) || t("Pas de notes pour cette version.")}</div>
       {#if progress !== null}
-        <progress max="1" value={progress} aria-label="Téléchargement"></progress>
+        <progress max="1" value={progress} aria-label={t("Téléchargement")}></progress>
       {/if}
       {#if error}<p class="error">{error}</p>{/if}
       <footer>
         {#if !busy}
-          <button class="pill-btn" onclick={skip}>Ignorer cette version</button>
+          <button class="pill-btn" onclick={skip}>{t("Ignorer cette version")}</button>
         {/if}
         <span class="spacer"></span>
         {#if !busy}
-          <button class="pill-btn" onclick={later}>Plus tard</button>
+          <button class="pill-btn" onclick={later}>{t("Plus tard")}</button>
         {/if}
         <button class="pill-btn primary" disabled={busy} onclick={install}>
-          {busy ? "Téléchargement…" : release.installable ? "Télécharger et installer" : "Ouvrir la page"}
+          {busy ? t("Téléchargement…") : release.installable ? t("Télécharger et installer") : t("Ouvrir la page")}
         </button>
       </footer>
     </div>
@@ -123,11 +123,11 @@
     padding: 0;
     background: var(--surface);
     color: var(--ink);
-    box-shadow: 0 24px 64px rgba(43, 35, 29, 0.3);
+    box-shadow: var(--shadow-dialog);
   }
 
   dialog::backdrop {
-    background: rgba(43, 35, 29, 0.35);
+    background: var(--backdrop);
   }
 
   .body {

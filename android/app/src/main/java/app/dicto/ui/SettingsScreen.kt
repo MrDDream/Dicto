@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -63,56 +64,59 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader("Réglages", onBack)
+        ScreenHeader(tr("Réglages"), onBack)
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle("Langue", "« Auto » détecte la langue à chaque phrase.")
+            SectionTitle(tr("Apparence"))
+            AppearanceCard()
+
+            SectionTitle(tr("Langue de la dictée"), tr("« Auto » détecte la langue à chaque phrase."))
             DictoCard {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for ((code, name) in LANGUAGES) {
                         ChipButton(onClick = { app.settings.setLanguage(code) }, accent = code == language) {
-                            Text(name, style = MaterialTheme.typography.labelMedium)
+                            Text(tr(name), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
             }
 
-            SectionTitle("Pendant la dictée")
+            SectionTitle(tr("Pendant la dictée"))
             DictoCard(padding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-                SettingRow("Commandes vocales", "« nouvelle ligne », « nouveau paragraphe », « efface ça »") {
-                    DictoSwitch(voiceCommands, app.settings::setVoiceCommands, "Commandes vocales")
+                SettingRow(tr("Commandes vocales"), tr("« nouvelle ligne », « nouveau paragraphe », « efface ça »")) {
+                    DictoSwitch(voiceCommands, app.settings::setVoiceCommands, tr("Commandes vocales"))
                 }
                 SettingRow(
-                    "Texte en direct",
-                    "Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de batterie.",
+                    tr("Texte en direct"),
+                    tr("Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de batterie."),
                 ) {
-                    DictoSwitch(livePreview, app.settings.livePreview::set, "Texte en direct")
+                    DictoSwitch(livePreview, app.settings.livePreview::set, tr("Texte en direct"))
                 }
             }
 
-            SectionTitle("Clavier Dicto")
+            SectionTitle(tr("Clavier Dicto"))
             DictoCard(padding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-                SettingRow("Écouter dès l'ouverture", "Passe sur le clavier Dicto et parle, sans toucher le micro.") {
-                    DictoSwitch(imeAutoStart, app.settings.imeAutoStart::set, "Écouter dès l'ouverture")
+                SettingRow(tr("Écouter dès l'ouverture"), tr("Passe sur le clavier Dicto et parle, sans toucher le micro.")) {
+                    DictoSwitch(imeAutoStart, app.settings.imeAutoStart::set, tr("Écouter dès l'ouverture"))
                 }
-                SettingRow("Revenir à mon clavier", "Une fois la dictée arrêtée et le texte écrit, ton clavier habituel revient.") {
-                    DictoSwitch(imeAutoReturn, app.settings.imeAutoReturn::set, "Revenir à mon clavier")
+                SettingRow(tr("Revenir à mon clavier"), tr("Une fois la dictée arrêtée et le texte écrit, ton clavier habituel revient.")) {
+                    DictoSwitch(imeAutoReturn, app.settings.imeAutoReturn::set, tr("Revenir à mon clavier"))
                 }
             }
 
-            SectionTitle("Vocabulaire", "Noms propres et mots techniques que le modèle doit connaître.")
+            SectionTitle(tr("Vocabulaire"), tr("Noms propres et mots techniques que le modèle doit connaître."))
             DictoCard {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = newTerm,
                         onValueChange = { newTerm = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ajouter un mot") },
+                        placeholder = { Text(tr("Ajouter un mot")) },
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { addTerm() }),
                     )
-                    TonalButton("Ajouter", ::addTerm, icon = DictoIcons.Plus)
+                    TonalButton(tr("Ajouter"), ::addTerm, icon = DictoIcons.Plus)
                 }
                 if (terms.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -125,54 +129,54 @@ fun SettingsScreen(onBack: () -> Unit) {
                                     app.dictation.applyOptions()
                                 },
                                 label = { Text(t.term) },
-                                trailingIcon = { Icon(DictoIcons.Close, "Retirer ${t.term}", Modifier.padding(2.dp)) },
+                                trailingIcon = { Icon(DictoIcons.Close, tr("Retirer %1\$s", t.term), Modifier.padding(2.dp)) },
                             )
                         }
                     }
                 }
             }
 
-            SectionTitle("Retouche par IA", "Ponctuation, style, traduction.")
+            SectionTitle(tr("Retouche par IA"), tr("Ponctuation, style, traduction."))
             RefineSettingsCard()
 
-            SectionTitle("Profils par app", "Langue, retouche et mode selon l'app où tu écris.")
+            SectionTitle(tr("Profils par app"), tr("Langue, retouche et mode selon l'app où tu écris."))
             ProfilesCard()
 
-            SectionTitle("Diagnostic", "Les derniers événements du clavier et de la bulle, gardés sur le téléphone.")
+            SectionTitle(tr("Diagnostic"), tr("Les derniers événements du clavier et de la bulle, gardés sur le téléphone."))
             DictoCard {
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val crashed = remember(refresh) { Journal.hasCrash() }
                 Text(
-                    if (crashed) "Dicto a planté récemment : le détail est dans le journal."
-                    else "Si quelque chose ne marche pas, copie le journal et colle-le dans ton message.",
+                    if (crashed) tr("Dicto a planté récemment : le détail est dans le journal.")
+                    else tr("Si quelque chose ne marche pas, copie le journal et colle-le dans ton message."),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (crashed) Dicto.OnRecordingContainer else Dicto.InkMuted,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TonalButton("Copier le journal", {
+                    TonalButton(tr("Copier le journal"), {
                         context.getSystemService(android.content.ClipboardManager::class.java)
                             .setPrimaryClip(android.content.ClipData.newPlainText("Journal Dicto", Journal.export()))
-                        android.widget.Toast.makeText(context, "Journal copié", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, tr("Journal copié"), android.widget.Toast.LENGTH_SHORT).show()
                     })
-                    TonalButton("Effacer", {
+                    TonalButton(tr("Effacer"), {
                         Journal.clear()
                         refresh++
                     })
                 }
             }
 
-            SectionTitle("Mises à jour", "Les nouvelles versions publiées sur GitHub.")
+            SectionTitle(tr("Mises à jour"), tr("Les nouvelles versions publiées sur GitHub."))
             UpdatesCard()
 
-            SectionTitle("À propos")
+            SectionTitle(tr("À propos"))
             DictoCard {
                 Text("Dicto ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "Transcription locale par sherpa-onnx et whisper.cpp. Modèles de NVIDIA, Meta, OpenAI et Bofeng Huang.",
+                    tr("Transcription locale par sherpa-onnx et whisper.cpp. Modèles de NVIDIA, Meta, OpenAI et Bofeng Huang."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Dicto.InkMuted,
                 )
-                TonalButton("Crédits et licences", { creditsOpen = true })
+                TonalButton(tr("Crédits et licences"), { creditsOpen = true })
             }
         }
     }
@@ -187,23 +191,56 @@ private fun UpdatesCard() {
     var checking by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
     DictoCard {
-        SettingRow("Vérifier automatiquement", "Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.") {
-            DictoSwitch(consent == true, { app.dicto.update.UpdateChecker.setEnabled(context, it) }, "Vérifier automatiquement")
+        SettingRow(tr("Vérifier automatiquement"), tr("Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.")) {
+            DictoSwitch(consent == true, { app.dicto.update.UpdateChecker.setEnabled(context, it) }, tr("Vérifier automatiquement"))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TonalButton(if (checking) "Vérification…" else "Vérifier maintenant", {
+            TonalButton(if (checking) tr("Vérification…") else tr("Vérifier maintenant"), {
                 if (checking) return@TonalButton
                 checking = true
                 status = null
                 scope.launch {
                     status = app.dicto.update.UpdateChecker.checkNow(context).fold(
-                        { r -> if (r == null) "Dicto est à jour (${BuildConfig.VERSION_NAME})." else "Dicto ${r.tag} est disponible." },
-                        { e -> e.message ?: "Vérification impossible." },
+                        { r -> if (r == null) tr("Dicto est à jour (%1\$s).", BuildConfig.VERSION_NAME) else tr("Dicto %1\$s est disponible.", r.tag) },
+                        { e -> e.message ?: tr("Vérification impossible.") },
                     )
                     checking = false
                 }
             })
         }
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted) }
+    }
+}
+
+/** Langue de l'app et thème : « Auto » suit le téléphone. */
+@Composable
+private fun AppearanceCard() {
+    val settings = DictoApp.instance.settings
+    val language by settings.appLanguage.flow.collectAsStateWithLifecycle()
+    val theme by settings.theme.flow.collectAsStateWithLifecycle()
+    DictoCard {
+        Text(tr("Langue de l'app"), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for ((code, name) in listOf("auto" to tr("Auto"), "fr" to "Français", "en" to "English")) {
+                ChipButton(onClick = {
+                    settings.appLanguage.set(code)
+                    app.dicto.i18n.I18n.setMode(code)
+                }, accent = code == language) {
+                    Text(name, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+        Text(tr("Thème"), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for ((code, name) in listOf("auto" to tr("Auto"), "light" to tr("Clair"), "dark" to tr("Sombre"))) {
+                ChipButton(onClick = {
+                    settings.theme.set(code)
+                    app.dicto.ui.theme.ThemeMode.set(code)
+                }, accent = code == theme) {
+                    Text(name, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+        Text(tr("« Auto » suit les réglages du téléphone."), style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted)
     }
 }

@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import { api, formatDuration, MODE_LABELS, shortcutKeys, type ListenMode, type PresetView } from "../lib/api";
   import { app } from "../lib/store.svelte";
+  import { t, tr } from "../lib/i18n.svelte";
   import Waveform from "../lib/Waveform.svelte";
 
   const MODES: ListenMode[] = ["pushToTalk", "continuous", "hold"];
@@ -25,10 +26,10 @@
   const status = $derived(
     snap.active
       ? snap.state === "listening"
-        ? `En écoute · ${elapsed}`
-        : `Je t'écoute · ${elapsed}`
+        ? t("En écoute · %1", elapsed)
+        : t("Je t'écoute · %1", elapsed)
       : snap.pending > 0
-        ? "Transcription…"
+        ? t("Transcription…")
         : null,
   );
 
@@ -37,7 +38,7 @@
   async function copy() {
     try {
       await api.copyText(fullText);
-      app.show("Texte copié.");
+      app.show(t("Texte copié."));
     } catch (e) {
       app.show(String(e));
     }
@@ -81,28 +82,27 @@
 <div class="screen">
   <header>
     <div class="intro">
-      <h1>Bonjour</h1>
+      <h1>{t("Bonjour")}</h1>
       <p class="lead">
-        Parle, j'écris. Avec un raccourci, le texte part dans la fenêtre active ; avec le bouton ci-dessous, il reste
-        ici.
+        {t("Parle, j'écris. Avec un raccourci, le texte part dans la fenêtre active ; avec le bouton ci-dessous, il reste ici.")}
       </p>
     </div>
-    <div role="radiogroup" aria-label="Mode d'écoute" class="modes">
+    <div role="radiogroup" aria-label={t("Mode d'écoute")} class="modes">
       {#each MODES as m (m)}
         <button
           role="radio"
           aria-checked={mode === m}
           class:on={mode === m}
           disabled={snap.active}
-          onclick={() => app.update({ mode: m })}>{MODE_LABELS[m]}</button
+          onclick={() => app.update({ mode: m })}>{t(MODE_LABELS[m])}</button
         >
       {/each}
     </div>
   </header>
 
-  <section class="transcript card" aria-label="Transcription">
+  <section class="transcript card" aria-label={t("Transcription")}>
     <div class="head">
-      <span class="caption">Transcription</span>
+      <span class="caption">{t("Transcription")}</span>
       {#if status}
         <span class="status" class:rec={snap.active}>
           {#if snap.active}<span class="rec-dot"></span>{/if}{status}
@@ -113,30 +113,30 @@
       {#if app.transcript.length === 0 && !snap.partial}
         <p class="placeholder">
           {snap.engine.kind === "ready"
-            ? "Touche le micro, ou utilise ton raccourci depuis n'importe quelle app."
-            : "Choisis d'abord un modèle dans Modèles."}
+            ? t("Touche le micro, ou utilise ton raccourci depuis n'importe quelle app.")
+            : t("Choisis d'abord un modèle dans Modèles.")}
         </p>
       {/if}
       {#each app.transcript as chunk, i (i)}
-        <p title={chunk.written ? "Écrit dans la fenêtre active" : undefined}>{chunk.text}</p>
+        <p title={chunk.written ? t("Écrit dans la fenêtre active") : undefined}>{chunk.text}</p>
       {/each}
       {#if snap.partial}<p class="partial">{snap.partial}</p>{/if}
     </div>
     <div class="actions">
-      <button class="pill-btn" disabled={!fullText} onclick={copy}>Copier</button>
+      <button class="pill-btn" disabled={!fullText} onclick={copy}>{t("Copier")}</button>
       {#if app.settings?.refineProvider}
         <label class="refine">
-          <span class="sr-only">Consigne de retouche</span>
+          <span class="sr-only">{t("Consigne de retouche")}</span>
           <select bind:value={preset} disabled={refining}>
-            {#each presets as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
-            {#if app.settings.refineCustom}<option value="custom">Personnalisée</option>{/if}
+            {#each presets as p (p.id)}<option value={p.id}>{tr(p.name)}</option>{/each}
+            {#if app.settings.refineCustom}<option value="custom">{t("Personnalisée")}</option>{/if}
           </select>
         </label>
         <button class="pill-btn tonal" disabled={!fullText || refining} onclick={refine}>
-          {refining ? "Retouche…" : "Reformuler"}
+          {refining ? t("Retouche…") : t("Reformuler")}
         </button>
       {/if}
-      <button class="pill-btn ghost end" disabled={!fullText} onclick={() => (app.transcript = [])}>Effacer</button>
+      <button class="pill-btn ghost end" disabled={!fullText} onclick={() => (app.transcript = [])}>{t("Effacer")}</button>
     </div>
   </section>
 
@@ -144,7 +144,7 @@
     <button
       class="mic"
       class:active={snap.active}
-      aria-label={snap.active ? (mode === "hold" ? "Relâche pour transcrire" : "Arrêter la dictée") : "Dicter"}
+      aria-label={snap.active ? (mode === "hold" ? t("Relâche pour transcrire") : t("Arrêter la dictée")) : t("Dicter")}
       onpointerdown={down}
       onpointerup={up}
       onpointercancel={up}
@@ -170,7 +170,7 @@
     <div class="wave"><Waveform bars={28} /></div>
     {#if shortcut}
       <div class="shortcut">
-        Raccourci
+        {t("Raccourci")}
         {#each shortcutKeys(shortcut) as k (k)}<kbd>{k}</kbd>{/each}
       </div>
     {/if}
@@ -217,7 +217,7 @@
   }
 
   .modes button.on {
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--on-accent);
     font-weight: 700;
   }
@@ -329,7 +329,7 @@
     height: 56px;
     border-radius: 28px;
     border: none;
-    background: var(--accent);
+    background: var(--accent-fill);
     box-shadow: 0 0 0 6px var(--overlay-line);
     display: flex;
     align-items: center;

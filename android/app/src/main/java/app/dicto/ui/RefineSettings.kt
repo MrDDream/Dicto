@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -32,34 +33,33 @@ fun RefineSettingsCard() {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         RefineProviders()
         Text(
-            "Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut tourner sur ton propre PC. " +
-                "La roue dentée règle la clé, l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore).",
+            tr("Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut tourner sur ton propre PC. La roue dentée règle la clé, l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore)."),
             style = MaterialTheme.typography.labelSmall,
             color = Dicto.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
         if (provider != null) {
             DictoCard {
-                Text("Consigne", style = MaterialTheme.typography.titleSmall)
+                Text(tr("Consigne"), style = MaterialTheme.typography.titleSmall)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (pr in refinePresets()) {
                         ChipButton(onClick = { s.refinePreset.set(pr.id); saved() }, accent = preset == pr.id) {
-                            Text(pr.name, style = MaterialTheme.typography.labelMedium)
+                            Text(tr(pr.name), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                     ChipButton(onClick = { s.refinePreset.set("custom"); saved() }, accent = preset == "custom") {
-                        Text("Personnalisée", style = MaterialTheme.typography.labelMedium)
+                        Text(tr("Personnalisée"), style = MaterialTheme.typography.labelMedium)
                     }
                 }
                 if (preset == "custom") {
                     OutlinedTextField(
                         value = custom, onValueChange = { s.refineCustom.set(it); saved() },
-                        label = { Text("Ta consigne") }, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
+                        label = { Text(tr("Ta consigne")) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
                         minLines = 2,
                     )
                 }
-                SettingRow("Retoucher chaque dictée", "Sinon, utilise « Reformuler » dans l'écran Dictée") {
-                    DictoSwitch(auto, { s.autoRefine.set(it); saved() }, "Retoucher chaque dictée")
+                SettingRow(tr("Retoucher chaque dictée"), tr("Sinon, utilise « Reformuler » dans l'écran Dictée")) {
+                    DictoSwitch(auto, { s.autoRefine.set(it); saved() }, tr("Retoucher chaque dictée"))
                 }
             }
         }

@@ -14,6 +14,7 @@
   <a href="https://github.com/MrDDream/Dicto/releases/latest"><img src="https://img.shields.io/github/v/release/MrDDream/Dicto?label=version&color=F0B44C" alt="Dernière version"></a>
   <a href="https://github.com/MrDDream/Dicto/releases"><img src="https://img.shields.io/github/downloads/MrDDream/Dicto/total?label=t%C3%A9l%C3%A9chargements&color=2F5D50" alt="Téléchargements"></a>
   <a href="https://github.com/MrDDream/Dicto/actions/workflows/desktop.yml"><img src="https://img.shields.io/github/actions/workflow/status/MrDDream/Dicto/desktop.yml?branch=main&label=bureau&logo=githubactions&logoColor=white" alt="Compilation du bureau"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-GPL--3.0-7AA2F7" alt="GPL-3.0"></a>
   <br>
   <img src="https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&logoColor=white" alt="Android 10+">
   <img src="https://img.shields.io/badge/Windows-x64-0078D4" alt="Windows">
@@ -29,7 +30,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/mockups/hero.png" alt="Dicto sur un ordinateur et un téléphone, pendant une dictée" width="860">
+  <img src="docs/assets/mockups/fr/hero.png" alt="Dicto sur un ordinateur et un téléphone, pendant une dictée" width="860">
 </p>
 
 <p align="center">
@@ -49,9 +50,10 @@
 
 Écrire sur un téléphone est lent, et la plupart des outils de dictée envoient chaque mot prononcé sur les serveurs de quelqu'un d'autre. Dicto fait la reconnaissance vocale **sur ton appareil** : tu télécharges un modèle une fois, et ta voix ne quitte plus le téléphone ni l'ordinateur. Quand tu veux la meilleure précision sans charger le téléphone, branche le service en ligne que tu paies déjà (OpenAI, Mistral, Gemini, Grok, ou ton propre serveur Whisper), avec ta clé.
 
-- **Sans compte, sans pub, sans traceur.** L'historique reste dans une base locale.
+- **Libre et gratuit** (GPL-3.0), sans compte, sans pub, sans traceur. L'historique reste dans une base locale.
 - **Un seul cœur Rust** pour toutes les plateformes : les mêmes moteurs, modes et commandes vocales partout.
 - **Il écrit là où tu es** : le clavier Dicto et une bulle flottante sur Android, un raccourci global sur l'ordinateur.
+- **En français et en anglais**, avec un thème clair et un thème sombre qui peuvent suivre l'appareil.
 
 ## ✨ Ce que fait Dicto
 
@@ -71,7 +73,7 @@
 ## 📱 Sur Android
 
 <p align="center">
-  <img src="docs/assets/mockups/android-row.png" alt="Dictée, bulle flottante et clavier, déclencheurs, historique" width="860">
+  <img src="docs/assets/mockups/fr/android-row.png" alt="Dictée, bulle flottante et clavier, déclencheurs, historique" width="860">
 </p>
 
 Dicte dans n'importe quelle app sans ouvrir Dicto :
@@ -84,8 +86,8 @@ Dicte dans n'importe quelle app sans ouvrir Dicto :
 ## 💻 Sur ton ordinateur
 
 <p align="center">
-  <img src="docs/assets/mockups/desktop-modeles.png" alt="Les modèles sur l'ordinateur" width="49%">
-  <img src="docs/assets/mockups/desktop-raccourcis.png" alt="Les raccourcis sur l'ordinateur" width="49%">
+  <img src="docs/assets/mockups/fr/desktop-modeles.png" alt="Les modèles sur l'ordinateur" width="49%">
+  <img src="docs/assets/mockups/fr/desktop-raccourcis.png" alt="Les raccourcis sur l'ordinateur" width="49%">
 </p>
 
 - **Un raccourci global par mode** (Ctrl+Alt+Espace, Ctrl+Alt+C, Ctrl+Maj+Espace par défaut), appuyé ou maintenu.
@@ -167,6 +169,6 @@ cd desktop && npm ci && npx tauri dev
 
 **Versions** : pousser un tag `vX.Y.Z` compile les APK signés et les paquets du bureau sur GitHub Actions et les publie avec leurs sommes de contrôle ([release.yml](.github/workflows/release.yml)).
 
-## 🙏 Crédits
+## 🙏 Crédits et licence
 
-Dicto s'appuie sur [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [UniFFI](https://github.com/mozilla/uniffi-rs), [Tauri](https://tauri.app) et [Svelte](https://svelte.dev), et sur les modèles publiés par NVIDIA, Meta, OpenAI et Bofeng Huang. Polices : Bricolage Grotesque, Figtree et JetBrains Mono.
+Dicto est un logiciel libre sous [GNU GPL v3](LICENSE). Il s'appuie sur [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [UniFFI](https://github.com/mozilla/uniffi-rs), [Tauri](https://tauri.app) et [Svelte](https://svelte.dev), et sur les modèles publiés par NVIDIA, Meta, OpenAI et Bofeng Huang. Polices : Bricolage Grotesque, Figtree et JetBrains Mono.

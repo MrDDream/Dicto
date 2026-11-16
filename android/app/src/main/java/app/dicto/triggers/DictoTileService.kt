@@ -1,5 +1,6 @@
 package app.dicto.triggers
 
+import app.dicto.i18n.tr
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
@@ -21,9 +22,9 @@ class DictoTileService : TileService() {
         val on = DictoApp.instance.settings.bubble.value && BubbleService.canRun(this)
         qsTile?.apply {
             state = if (on) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-            label = "Bulle Dicto"
+            label = tr("Bulle Dicto")
             icon = Icon.createWithResource(this@DictoTileService, R.drawable.ic_launcher_monochrome)
-            if (Build.VERSION.SDK_INT >= 29) subtitle = if (on) "Affichée" else "Masquée"
+            if (Build.VERSION.SDK_INT >= 29) subtitle = if (on) tr("Affichée") else tr("Masquée")
             updateTile()
         }
     }

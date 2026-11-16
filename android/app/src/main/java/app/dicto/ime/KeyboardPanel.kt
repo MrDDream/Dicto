@@ -1,8 +1,8 @@
 package app.dicto.ime
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -99,12 +99,15 @@ private val LIGHT = KeyboardColors(
 )
 
 private val K: KeyboardColors
-    @Composable get() = if (isSystemInDarkTheme()) DARK else LIGHT
+    @Composable get() = if (app.dicto.ui.theme.dictoIsDark()) DARK else LIGHT
 
 /** Le clavier est-il sombre (barre de navigation assortie). */
-fun keyboardIsDark(context: android.content.Context): Boolean =
-    (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+fun keyboardIsDark(context: android.content.Context): Boolean = when (app.dicto.ui.theme.ThemeMode.mode) {
+    "dark" -> true
+    "light" -> false
+    else -> (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
         android.content.res.Configuration.UI_MODE_NIGHT_YES
+}
 
 /** Fond du clavier, pour colorer la barre de navigation dessous. */
 fun keyboardBackground(dark: Boolean): Color = if (dark) DARK.background else LIGHT.background
@@ -142,11 +145,11 @@ fun KeyboardPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val (text, active) = when {
-                !hasMicPermission -> "Micro non autorisé" to false
-                ui.isActive -> (if (ui.state == State.SPEAKING || ui.mode != Mode.CONTINUOUS) "Je t'écoute" else "En écoute") to true
-                ui.pending > 0 -> "Transcription…" to false
-                ui.engine.kind == EngineStatus.Kind.LOADING -> "Chargement du modèle…" to false
-                !ui.engine.isReady -> "Aucun modèle choisi" to false
+                !hasMicPermission -> tr("Micro non autorisé") to false
+                ui.isActive -> (if (ui.state == State.SPEAKING || ui.mode != Mode.CONTINUOUS) tr("Je t'écoute") else tr("En écoute")) to true
+                ui.pending > 0 -> tr("Transcription…") to false
+                ui.engine.kind == EngineStatus.Kind.LOADING -> tr("Chargement du modèle…") to false
+                !ui.engine.isReady -> tr("Aucun modèle choisi") to false
                 else -> ui.engine.label to false
             }
             Row(
@@ -180,10 +183,10 @@ fun KeyboardPanel(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        MODE_LABELS.getValue(ui.mode) + "  ▾",
+                        tr(MODE_LABELS.getValue(ui.mode)) + "  ▾",
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 10.dp)
-                            .semantics { contentDescription = "Mode : ${MODE_LABELS.getValue(ui.mode)}, toucher pour changer" },
+                            .semantics { contentDescription = tr("Mode : %1\$s, toucher pour changer", tr(MODE_LABELS.getValue(ui.mode))) },
                     )
                 }
             }
@@ -197,7 +200,7 @@ fun KeyboardPanel(
                     shape = RoundedCornerShape(23.dp), modifier = Modifier.fillMaxWidth().height(46.dp),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("Ouvrir Dicto pour autoriser le micro", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text(tr("Ouvrir Dicto pour autoriser le micro"), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     }
                 }
                 ui.partial.isNotBlank() -> Text(
@@ -221,7 +224,7 @@ fun KeyboardPanel(
                     }
                 }
                 else -> Text(
-                    if (ui.pending > 0) "Le texte arrive…" else "Touche le micro et parle : le texte s'écrit tout seul.",
+                    if (ui.pending > 0) tr("Le texte arrive…") else tr("Touche le micro et parle : le texte s'écrit tout seul."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = K.muted,
                 )
@@ -234,17 +237,17 @@ fun KeyboardPanel(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Key(Modifier.width(52.dp), "Changer de clavier", onSwitchKeyboard) {
+                Key(Modifier.width(52.dp), tr("Changer de clavier"), onSwitchKeyboard) {
                     Icon(DictoIcons.Keyboard, null, Modifier.size(22.dp))
                 }
-                Key(Modifier.weight(1f), "Espace", onSpace) {
+                Key(Modifier.weight(1f), tr("Espace"), onSpace) {
                     Box(Modifier.width(28.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(K.muted))
                 }
             }
             MicKey(ui.isActive, ui.mode, onPress, onRelease)
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RepeatKey(Modifier.weight(1f), DictoIcons.Backspace, "Effacer", onBackspace)
-                Key(Modifier.weight(1f), "Entrée", onEnter) {
+                RepeatKey(Modifier.weight(1f), DictoIcons.Backspace, tr("Effacer"), onBackspace)
+                Key(Modifier.weight(1f), tr("Entrée"), onEnter) {
                     Icon(DictoIcons.Enter, null, Modifier.size(22.dp))
                 }
             }
@@ -272,9 +275,9 @@ private fun Key(modifier: Modifier, description: String, onClick: () -> Unit, co
 @Composable
 private fun MicKey(active: Boolean, mode: Mode, onPress: () -> Unit, onRelease: () -> Unit) {
     val label = when {
-        mode == Mode.HOLD -> if (active) "Relâche pour transcrire" else "Maintiens pour parler"
-        active -> "Arrêter la dictée"
-        else -> "Dicter"
+        mode == Mode.HOLD -> if (active) tr("Relâche pour transcrire") else tr("Maintiens pour parler")
+        active -> tr("Arrêter la dictée")
+        else -> tr("Dicter")
     }
     Box(
         Modifier

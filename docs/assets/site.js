@@ -1,27 +1,28 @@
-// Site de Dicto : la langue (anglais par défaut, français si le navigateur l'est ou si on le choisit),
-// la démo des trois modes, la galerie et les liens de la dernière version publiée sur GitHub.
+// Site de Dicto : la langue (anglais par défaut, français si on le choisit), le thème (automatique selon
+// l'appareil, clair ou sombre), la démo des trois modes, la galerie et les liens de la dernière version.
 (() => {
   const REPO = "MrDDream/Dicto";
   const root = document.documentElement;
 
   // --- Langue ------------------------------------------------------------------------------
-  function stored() {
+  function stored(key) {
     try {
-      return localStorage.getItem("dicto-lang");
+      return localStorage.getItem(key);
     } catch {
       return null;
     }
   }
-  function setLang(lang, remember) {
+  function remember(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
+  }
+  function setLang(lang, save) {
     root.dataset.lang = lang;
     root.lang = lang;
     document.title = lang === "fr" ? "Dicto · la dictée, chez toi" : "Dicto · dictation that stays with you";
     document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.set === lang)));
-    if (remember) {
-      try {
-        localStorage.setItem("dicto-lang", lang);
-      } catch {}
-    }
+    if (save) remember("dicto-lang", lang);
     renderMode();
   }
   document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.set, true)));
@@ -102,5 +103,14 @@
     })
     .catch(() => {});
 
-  setLang(stored() || ((navigator.language || "").toLowerCase().startsWith("fr") ? "fr" : "en"), false);
+  // --- Thème ----------------------------------------------------------------------------------
+  function setTheme(theme, save) {
+    root.dataset.theme = theme;
+    document.querySelectorAll(".theme button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === theme)));
+    if (save) remember("dicto-theme", theme);
+  }
+  document.querySelectorAll(".theme button").forEach((b) => b.addEventListener("click", () => setTheme(b.dataset.theme, true)));
+
+  setTheme(["auto", "light", "dark"].includes(stored("dicto-theme")) ? stored("dicto-theme") : "auto", false);
+  setLang(stored("dicto-lang") === "fr" ? "fr" : "en", false);
 })();

@@ -35,7 +35,7 @@ class OverlayOwner : LifecycleOwner, SavedStateRegistryOwner {
         ComposeView(context).apply {
             setViewTreeLifecycleOwner(this@OverlayOwner)
             setViewTreeSavedStateRegistryOwner(this@OverlayOwner)
-            setContent { DictoTheme(content) }
+            setContent { DictoTheme(content = content) }
         }
 
     fun destroy() {

@@ -1,5 +1,6 @@
 package app.dicto.models
 
+import app.dicto.i18n.tr
 import android.content.Context
 import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
@@ -104,8 +105,8 @@ class ModelDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
         val percent = if (total > 0) (downloaded * 100 / total).toInt() else 0
         val notification = NotificationCompat.Builder(applicationContext, DictoApp.CHANNEL_DOWNLOADS)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle("Téléchargement de $name")
-            .setContentText(if (total > 0) "$percent %" else "Préparation…")
+            .setContentTitle(tr("Téléchargement de %1\$s", name))
+            .setContentText(if (total > 0) "$percent %" else tr("Préparation…"))
             .setProgress(100, percent, total == 0L)
             .setOngoing(true)
             .setSilent(true)

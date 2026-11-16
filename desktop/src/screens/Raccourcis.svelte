@@ -2,6 +2,7 @@
   import type { Output, PillPosition, Settings } from "../lib/api";
   import ShortcutField from "../lib/ShortcutField.svelte";
   import { app } from "../lib/store.svelte";
+  import { t } from "../lib/i18n.svelte";
 
   const OUTPUTS: { id: Output; title: string; hint: string }[] = [
     { id: "type", title: "Taper dans la fenêtre", hint: "Comme un clavier" },
@@ -24,49 +25,47 @@
   <div class="screen">
     <div class="main">
       <div>
-        <h1>Raccourcis</h1>
-        <p class="lead">Fonctionnent partout, même quand Dicto est réduit. Échap annule une dictée en cours.</p>
+        <h1>{t("Raccourcis")}</h1>
+        <p class="lead">{t("Fonctionnent partout, même quand Dicto est réduit. Échap annule une dictée en cours.")}</p>
       </div>
 
       <section class="card" aria-labelledby="modes">
-        <h2 id="modes" class="pad">Un raccourci par mode</h2>
+        <h2 id="modes" class="pad">{t("Un raccourci par mode")}</h2>
         {#each SHORTCUTS as sc (sc.key)}
           <div class="row">
             <div class="label">
-              <div class="title">{sc.title}</div>
-              <div class="hint">{sc.hint}</div>
+              <div class="title">{t(sc.title)}</div>
+              <div class="hint">{t(sc.hint)}</div>
             </div>
-            <ShortcutField value={s[sc.key]} label={sc.title} onchange={(v) => app.update({ [sc.key]: v })} />
+            <ShortcutField value={s[sc.key]} label={t(sc.title)} onchange={(v) => app.update({ [sc.key]: v })} />
           </div>
         {/each}
       </section>
 
       <section class="card out" aria-labelledby="sortie">
-        <h2 id="sortie">Où va le texte</h2>
-        <div role="radiogroup" aria-label="Sortie du texte" class="choices">
+        <h2 id="sortie">{t("Où va le texte")}</h2>
+        <div role="radiogroup" aria-label={t("Sortie du texte")} class="choices">
           {#each OUTPUTS as o (o.id)}
             <button role="radio" aria-checked={s.output === o.id} class:on={s.output === o.id} onclick={() => app.update({ output: o.id })}>
-              <span class="title">{o.title}</span>
-              <span class="hint">{o.hint}</span>
+              <span class="title">{t(o.title)}</span>
+              <span class="hint">{t(o.hint)}</span>
             </button>
           {/each}
         </div>
         {#if isLinux}
           <p class="note">
-            Sous Linux, les raccourcis globaux et la frappe fonctionnent avec X11. Sous Wayland, ils ne marchent que
-            dans certaines apps pour l'instant ; « Presse-papiers » est le plus sûr.
+            {t("Sous Linux, les raccourcis globaux et la frappe fonctionnent avec X11. Sous Wayland, ils ne marchent que dans certaines apps pour l'instant ; « Presse-papiers » est le plus sûr.")}
           </p>
         {:else if isMac}
           <p class="note">
-            Sous macOS, autorise Dicto dans Réglages Système › Confidentialité et sécurité › Accessibilité pour qu'il
-            puisse écrire dans les autres apps.
+            {t("Sous macOS, autorise Dicto dans Réglages Système › Confidentialité et sécurité › Accessibilité pour qu'il puisse écrire dans les autres apps.")}
           </p>
         {/if}
       </section>
     </div>
 
     <aside aria-labelledby="pastille">
-      <h2 id="pastille">Pastille d'enregistrement</h2>
+      <h2 id="pastille">{t("Pastille d'enregistrement")}</h2>
       <div class="preview" aria-hidden="true">
         <div class="window"></div>
         <div class="mini-pill">
@@ -77,11 +76,11 @@
           >
           <span class="bars"><span style:height="8px"></span><span style:height="16px"></span><span style:height="12px"></span><span style:height="18px"></span><span style:height="6px"></span></span>
           <span class="time">00:03</span>
-          <kbd>Échap</kbd>
+          <kbd>{t("Échap")}</kbd>
         </div>
       </div>
       <fieldset>
-        <legend>Position</legend>
+        <legend>{t("Position")}</legend>
         {#each [{ id: "bottom", label: "En bas, au centre de l'écran" }, { id: "hidden", label: "Seulement l'icône de la zone de notification" }] as p (p.id)}
           <label class="radio">
             <input
@@ -89,7 +88,7 @@
               name="pill"
               checked={s.pill === p.id}
               onchange={() => app.update({ pill: p.id as PillPosition })}
-            />{p.label}
+            />{t(p.label)}
           </label>
         {/each}
       </fieldset>
@@ -203,7 +202,7 @@
     padding: 0 14px 0 8px;
     border-radius: 23px;
     background: var(--overlay);
-    box-shadow: 0 10px 24px rgba(43, 35, 29, 0.3);
+    box-shadow: var(--shadow-pop);
   }
 
   .mic {

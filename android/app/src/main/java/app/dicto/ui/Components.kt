@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,7 +65,7 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)? = null) {
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
-                Icon(app.dicto.ui.theme.DictoIcons.Back, contentDescription = "Retour", tint = Dicto.Ink)
+                Icon(app.dicto.ui.theme.DictoIcons.Back, contentDescription = tr("Retour"), tint = Dicto.Ink)
             }
         }
         Text(title, style = MaterialTheme.typography.headlineMedium)

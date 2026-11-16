@@ -10,6 +10,7 @@
   import Raccourcis from "./screens/Raccourcis.svelte";
   import Reglages from "./screens/Reglages.svelte";
   import UpdateDialog from "./lib/UpdateDialog.svelte";
+  import { t, tr } from "./lib/i18n.svelte";
 
   type Screen = "dictee" | "fichiers" | "historique" | "modeles" | "raccourcis" | "reglages";
   const NAV: { id: Screen; label: string; icon: IconName }[] = [
@@ -38,18 +39,18 @@
   const statusText = $derived(
     engine.kind === "ready"
       ? engine.detail === "en ligne"
-        ? "Prêt, en ligne"
-        : "Prêt, en local"
+        ? t("Prêt, en ligne")
+        : t("Prêt, en local")
       : engine.kind === "loading"
-        ? "Chargement du modèle…"
+        ? t("Chargement du modèle…")
         : engine.kind === "error"
-          ? "Modèle indisponible"
-          : "Aucun modèle",
+          ? t("Modèle indisponible")
+          : t("Aucun modèle"),
   );
 </script>
 
 <div class="shell">
-  <nav aria-label="Navigation">
+  <nav aria-label={t("Navigation")}>
     <div class="brand">
       <Logo />
       <span>Dicto</span>
@@ -61,14 +62,14 @@
         aria-current={screen === item.id ? "page" : undefined}
         onclick={() => (screen = item.id)}
       >
-        <Icon name={item.icon} />{item.label}
+        <Icon name={item.icon} />{t(item.label)}
       </button>
     {/each}
-    <button class="engine" onclick={() => (screen = "modeles")} title={engine.detail ?? ""}>
+    <button class="engine" onclick={() => (screen = "modeles")} title={tr(engine.detail)}>
       <span class="engine-state" style:color={engine.kind === "ready" ? "var(--success-ink)" : "var(--ink-2)"}>
         <span class="dot" style:background={statusColor}></span>{statusText}
       </span>
-      <span class="engine-name">{engine.kind === "none" ? "Choisis un modèle" : engine.label}</span>
+      <span class="engine-name">{engine.kind === "none" ? t("Choisis un modèle") : tr(engine.label)}</span>
     </button>
   </nav>
 
@@ -95,7 +96,7 @@
   {#if app.message}
     <div class="toast" role="status">
       <span>{app.message}</span>
-      <button aria-label="Fermer le message" onclick={() => (app.message = null)}><Icon name="close" size={16} /></button>
+      <button aria-label={t("Fermer le message")} onclick={() => (app.message = null)}><Icon name="close" size={16} /></button>
     </div>
   {/if}
 </div>
@@ -143,12 +144,12 @@
   }
 
   .nav-item:hover {
-    background: rgba(255, 252, 248, 0.5);
+    background: var(--nav-hover);
   }
 
   .nav-item.current {
     background: var(--surface);
-    box-shadow: 0 1px 2px rgba(43, 35, 29, 0.08);
+    box-shadow: var(--shadow-soft);
     color: var(--accent);
     font-weight: 700;
   }
@@ -211,7 +212,7 @@
     font-size: 14px;
     line-height: 1.4;
     white-space: pre-line;
-    box-shadow: 0 10px 24px rgba(43, 35, 29, 0.3);
+    box-shadow: var(--shadow-pop);
   }
 
   .toast button {

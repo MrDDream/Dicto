@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.Manifest
 import android.app.StatusBarManager
 import android.content.ComponentName
@@ -77,9 +78,9 @@ fun TriggersScreen() {
     val edge by settings.edgeSwipe.flow.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader("Déclencheurs")
+        ScreenHeader(tr("Déclencheurs"))
         Text(
-            "Dicte depuis n'importe quelle app, sans ouvrir Dicto. Le texte arrive dans le champ où tu écris.",
+            tr("Dicte depuis n'importe quelle app, sans ouvrir Dicto. Le texte arrive dans le champ où tu écris."),
             style = MaterialTheme.typography.bodyMedium,
             color = Dicto.InkMuted,
             modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 16.dp),
@@ -88,31 +89,26 @@ fun TriggersScreen() {
             // Clavier Dicto : la voie qui écrit dans les autres apps.
             DictoCard {
                 TriggerHeader(
-                    DictoIcons.Keyboard, Dicto.Accent, Dicto.OnAccent, "Clavier Dicto",
+                    DictoIcons.Keyboard, Dicto.Accent, Dicto.OnAccent, tr("Clavier Dicto"),
                     when {
-                        imeCurrent -> "En cours : le texte s'écrit directement"
-                        imeEnabled -> "Activé"
-                        else -> "Pour écrire le texte dans tes apps"
+                        imeCurrent -> tr("En cours : le texte s'écrit directement")
+                        imeEnabled -> tr("Activé")
+                        else -> tr("Pour écrire le texte dans tes apps")
                     },
                 ) {
                     when {
-                        imeCurrent -> Pill("En cours", Dicto.AccentContainer, Dicto.Accent)
-                        imeEnabled -> TonalButton("Choisir", { context.getSystemService(InputMethodManager::class.java).showInputMethodPicker() })
-                        else -> TonalButton("Activer", {
+                        imeCurrent -> Pill(tr("En cours"), Dicto.AccentContainer, Dicto.Accent)
+                        imeEnabled -> TonalButton(tr("Choisir"), { context.getSystemService(InputMethodManager::class.java).showInputMethodPicker() })
+                        else -> TonalButton(tr("Activer"), {
                             context.startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         })
                     }
                 }
                 Text(
                     if (imeEnabled) {
-                        "Pour passer à Dicto en une touche depuis Gboard : dans ses paramètres, Préférences, active " +
-                            "« Afficher la touche de changement de langue ». Le globe 🌐 bascule alors sur le clavier Dicto, " +
-                            "qui écoute aussitôt ; touche ■ quand tu as fini, le texte s'écrit et Gboard revient. " +
-                            "Pour rester sur Dicto, coupe « Revenir à mon clavier » dans Réglages. " +
-                            "La bulle et « OK Dicto » écrivent aussi par lui."
+                        tr("Pour passer à Dicto en une touche depuis Gboard : dans ses paramètres, Préférences, active « Afficher la touche de changement de langue ». Le globe 🌐 bascule alors sur le clavier Dicto, qui écoute aussitôt ; touche ■ quand tu as fini, le texte s'écrit et Gboard revient. Pour rester sur Dicto, coupe « Revenir à mon clavier » dans Réglages. La bulle et « OK Dicto » écrivent aussi par lui.")
                     } else {
-                        "Active « Clavier Dicto » dans la liste des claviers d'Android. Sans lui, le texte dicté " +
-                            "depuis la bulle est copié, à coller toi-même."
+                        tr("Active « Clavier Dicto » dans la liste des claviers d'Android. Sans lui, le texte dicté depuis la bulle est copié, à coller toi-même.")
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = Dicto.InkMuted,
@@ -121,39 +117,39 @@ fun TriggersScreen() {
 
             // Bouton flottant
             DictoCard {
-                TriggerHeader(DictoIcons.Mic, Dicto.Accent, Dicto.OnAccent, "Bouton flottant", "Une bulle au bord de l'écran") {
+                TriggerHeader(DictoIcons.Mic, Dicto.Accent, Dicto.OnAccent, tr("Bouton flottant"), tr("Une bulle au bord de l'écran")) {
                     DictoSwitch(bubble && overlay, { on ->
                         if (on && !overlay) requestOverlay(context)
                         settings.bubble.set(on)
                         BubbleService.refresh(context)
-                    }, "Bouton flottant")
+                    }, tr("Bouton flottant"))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    GestureHint("Toucher", "mode choisi", Modifier.weight(1f))
-                    GestureHint("Appui long", "maintenu", Modifier.weight(1f))
-                    GestureHint("Glisser", "déplacer, ou vers ✕ pour masquer", Modifier.weight(1f))
+                    GestureHint(tr("Toucher"), tr("mode choisi"), Modifier.weight(1f))
+                    GestureHint(tr("Appui long"), tr("maintenu"), Modifier.weight(1f))
+                    GestureHint(tr("Glisser"), tr("déplacer, ou vers ✕ pour masquer"), Modifier.weight(1f))
                 }
-                if (bubble && !overlay) OverlayWarning(context, "pour voir la bulle")
+                if (bubble && !overlay) OverlayWarning(context, tr("pour voir la bulle"))
             }
 
             // À la voix
             DictoCard {
-                TriggerHeader(DictoIcons.Wave, Dicto.RecordingContainer, Dicto.OnRecordingContainer, "À la voix", "Écouté sur le téléphone uniquement") {
+                TriggerHeader(DictoIcons.Wave, Dicto.RecordingContainer, Dicto.OnRecordingContainer, tr("À la voix"), tr("Écouté sur le téléphone uniquement")) {
                     DictoSwitch(wake, { on ->
                         if (on && ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(context, "Autorise d'abord le micro depuis l'écran Dictée.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, tr("Autorise d'abord le micro depuis l'écran Dictée."), Toast.LENGTH_LONG).show()
                             return@DictoSwitch
                         }
                         if (on && !overlay) requestOverlay(context)
                         settings.wakeWord.set(on)
                         if (on) WakeWordService.start(context) else WakeWordService.stop(context)
-                    }, "Activation à la voix")
+                    }, tr("Activation à la voix"))
                 }
                 var draft by remember(phrase) { mutableStateOf(phrase) }
                 OutlinedTextField(
                     value = draft,
                     onValueChange = { draft = it },
-                    label = { Text("Ta phrase d'appel") },
+                    label = { Text(tr("Ta phrase d'appel")) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -167,43 +163,42 @@ fun TriggersScreen() {
                     },
                 )
                 Text(
-                    "« Ok Google » est réservé à Google, choisis la tienne : deux ou trois mots, prononcés à l'anglaise. " +
-                        "Mise en pause écran éteint et en économie d'énergie.",
+                    tr("« Ok Google » est réservé à Google, choisis la tienne : deux ou trois mots, prononcés à l'anglaise. Mise en pause écran éteint et en économie d'énergie."),
                     style = MaterialTheme.typography.labelSmall,
                     color = Dicto.InkMuted,
                 )
                 val wakeState by WakeWordService.state.collectAsStateWithLifecycle()
                 if (wake) {
                     wakeState?.let {
-                        Text(it, style = MaterialTheme.typography.labelMedium, color = if (it.startsWith("J'écoute")) Dicto.Accent else Dicto.OnRecordingContainer)
+                        Text(it, style = MaterialTheme.typography.labelMedium, color = if (it.startsWith(tr("J'écoute"))) Dicto.Accent else Dicto.OnRecordingContainer)
                     }
                 }
-                if (wake && !overlay) OverlayWarning(context, "pour que la dictée s'ouvre seule (sinon, une notification « Touche pour dicter »)")
+                if (wake && !overlay) OverlayWarning(context, tr("pour que la dictée s'ouvre seule (sinon, une notification « Touche pour dicter »)"))
             }
 
             // Autres déclencheurs
             DictoCard(padding = PaddingValues(0.dp)) {
                 Column {
-                    ListRow("Geste depuis le bord", "Glisser vers l'intérieur, à droite") {
+                    ListRow(tr("Geste depuis le bord"), tr("Glisser vers l'intérieur, à droite")) {
                         DictoSwitch(edge && overlay, { on ->
                             if (on && !overlay) requestOverlay(context)
                             settings.edgeSwipe.set(on)
                             BubbleService.refresh(context)
-                        }, "Geste depuis le bord")
+                        }, tr("Geste depuis le bord"))
                     }
                     HorizontalDivider(color = Dicto.SurfaceSunken)
-                    ListRow("Tuile Réglages rapides", "Affiche ou masque la bulle depuis le volet de notifications") {
-                        TonalButton("Ajouter", { addTile(context) })
+                    ListRow(tr("Tuile Réglages rapides"), tr("Affiche ou masque la bulle depuis le volet de notifications")) {
+                        TonalButton(tr("Ajouter"), { addTile(context) })
                     }
                     HorizontalDivider(color = Dicto.SurfaceSunken)
-                    ListRow("Assistant par défaut", "Appui long sur Power ou coin de l'écran") {
-                        TonalButton("Choisir", {
+                    ListRow(tr("Assistant par défaut"), tr("Appui long sur Power ou coin de l'écran")) {
+                        TonalButton(tr("Choisir"), {
                             context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         })
                     }
                 }
             }
-            if (edge && !overlay) OverlayWarning(context, "pour activer le geste")
+            if (edge && !overlay) OverlayWarning(context, tr("pour activer le geste"))
         }
     }
 }
@@ -220,29 +215,27 @@ private fun OverlayWarning(context: Context, purpose: String) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            "Autorise « Afficher par-dessus les autres apps » $purpose.",
+            tr("Autorise « Afficher par-dessus les autres apps » %1\$s.", purpose),
             style = MaterialTheme.typography.labelMedium,
             color = Dicto.OnRecordingContainer,
         )
         if (Build.VERSION.SDK_INT >= 33) {
             Text(
-                "« Accès refusé » ou réglage grisé ? Android verrouille ce réglage pour les applis installées hors boutique. " +
-                    "Ouvre les infos de Dicto, touche ⋮ en haut à droite, puis « Autoriser les paramètres restreints ». " +
-                    "Reviens ensuite activer l'autorisation.",
+                tr("« Accès refusé » ou réglage grisé ? Android verrouille ce réglage pour les applis installées hors boutique. Ouvre les infos de Dicto, touche ⋮ en haut à droite, puis « Autoriser les paramètres restreints ». Reviens ensuite activer l'autorisation."),
                 style = MaterialTheme.typography.labelSmall,
                 color = Dicto.OnRecordingContainer,
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (Build.VERSION.SDK_INT >= 33) {
-                TonalButton("Infos de Dicto", {
+                TonalButton(tr("Infos de Dicto"), {
                     context.startActivity(
                         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
                 })
             }
-            TonalButton("Autoriser", { requestOverlay(context) })
+            TonalButton(tr("Autoriser"), { requestOverlay(context) })
         }
     }
 }
@@ -294,11 +287,11 @@ private fun addTile(context: Context) {
     if (Build.VERSION.SDK_INT >= 33) {
         context.getSystemService(StatusBarManager::class.java).requestAddTileService(
             ComponentName(context, DictoTileService::class.java),
-            "Bulle Dicto",
+            tr("Bulle Dicto"),
             Icon.createWithResource(context, R.drawable.ic_launcher_monochrome),
             context.mainExecutor,
         ) { }
     } else {
-        Toast.makeText(context, "Ouvre le volet des réglages rapides, touche le crayon et ajoute « Dicto ».", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, tr("Ouvre le volet des réglages rapides, touche le crayon et ajoute « Dicto »."), Toast.LENGTH_LONG).show()
     }
 }

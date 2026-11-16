@@ -1,5 +1,6 @@
 package app.dicto.ui.providers
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.HorizontalDivider
@@ -55,10 +56,10 @@ fun transcriptionSpec(p: CloudProvider): ProviderSpec {
             CloudProvider.OPEN_AI -> "sk-…"
             CloudProvider.GEMINI -> "AIza…"
             CloudProvider.XAI -> "xai-…"
-            else -> "clé"
+            else -> tr("clé")
         },
-        urlPlaceholder = if (p == CloudProvider.CUSTOM) "http://IP-du-serveur:8000/v1" else null,
-        urlHint = if (p == CloudProvider.CUSTOM) "Serveur compatible OpenAI : speaches, faster-whisper-server, LocalAI…" else null,
+        urlPlaceholder = if (p == CloudProvider.CUSTOM) tr("http://IP-du-serveur:8000/v1") else null,
+        urlHint = if (p == CloudProvider.CUSTOM) tr("Serveur compatible OpenAI : speaches, faster-whisper-server, LocalAI…") else null,
         savedKey = { app.secrets.has(secret) },
         savedModel = { app.settings.cloud.value[p]?.model },
         savedUrl = { app.settings.cloud.value[p]?.baseUrl },
@@ -84,8 +85,8 @@ fun refineSpec(p: RefineProvider): ProviderSpec {
         brand = p.brand,
         label = when (p) {
             RefineProvider.ANTHROPIC -> "Claude (Anthropic)"
-            RefineProvider.OLLAMA -> "Local (Ollama, LM Studio…)"
-            RefineProvider.OPEN_AI_COMPATIBLE -> "Autre (compatible OpenAI)"
+            RefineProvider.OLLAMA -> tr("Local (Ollama, LM Studio…)")
+            RefineProvider.OPEN_AI_COMPATIBLE -> tr("Autre (compatible OpenAI)")
             else -> p.label
         },
         needsKey = p == RefineProvider.ANTHROPIC || p == RefineProvider.OPEN_AI || p == RefineProvider.GEMINI,
@@ -93,16 +94,16 @@ fun refineSpec(p: RefineProvider): ProviderSpec {
             RefineProvider.ANTHROPIC -> "sk-ant-…"
             RefineProvider.OPEN_AI -> "sk-…"
             RefineProvider.GEMINI -> "AIza…"
-            else -> "clé"
+            else -> tr("clé")
         },
         urlPlaceholder = when (p) {
-            RefineProvider.OLLAMA -> "http://IP-du-PC:11434"
-            RefineProvider.OPEN_AI_COMPATIBLE -> "http://IP-du-PC:1234/v1"
+            RefineProvider.OLLAMA -> tr("http://IP-du-PC:11434")
+            RefineProvider.OPEN_AI_COMPATIBLE -> tr("http://IP-du-PC:1234/v1")
             else -> null
         },
         urlHint = when (p) {
-            RefineProvider.OLLAMA -> "Ollama : lancer avec OLLAMA_HOST=0.0.0.0 pour l'atteindre depuis le téléphone."
-            RefineProvider.OPEN_AI_COMPATIBLE -> "LM Studio, llama.cpp server, vLLM… (adresse se terminant par /v1)."
+            RefineProvider.OLLAMA -> tr("Ollama : lancer avec OLLAMA_HOST=0.0.0.0 pour l'atteindre depuis le téléphone.")
+            RefineProvider.OPEN_AI_COMPATIBLE -> tr("LM Studio, llama.cpp server, vLLM… (adresse se terminant par /v1).")
             else -> null
         },
         chatFilters = true,
@@ -146,7 +147,7 @@ fun TranscriptionProviders() {
                 val configured = remember(p, revision) { spec.isConfigured() }
                 val on = engine == EngineChoice.Cloud(p) && configured
                 ProviderRow(
-                    spec, on, badge = if (on) "En service" else null, revision = revision,
+                    spec, on, badge = if (on) tr("En service") else null, revision = revision,
                     onToggle = { want ->
                         when {
                             want && !configured -> { enableAfter = true; configuring = p }
@@ -190,7 +191,7 @@ fun RefineProviders() {
                 val configured = remember(p, revision) { spec.isConfigured() }
                 val on = active == p && configured
                 ProviderRow(
-                    spec, on, badge = if (on) "Actif" else null, revision = revision,
+                    spec, on, badge = if (on) tr("Actif") else null, revision = revision,
                     onToggle = { want ->
                         when {
                             want && !configured -> {

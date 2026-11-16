@@ -1,5 +1,6 @@
 package app.dicto.ui.providers
 
+import app.dicto.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -147,14 +148,14 @@ fun ProviderRow(
                 }
             }
             Text(
-                if (configured) prettyModel(model) else "Non configuré",
+                if (configured) prettyModel(model) else tr("Non configuré"),
                 fontSize = 12.sp,
                 color = if (configured) Dicto.InkMuted else Dicto.OnRecordingContainer,
                 maxLines = 1,
             )
         }
         IconButton(onClick = onConfigure) {
-            Icon(DictoIcons.Gear, contentDescription = "Configurer ${spec.label}", tint = Dicto.InkSecondary, modifier = Modifier.size(20.dp))
+            Icon(DictoIcons.Gear, contentDescription = tr("Configurer %1\$s", spec.label), tint = Dicto.InkSecondary, modifier = Modifier.size(20.dp))
         }
         Switch(
             on, onToggle,
@@ -210,20 +211,20 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
                 Text(spec.label, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     when {
-                        keySaved -> "Clé enregistrée"
-                        spec.needsKey -> "Clé API requise"
-                        else -> "Clé API facultative"
+                        keySaved -> tr("Clé enregistrée")
+                        spec.needsKey -> tr("Clé API requise")
+                        else -> tr("Clé API facultative")
                     },
                     color = if (spec.needsKey && !keySaved) Dicto.OnRecordingContainer else Dicto.InkMuted, fontSize = 12.sp,
                 )
             }
-            IconButton(onClick = onDismiss) { Icon(DictoIcons.Close, contentDescription = "Fermer", tint = Dicto.InkSecondary) }
+            IconButton(onClick = onDismiss) { Icon(DictoIcons.Close, contentDescription = tr("Fermer"), tint = Dicto.InkSecondary) }
         }
 
         if (spec.editableUrl) {
             OutlinedTextField(
                 value = url, onValueChange = { url = it },
-                label = { Text("Adresse de l'API") },
+                label = { Text(tr("Adresse de l'API")) },
                 placeholder = { Text(spec.urlPlaceholder.orEmpty(), color = Dicto.InkDisabled, fontFamily = Mono) },
                 singleLine = true, modifier = Modifier.fillMaxWidth(),
                 textStyle = TextStyle(fontFamily = Mono, fontSize = 14.sp, color = Dicto.Ink),
@@ -236,9 +237,9 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
             value = key, onValueChange = { key = it },
             label = {
                 Text(when {
-                    keySaved -> "Nouvelle clé API (facultatif)"
-                    spec.needsKey -> "Clé API"
-                    else -> "Clé API (facultative)"
+                    keySaved -> tr("Nouvelle clé API (facultatif)")
+                    spec.needsKey -> tr("Clé API")
+                    else -> tr("Clé API (facultative)")
                 })
             },
             placeholder = { Text(if (keySaved) "••••••••••••" else spec.keyHint, color = Dicto.InkDisabled, fontFamily = Mono) },
@@ -248,7 +249,7 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
                 IconButton(onClick = { showKey = !showKey }) {
                     Icon(
                         if (showKey) DictoIcons.EyeOff else DictoIcons.Eye,
-                        contentDescription = if (showKey) "Masquer" else "Afficher", tint = Dicto.InkSecondary, modifier = Modifier.size(20.dp),
+                        contentDescription = if (showKey) tr("Masquer") else tr("Afficher"), tint = Dicto.InkSecondary, modifier = Modifier.size(20.dp),
                     )
                 }
             },
@@ -258,7 +259,7 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
 
         // Le modèle se choisit dans la liste du fournisseur (un nom saisi à la main reste possible).
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Modèle", color = Dicto.InkSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(tr("Modèle"), color = Dicto.InkSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 58.dp).clip(RoundedCornerShape(12.dp))
                     .border(1.dp, Dicto.Border, RoundedCornerShape(12.dp))
@@ -268,7 +269,7 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
             ) {
                 Column(Modifier.weight(1f)) {
                     if (model.isBlank()) {
-                        Text("Choisir un modèle", color = Dicto.InkDisabled, fontSize = 15.sp)
+                        Text(tr("Choisir un modèle"), color = Dicto.InkDisabled, fontSize = 15.sp)
                     } else {
                         Text(prettyModel(model), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Dicto.Ink)
                         Text(model, fontSize = 11.sp, fontFamily = Mono, color = Dicto.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -301,16 +302,16 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
                         status = try {
                             val n = spec.loadModels(k, u).size
                             onSaved(spec.isConfigured())
-                            true to "Connexion OK · $n modèle(s) disponible(s)"
+                            true to tr("Connexion OK · %1\$s modèle(s) disponible(s)", n)
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            false to "Échec : ${e.userMessage()}"
+                            false to tr("Échec : %1\$s", e.userMessage())
                         }
                         busy = false
                     }
                 },
-            ) { Text("Tester", color = Dicto.Ink, fontWeight = FontWeight.SemiBold) }
+            ) { Text(tr("Tester"), color = Dicto.Ink, fontWeight = FontWeight.SemiBold) }
             Button(
                 enabled = !busy && canSave, modifier = Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Dicto.Accent, contentColor = Dicto.OnAccent),
@@ -319,7 +320,7 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
                     onSaved(spec.isConfigured())
                     onDismiss()
                 },
-            ) { Text("Enregistrer", fontWeight = FontWeight.SemiBold) }
+            ) { Text(tr("Enregistrer"), fontWeight = FontWeight.SemiBold) }
         }
 
         if (keySaved) {
@@ -327,7 +328,7 @@ fun ProviderSheetContent(spec: ProviderSpec, onSaved: (configured: Boolean) -> U
                 spec.forgetKey()
                 keySaved = false
                 onSaved(spec.isConfigured())
-            }) { Text("Oublier la clé ${spec.label}", color = Dicto.OnRecordingContainer) }
+            }) { Text(tr("Oublier la clé %1\$s", spec.label), color = Dicto.OnRecordingContainer) }
         }
     }
 
@@ -411,16 +412,16 @@ fun ModelPickerContent(
 
     Column(Modifier.padding(top = 18.dp)) {
         Row(Modifier.padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Choisir un modèle", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            IconButton(onClick = onClose) { Icon(DictoIcons.Close, contentDescription = "Fermer", tint = Dicto.InkSecondary) }
+            Text(tr("Choisir un modèle"), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            IconButton(onClick = onClose) { Icon(DictoIcons.Close, contentDescription = tr("Fermer"), tint = Dicto.InkSecondary) }
         }
         OutlinedTextField(
             value = query, onValueChange = { query = it }, singleLine = true,
-            placeholder = { Text("Rechercher un modèle", color = Dicto.InkDisabled) },
+            placeholder = { Text(tr("Rechercher un modèle"), color = Dicto.InkDisabled) },
             leadingIcon = { Icon(DictoIcons.Search, contentDescription = null, tint = Dicto.InkMuted, modifier = Modifier.size(20.dp)) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
-                    IconButton(onClick = { query = "" }) { Icon(DictoIcons.Close, contentDescription = "Effacer", tint = Dicto.InkMuted, modifier = Modifier.size(18.dp)) }
+                    IconButton(onClick = { query = "" }) { Icon(DictoIcons.Close, contentDescription = tr("Effacer"), tint = Dicto.InkMuted, modifier = Modifier.size(18.dp)) }
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
@@ -445,7 +446,7 @@ fun ModelPickerContent(
                                 .border(1.dp, if (on) Dicto.Accent else Dicto.Border, RoundedCornerShape(17.dp))
                                 .clickable(role = Role.RadioButton) { filter = f }.padding(horizontal = 12.dp),
                             contentAlignment = Alignment.Center,
-                        ) { Text("${f.label} · $n", fontSize = 13.sp, color = if (on) Dicto.Accent else Dicto.InkSecondary, fontWeight = FontWeight.Medium) }
+                        ) { Text("${tr(f.label)} · $n", fontSize = 13.sp, color = if (on) Dicto.Accent else Dicto.InkSecondary, fontWeight = FontWeight.Medium) }
                     }
                 }
             }
@@ -454,24 +455,24 @@ fun ModelPickerContent(
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             val typed = query.trim()
             if (typed.isNotEmpty() && all.none { it.equals(typed, ignoreCase = true) }) {
-                item { PickRow(DictoIcons.Pencil, "Utiliser « $typed »", "Nom saisi à la main", selected = false) { onPick(typed) } }
+                item { PickRow(DictoIcons.Pencil, tr("Utiliser « %1\$s »", typed), tr("Nom saisi à la main"), selected = false) { onPick(typed) } }
             }
             when {
                 error != null && models == null -> item {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Impossible de charger la liste : $error", color = Dicto.OnRecordingContainer, fontSize = 13.sp)
-                        Text("Vérifie la clé et l'adresse, ou saisis le nom du modèle ci-dessus.", color = Dicto.InkMuted, fontSize = 12.sp)
-                        TextButton(onClick = onRetry) { Text("Réessayer", color = Dicto.Accent) }
+                        Text(tr("Impossible de charger la liste : %1\$s", error), color = Dicto.OnRecordingContainer, fontSize = 13.sp)
+                        Text(tr("Vérifie la clé et l'adresse, ou saisis le nom du modèle ci-dessus."), color = Dicto.InkMuted, fontSize = 12.sp)
+                        TextButton(onClick = onRetry) { Text(tr("Réessayer"), color = Dicto.Accent) }
                     }
                 }
                 models == null -> item {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         LinearProgressIndicator(color = Dicto.Accent, trackColor = Dicto.Border, modifier = Modifier.fillMaxWidth())
-                        Text("Chargement des modèles…", color = Dicto.InkMuted, fontSize = 13.sp)
+                        Text(tr("Chargement des modèles…"), color = Dicto.InkMuted, fontSize = 13.sp)
                     }
                 }
                 shown.isEmpty() -> item {
-                    Text("Aucun modèle ne correspond.", color = Dicto.InkMuted, fontSize = 13.sp, modifier = Modifier.padding(20.dp))
+                    Text(tr("Aucun modèle ne correspond."), color = Dicto.InkMuted, fontSize = 13.sp, modifier = Modifier.padding(20.dp))
                 }
             }
             items(shown, key = { it }) { id -> PickRow(null, prettyModel(id), id, selected = id == current) { onPick(id) } }
@@ -492,6 +493,6 @@ private fun PickRow(icon: ImageVector?, title: String, detail: String, selected:
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Dicto.Accent else Dicto.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(detail, fontSize = 11.sp, fontFamily = Mono, color = Dicto.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (selected) Icon(DictoIcons.Check, contentDescription = "Sélectionné", tint = Dicto.Accent, modifier = Modifier.size(20.dp))
+        if (selected) Icon(DictoIcons.Check, contentDescription = tr("Sélectionné"), tint = Dicto.Accent, modifier = Modifier.size(20.dp))
     }
 }

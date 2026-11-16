@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import { api, formatDuration } from "./lib/api";
   import { app } from "./lib/store.svelte";
+  import { t } from "./lib/i18n.svelte";
   import Waveform from "./lib/Waveform.svelte";
 
   onMount(() => app.init());
@@ -19,7 +20,7 @@
         ? formatDuration(now - snap.startedAt)
         : "00:00"
       : snap.pending > 0
-        ? "Transcription…"
+        ? t("Transcription…")
         : "",
   );
 </script>
@@ -35,7 +36,7 @@
   {/if}
   <span class="time">{label}</span>
   {#if snap.active}
-    <button aria-label="Annuler la dictée" onclick={() => api.cancel()}><kbd>Échap</kbd></button>
+    <button aria-label={t("Annuler la dictée")} onclick={() => api.cancel()}><kbd>{t("Échap")}</kbd></button>
   {/if}
 </div>
 
@@ -61,7 +62,7 @@
     padding: 0 10px 0 8px;
     border-radius: 23px;
     background: var(--overlay);
-    box-shadow: 0 6px 16px rgba(43, 35, 29, 0.35);
+    box-shadow: var(--shadow-pop);
     color: var(--overlay-ink);
   }
 
@@ -77,7 +78,7 @@
   }
 
   .mic.idle {
-    background: var(--accent);
+    background: var(--accent-fill);
   }
 
   .time {

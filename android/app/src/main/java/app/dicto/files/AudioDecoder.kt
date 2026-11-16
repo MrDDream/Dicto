@@ -1,5 +1,6 @@
 package app.dicto.files
 
+import app.dicto.i18n.tr
 import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -21,7 +22,7 @@ object AudioDecoder {
         extractor.setDataSource(context, uri, null)
         val track = (0 until extractor.trackCount).firstOrNull {
             extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
-        } ?: throw IllegalArgumentException("aucune piste audio dans ce fichier")
+        } ?: throw IllegalArgumentException(tr("aucune piste audio dans ce fichier"))
         extractor.selectTrack(track)
         val format = extractor.getTrackFormat(track)
         val mime = format.getString(MediaFormat.KEY_MIME)!!

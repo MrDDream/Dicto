@@ -1,0 +1,394 @@
+# Anglais de chaque texte source français de l'app (voir I18n.kt) : français<TAB>anglais, une ligne par texte.
+Dictée en cours	Dictation in progress
+Affichée tant que le micro est ouvert.	Shown while the microphone is open.
+Téléchargement des modèles	Model downloads
+Fichier audio	Audio file
+Réglages	Settings
+Bonjour	Hello
+Que veux-tu dicter aujourd'hui ?	What would you like to dictate today?
+Choisir un modèle	Choose a model
+%1$s · en ligne	%1$s · online
+Aucun modèle installé ni service configuré	No model installed and no service set up
+Gérer les modèles…	Manage models…
+Auto	Auto
+Langue : %1$s	Language: %1$s
+Fermer	Close
+Transcription	Transcript
+Je t'écoute · %1$s	Listening · %1$s
+Transcription…	Transcribing…
+Le texte dicté apparaîtra ici.	Your dictated text will appear here.
+Copier	Copy
+Partager	Share
+Effacer	Clear
+Reformuler	Rewrite
+Retouche impossible : %1$s	Touch-up failed: %1$s
+Appuie pour terminer	Tap to finish
+Appuie pour parler	Tap to speak
+Je transcris dès que tu fais une pause	I transcribe as soon as you pause
+Écoute continue · appuie pour couper	Listening continuously · tap to stop
+Démarrer l’écoute continue	Start continuous listening
+Relâche pour transcrire	Release to transcribe
+Maintiens pour parler	Hold to speak
+Modèles	Models
+Aucun moteur choisi	No engine selected
+En service	In use
+Choisis un modèle ci-dessous	Choose a model below
+Hors ligne · prêt	Offline · ready
+En ligne · prêt	Online · ready
+Chargement du modèle…	Loading the model…
+Indisponible : %1$s	Unavailable: %1$s
+Hors ligne, ta voix reste sur le téléphone. Touche une carte pour ses détails.	Offline, your voice stays on the phone. Tap a card for its details.
+Toutes les langues	All languages
+Conseillés	Recommended
+Autres modèles	Other models
+Wi-Fi seulement	Wi-Fi only
+Aucun modèle installé	No model installed
+%1$s installé(s) · %2$s utilisés	%1$s installed · %2$s used
+Télécharger en Wi-Fi seulement	Download on Wi-Fi only
+Supprimer %1$s ?	Delete %1$s?
+%1$s seront libérés. Tu pourras le retélécharger.	%1$s will be freed. You can download it again later.
+Supprimer	Delete
+Annuler	Cancel
+Masquer les détails	Hide details
+Voir les détails	Show details
+En attente du réseau (Wi-Fi)…	Waiting for the network (Wi-Fi)…
+En attente du réseau…	Waiting for the network…
+%1$s %% · %2$s sur %3$s	%1$s%% · %2$s of %3$s
+Échec, touche ↓ pour réessayer	Failed, tap ↓ to retry
+En service · %1$s	In use · %1$s
+Installé · %1$s	Installed · %1$s
+Interrompu à %1$s %%	Stopped at %1$s%%
+Rapide	Fast
+Précis	Accurate
+En direct	Live
+ponctuation et majuscules	punctuation and capitals
+sans ponctuation	no punctuation
+licence %1$s	licence %1$s
+Utiliser	Use
+Annuler le téléchargement de %1$s	Cancel the download of %1$s
+Télécharger %1$s, %2$s	Download %1$s, %2$s
+%1$s : %2$s sur 4	%1$s: %2$s of 4
+L'audio est envoyé au service choisi. Le service activé remplace le modèle local ; la roue dentée règle la clé, l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore).	The audio is sent to the service you pick. The active service replaces the local model; the gear sets the key, the address and the model. Keys stay encrypted on the device (Android Keystore).
+Claude, Ollama et la retouche	Claude, Ollama and touch-up
+Claude, OpenAI, Gemini et Ollama peuvent retoucher le texte (ponctuation, style, traduction) : Réglages › Retouche par IA. Claude ne transcrit pas l'audio lui-même.	Claude, OpenAI, Gemini and Ollama can touch up the text (punctuation, style, translation): Settings › AI touch-up. Claude does not transcribe the audio itself.
+99 langues	99 languages
+1 600+ langues	1,600+ languages
+36 langues	36 languages
+multilingue	multilingual
+%1$s langues	%1$s languages
+%1$s langues dont %2$s	%1$s languages including %2$s
+Retour	Back
+Crédits et licences	Credits and licences
+Dicto est fait de travaux ouverts. Les modèles se téléchargent depuis leurs dépôts d'origine ; touche une ligne pour ouvrir sa source et sa licence.	Dicto is built from open work. Models are downloaded from their original repositories; tap a line to open its source and licence.
+Modèles de reconnaissance vocale	Speech recognition models
+Logiciels	Software
+Polices	Fonts
+Ouvrir la source	Open the source
+Quand tu dictes dans une app, ses réglages remplacent les réglages généraux. L'app est reconnue quand le clavier Dicto est ton clavier en cours.	When you dictate in an app, its settings replace the general ones. The app is recognised when the Dicto keyboard is your current keyboard.
+Supprimer le profil	Delete the profile
+Ajouter un profil	Add a profile
+sans retouche	no touch-up
+réglages généraux	general settings
+Choisir une app	Choose an app
+Rechercher	Search
+Langue	Language
+Habituelle	Usual
+Retouche	Touch-up
+Aucune	None
+Mode	Mode
+Enregistrer	Save
+Historique	History
+Tes dictées s'afficheront ici, y compris celles faites avec le clavier Dicto.	Your dictations will show up here, including those made with the Dicto keyboard.
+Aucun résultat.	No results.
+Fichiers audio	Audio files
+Transcrire un enregistrement	Transcribe a recording
+et l'audio des vidéos MP4 ou MKV	and the audio of MP4 or MKV videos
+Choisir un fichier	Choose a file
+Ou partage un message vocal vers Dicto depuis n'importe quelle app.	Or share a voice message to Dicto from any app.
+Moteur	Engine
+Horodatage	Timestamps
+Chaque passage avec son minutage	Each passage with its timing
+Toujours	Always
+Séparer les voix	Separate speakers
+Arrive dans une prochaine version	Coming in a future version
+Bientôt	Soon
+File d'attente	Queue
+En attente	Waiting
+Lecture %1$s %%	Reading %1$s%%
+Terminé	Done
+Échec : %1$s	Failed: %1$s
+Annulé	Cancelled
+Ouvrir	Open
+Retirer	Remove
+Résumé	Summary
+Aucune parole détectée.	No speech detected.
+Résumer avec un LLM	Summarise with an LLM
+Résumé ✓	Summary ✓
+Résumé impossible : %1$s	Summary failed: %1$s
+Apparence	Appearance
+Langue de la dictée	Dictation language
+« Auto » détecte la langue à chaque phrase.	“Auto” detects the language of each sentence.
+Pendant la dictée	While dictating
+Commandes vocales	Voice commands
+« nouvelle ligne », « nouveau paragraphe », « efface ça »	“new line”, “new paragraph”, “delete that” (said in French for now)
+Texte en direct	Live text
+Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de batterie.	Shows the sentence while you speak, with the fast models. Uses a little more battery.
+Clavier Dicto	Dicto keyboard
+Écouter dès l'ouverture	Listen as soon as it opens
+Passe sur le clavier Dicto et parle, sans toucher le micro.	Switch to the Dicto keyboard and speak, without touching the mic.
+Revenir à mon clavier	Back to my keyboard
+Une fois la dictée arrêtée et le texte écrit, ton clavier habituel revient.	Once dictation stops and the text is written, your usual keyboard comes back.
+Vocabulaire	Vocabulary
+Noms propres et mots techniques que le modèle doit connaître.	Names and technical words the model should know.
+Ajouter un mot	Add a word
+Ajouter	Add
+Retirer %1$s	Remove %1$s
+Retouche par IA	AI touch-up
+Ponctuation, style, traduction.	Punctuation, style, translation.
+Profils par app	Per-app profiles
+Langue, retouche et mode selon l'app où tu écris.	Language, touch-up and mode depending on the app you write in.
+Diagnostic	Diagnostics
+Les derniers événements du clavier et de la bulle, gardés sur le téléphone.	The latest keyboard and bubble events, kept on the phone.
+Dicto a planté récemment : le détail est dans le journal.	Dicto crashed recently: the details are in the log.
+Si quelque chose ne marche pas, copie le journal et colle-le dans ton message.	If something does not work, copy the log and paste it into your message.
+Copier le journal	Copy the log
+Journal copié	Log copied
+Mises à jour	Updates
+Les nouvelles versions publiées sur GitHub.	New versions published on GitHub.
+À propos	About
+Transcription locale par sherpa-onnx et whisper.cpp. Modèles de NVIDIA, Meta, OpenAI et Bofeng Huang.	On-device transcription with sherpa-onnx and whisper.cpp. Models by NVIDIA, Meta, OpenAI and Bofeng Huang.
+Vérifier automatiquement	Check automatically
+Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.	Once a day, Dicto checks GitHub for a newer version.
+Vérification…	Checking…
+Vérifier maintenant	Check now
+Dicto est à jour (%1$s).	Dicto is up to date (%1$s).
+Dicto %1$s est disponible.	Dicto %1$s is available.
+Vérification impossible.	Could not check.
+Langue de l'app	App language
+Thème	Theme
+Clair	Light
+Sombre	Dark
+« Auto » suit les réglages du téléphone.	“Auto” follows the phone's settings.
+Déclencheurs	Triggers
+Dicte depuis n'importe quelle app, sans ouvrir Dicto. Le texte arrive dans le champ où tu écris.	Dictate from any app without opening Dicto. The text lands in the field you are typing in.
+En cours : le texte s'écrit directement	Current: the text is typed directly
+Activé	Enabled
+Pour écrire le texte dans tes apps	To type the text into your apps
+En cours	Current
+Choisir	Choose
+Activer	Enable
+Pour passer à Dicto en une touche depuis Gboard : dans ses paramètres, Préférences, active « Afficher la touche de changement de langue ». Le globe 🌐 bascule alors sur le clavier Dicto, qui écoute aussitôt ; touche ■ quand tu as fini, le texte s'écrit et Gboard revient. Pour rester sur Dicto, coupe « Revenir à mon clavier » dans Réglages. La bulle et « OK Dicto » écrivent aussi par lui.	To switch to Dicto with one key from Gboard: in its settings, Preferences, turn on “Show language switch key”. The globe 🌐 then switches to the Dicto keyboard, which starts listening; tap ■ when you are done, the text is typed and Gboard comes back. To stay on Dicto, turn off “Back to my keyboard” in Settings. The bubble and “OK Dicto” also type through it.
+Active « Clavier Dicto » dans la liste des claviers d'Android. Sans lui, le texte dicté depuis la bulle est copié, à coller toi-même.	Enable “Dicto” in Android's list of keyboards. Without it, text dictated from the bubble is copied for you to paste.
+Bouton flottant	Floating button
+Une bulle au bord de l'écran	A bubble at the edge of the screen
+Toucher	Tap
+mode choisi	chosen mode
+Appui long	Long press
+maintenu	hold
+Glisser	Drag
+déplacer, ou vers ✕ pour masquer	move it, or onto ✕ to hide
+pour voir la bulle	to see the bubble
+À la voix	By voice
+Écouté sur le téléphone uniquement	Heard on the phone only
+Autorise d'abord le micro depuis l'écran Dictée.	Allow the microphone first from the Dictation screen.
+Activation à la voix	Voice activation
+Ta phrase d'appel	Your wake phrase
+« Ok Google » est réservé à Google, choisis la tienne : deux ou trois mots, prononcés à l'anglaise. Mise en pause écran éteint et en économie d'énergie.	“Ok Google” is reserved by Google, so pick your own: two or three words, pronounced in English. Paused when the screen is off and in battery saver.
+J'écoute	Listening
+pour que la dictée s'ouvre seule (sinon, une notification « Touche pour dicter »)	so dictation opens by itself (otherwise, a “Tap to dictate” notification)
+Geste depuis le bord	Edge swipe
+Glisser vers l'intérieur, à droite	Swipe inwards from the right edge
+Tuile Réglages rapides	Quick Settings tile
+Affiche ou masque la bulle depuis le volet de notifications	Shows or hides the bubble from the notification shade
+Assistant par défaut	Default assistant
+Appui long sur Power ou coin de l'écran	Long press on Power or a screen corner
+pour activer le geste	to enable the gesture
+Autorise « Afficher par-dessus les autres apps » %1$s.	Allow “Display over other apps” %1$s.
+« Accès refusé » ou réglage grisé ? Android verrouille ce réglage pour les applis installées hors boutique. Ouvre les infos de Dicto, touche ⋮ en haut à droite, puis « Autoriser les paramètres restreints ». Reviens ensuite activer l'autorisation.	“Access denied” or a greyed-out setting? Android locks it for apps installed outside a store. Open Dicto's app info, tap ⋮ at the top right, then “Allow restricted settings”. Then come back and grant the permission.
+Infos de Dicto	Dicto app info
+Autoriser	Allow
+Bulle Dicto	Dicto bubble
+Ouvre le volet des réglages rapides, touche le crayon et ajoute « Dicto ».	Open the Quick Settings panel, tap the pencil and add “Dicto”.
+Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut tourner sur ton propre PC. La roue dentée règle la clé, l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore).	The active provider receives the transcribed text (never the audio); Ollama can run on your own PC. The gear sets the key, the address and the model. Keys stay encrypted on the device (Android Keystore).
+Consigne	Instruction
+Personnalisée	Custom
+Ta consigne	Your instruction
+Retoucher chaque dictée	Touch up every dictation
+Sinon, utilise « Reformuler » dans l'écran Dictée	Otherwise, use “Rewrite” on the Dictation screen
+clé	key
+http://IP-du-serveur:8000/v1	http://server-IP:8000/v1
+Serveur compatible OpenAI : speaches, faster-whisper-server, LocalAI…	OpenAI-compatible server: speaches, faster-whisper-server, LocalAI…
+Local (Ollama, LM Studio…)	Local (Ollama, LM Studio…)
+Autre (compatible OpenAI)	Other (OpenAI-compatible)
+http://IP-du-PC:11434	http://PC-IP:11434
+http://IP-du-PC:1234/v1	http://PC-IP:1234/v1
+Ollama : lancer avec OLLAMA_HOST=0.0.0.0 pour l'atteindre depuis le téléphone.	Ollama: start it with OLLAMA_HOST=0.0.0.0 to reach it from the phone.
+LM Studio, llama.cpp server, vLLM… (adresse se terminant par /v1).	LM Studio, llama.cpp server, vLLM… (address ending in /v1).
+Actif	Active
+Non configuré	Not set up
+Configurer %1$s	Set up %1$s
+Clé enregistrée	Key saved
+Clé API requise	API key required
+Clé API facultative	API key optional
+Adresse de l'API	API address
+Nouvelle clé API (facultatif)	New API key (optional)
+Clé API	API key
+Clé API (facultative)	API key (optional)
+Masquer	Hide
+Afficher	Show
+Modèle	Model
+Connexion OK · %1$s modèle(s) disponible(s)	Connected · %1$s model(s) available
+Tester	Test
+Oublier la clé %1$s	Forget the %1$s key
+Rechercher un modèle	Search for a model
+Utiliser « %1$s »	Use “%1$s”
+Nom saisi à la main	Name typed by hand
+Impossible de charger la liste : %1$s	Could not load the list: %1$s
+Vérifie la clé et l'adresse, ou saisis le nom du modèle ci-dessus.	Check the key and the address, or type the model name above.
+Réessayer	Retry
+Chargement des modèles…	Loading models…
+Aucun modèle ne correspond.	No model matches.
+Sélectionné	Selected
+Vérifier les mises à jour ?	Check for updates?
+Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour.	Once a day, Dicto can check GitHub for a new version and offer it to you. Nothing else is sent. You can change your mind in Settings › Updates.
+Non merci	No thanks
+Oui, vérifier	Yes, check
+Dicto %1$s est disponible	Dicto %1$s is available
+Tu as la version %1$s	You have version %1$s
+Pas de notes pour cette version.	No notes for this version.
+Autorise Dicto à installer des applis, puis touche « Installer ».	Allow Dicto to install apps, then tap “Install”.
+Ignorer	Skip
+Plus tard	Later
+Installer	Install
+Téléchargement…	Downloading…
+Ouvrir la page	Open the page
+Télécharger et installer	Download and install
+Somme de contrôle introuvable pour %1$s : mise à jour refusée.	No checksum found for %1$s: update refused.
+La mise à jour n'est pas signée par la même clé que l'application installée : elle a été supprimée.	The update is not signed with the same key as the installed app: it was deleted.
+Le fichier téléchargé ne correspond pas à la somme de contrôle de la version : il a été supprimé.	The downloaded file does not match the release checksum: it was deleted.
+Micro non autorisé	Microphone not allowed
+Je t'écoute	Listening
+En écoute	Listening
+Aucun modèle choisi	No model selected
+Mode : %1$s, toucher pour changer	Mode: %1$s, tap to change
+Ouvrir Dicto pour autoriser le micro	Open Dicto to allow the microphone
+Le texte arrive…	Text on its way…
+Touche le micro et parle : le texte s'écrit tout seul.	Tap the mic and speak: the text types itself.
+Changer de clavier	Switch keyboard
+Espace	Space
+Entrée	Enter
+Arrêter la dictée	Stop dictation
+Dicter	Dictate
+Préparation…	Preparing…
+Android a refusé de démarrer l'écoute en arrière-plan : ouvre Dicto pour la relancer.	Android refused to start listening in the background: open Dicto to restart it.
+Téléchargement du modèle (18 Mo)…	Downloading the model (18 MB)…
+J'écoute « %1$s »	Listening for “%1$s”
+Touche pour dicter	Tap to dictate
+Autorise « Afficher par-dessus les autres apps » pour ouvrir la dictée directement.	Allow “Display over other apps” to open dictation directly.
+Mot d'activation	Wake word
+Insérer le texte	Insert the text
+Choisis un modèle dans l'onglet Modèles de Dicto.	Choose a model in Dicto's Models tab.
+Annuler la dictée	Cancel dictation
+Prêt	Ready
+Arrêter	Stop
+Zone de geste Dicto : glisser vers la gauche pour dicter	Dicto gesture area: swipe left to dictate
+Dicter avec Dicto	Dictate with Dicto
+Bulle masquée. Réactive-la dans Dicto › Déclencheurs.	Bubble hidden. Turn it back on in Dicto › Triggers.
+Masquer la bulle	Hide the bubble
+Bulle Dicto active	Dicto bubble on
+Geste Dicto actif	Dicto gesture on
+Touche la bulle pour dicter dans n'importe quelle app.	Tap the bubble to dictate in any app.
+Glisse depuis le bord droit de l'écran pour dicter.	Swipe from the right edge of the screen to dictate.
+Texte copié : aucun champ de saisie actif.	Text copied: no active text field.
+Texte copié. Choisis « Dicto » dans la liste des claviers pour qu'il s'écrive directement.	Text copied. Choose “Dicto” in the list of keyboards to have it typed directly.
+Texte copié. Active le clavier Dicto dans Déclencheurs pour l'écrire directement.	Text copied. Enable the Dicto keyboard in Triggers to type it directly.
+Affichée	Shown
+Masquée	Hidden
+Dicto transcrit ce que tu dis.	Dicto is transcribing what you say.
+Aucun moteur	No engine
+Autorise le micro pour dicter.	Allow the microphone to dictate.
+Le modèle se charge, encore un instant…	The model is loading, just a moment…
+Choisis un modèle ou un service dans l'onglet Modèles.	Choose a model or a service in the Models tab.
+configure la retouche dans les Réglages	set up touch-up in Settings
+consigne vide	empty instruction
+chargement…	loading…
+en ligne	online
+modèle non installé	model not installed
+aucun modèle choisi	no model selected
+Impossible d'ouvrir le micro.	Could not open the microphone.
+Android a refusé l'accès au micro en arrière-plan.	Android refused microphone access in the background.
+Transcription impossible : %1$s	Transcription failed: %1$s
+réseau indisponible (%1$s)	network unavailable (%1$s)
+%1$s refuse la clé d'API	%1$s rejects the API key
+%1$s : quota dépassé, réessaie plus tard	%1$s: quota exceeded, try again later
+stockage : %1$s	storage: %1$s
+annulé	cancelled
+Mon serveur	My server
+Serveur	Server
+Téléchargement de %1$s	Downloading %1$s
+aucune piste audio dans ce fichier	no audio track in this file
+choisis d'abord un modèle	choose a model first
+Transcription de fichiers	File transcription
+Dicto transcrit tes enregistrements sur le téléphone.	Dicto is transcribing your recordings on the phone.
+Dictée	Dictation
+Marche/arrêt	On/off
+Continu	Continuous
+Maintenu	Hold
+Habituel	Usual
+Un appui pour commencer, un second pour terminer.	One tap to start, another to finish.
+J’écoute en continu et transcris chaque phrase dès que tu fais une pause.	I listen continuously and transcribe each sentence as soon as you pause.
+Garde le doigt appuyé pendant que tu parles, relâche pour transcrire.	Keep your finger down while you speak, release to transcribe.
+Sur le téléphone	On the phone
+En ligne	Online
+Texte	Text
+Rapides	Fast
+Puissants	Powerful
+Raisonnement	Reasoning
+Tous	All
+Nettoyer	Clean up
+Mail	E-mail
+Notes	Notes
+Message	Message
+Formel	Formal
+Traduire en anglais	Translate to English
+Traduire en français	Translate to French
+k2-fsa (Next-gen Kaldi) : moteurs Canary, Parakeet, Nemotron, Omnilingual, détection de voix et mot d'activation.	k2-fsa (Next-gen Kaldi): Canary, Parakeet, Nemotron and Omnilingual engines, voice detection and wake word.
+Microsoft : exécution des modèles sherpa-onnx.	Microsoft: runs the sherpa-onnx models.
+whisper.cpp et ggml	whisper.cpp and ggml
+Georgi Gerganov et contributeurs : moteur Whisper.	Georgi Gerganov and contributors: Whisper engine.
+Mozilla : pont entre le cœur Rust et Kotlin.	Mozilla: bridge between the Rust core and Kotlin.
+Java Native Access : appel du cœur Rust depuis Android.	Java Native Access: calls the Rust core from Android.
+Bibliothèques Rust	Rust libraries
+tokio, reqwest, rustls, serde, hound, tar, bzip2 et leurs dépendances ; SQLite (domaine public) via rusqlite.	tokio, reqwest, rustls, serde, hound, tar, bzip2 and their dependencies; SQLite (public domain) via rusqlite.
+Jetpack Compose et AndroidX	Jetpack Compose and AndroidX
+Google : interface, WorkManager, cycle de vie.	Google: interface, WorkManager, lifecycle.
+Kotlin et kotlinx.coroutines	Kotlin and kotlinx.coroutines
+Icône de la roue dentée.	Gear icon.
+Logos des fournisseurs	Provider logos
+Marques déposées	Trademarks
+Fichiers des services publiés sur Wikimedia Commons. Les marques appartiennent à leurs propriétaires et servent seulement à nommer le service.	Service files published on Wikimedia Commons. Trademarks belong to their owners and are only used to name the service.
+Mathieu Triay et les auteurs de Bricolage Grotesque.	Mathieu Triay and the Bricolage Grotesque authors.
+Erik Kennedy et les auteurs de Figtree.	Erik Kennedy and the Figtree authors.
+Très léger et rapide, avec ponctuation. Français, anglais, allemand, espagnol.	Very light and fast, with punctuation. French, English, German, Spanish.
+Excellente précision dans 25 langues européennes, ponctuation incluse. Plus rapide que Whisper à précision égale.	Excellent accuracy in 25 European languages, punctuation included. Faster than Whisper at the same accuracy.
+Le texte s'affiche pendant que tu parles. Environ 36 langues.	The text appears while you speak. About 36 languages.
+1 600 langues, dont beaucoup de langues rares. Sans ponctuation.	1,600 languages, many of them rare. No punctuation.
+Très rapide, précision simple. Pour les vieux téléphones.	Very fast, basic accuracy. For older phones.
+Rapide, correct pour des messages courts. 99 langues.	Fast, fine for short messages. 99 languages.
+Bon compromis dans 99 langues.	A good balance in 99 languages.
+Très précis dans 99 langues. Lent sur téléphone sans GPU.	Very accurate in 99 languages. Slow on phones without a GPU.
+Très précis, plus lent.	Very accurate, slower.
+Quasi identique à la version complète, deux fois plus léger.	Almost identical to the full version, half the size.
+Précision maximale. Conseillé avec un GPU.	Maximum accuracy. Best with a GPU.
+Whisper large-v3 spécialisé en français (bofenghuang), allégé. Pour le bureau.	Whisper large-v3 specialised in French (bofenghuang), lighter. For the desktop.
+Whisper large-v3 spécialisé en français (bofenghuang). Le plus précis en français, lent.	Whisper large-v3 specialised in French (bofenghuang). The most accurate in French, slow.
+NVIDIA (nvidia/canary-180m-flash), converti en ONNX par k2-fsa/sherpa-onnx	NVIDIA (nvidia/canary-180m-flash), converted to ONNX by k2-fsa/sherpa-onnx
+NVIDIA (nvidia/parakeet-tdt-0.6b-v3), converti en ONNX par k2-fsa/sherpa-onnx	NVIDIA (nvidia/parakeet-tdt-0.6b-v3), converted to ONNX by k2-fsa/sherpa-onnx
+NVIDIA (nvidia/nemotron-3.5-asr-streaming-0.6b), converti en ONNX par k2-fsa/sherpa-onnx	NVIDIA (nvidia/nemotron-3.5-asr-streaming-0.6b), converted to ONNX by k2-fsa/sherpa-onnx
+Meta (facebook/omniASR-CTC-300M), converti en ONNX par k2-fsa/sherpa-onnx	Meta (facebook/omniASR-CTC-300M), converted to ONNX by k2-fsa/sherpa-onnx
+OpenAI (Whisper), converti au format ggml par ggerganov/whisper.cpp	OpenAI (Whisper), converted to ggml by ggerganov/whisper.cpp
+Bofeng Huang, à partir de Whisper large-v3 (OpenAI)	Bofeng Huang, based on Whisper large-v3 (OpenAI)
+Nemotron 3.5 en direct	Nemotron 3.5 streaming
+Whisper français distillé	Whisper French (distilled)
+Whisper français	Whisper French
+Détection de la voix (Silero)	Voice detection (Silero)

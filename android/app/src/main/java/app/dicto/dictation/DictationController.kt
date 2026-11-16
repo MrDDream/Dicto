@@ -1,5 +1,6 @@
 package app.dicto.dictation
 
+import app.dicto.i18n.tr
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -67,7 +68,7 @@ data class DictationUi(
     val message: String? = null,
     /** Texte provisoire pendant qu'on parle (modèles « en direct »). */
     val partial: String = "",
-    val engine: EngineStatus = EngineStatus(EngineStatus.Kind.NONE, "Aucun moteur"),
+    val engine: EngineStatus = EngineStatus(EngineStatus.Kind.NONE, tr("Aucun moteur")),
 ) {
     val isActive get() = state != State.IDLE
     val transcript get() = joinChunks(chunks)
@@ -176,14 +177,14 @@ class DictationController(private val context: Context) : DictationListener {
     /** Doigt posé / touche enfoncée. Le cœur décide selon le mode (bascule, maintien…). */
     fun press() {
         if (!hasMicPermission()) {
-            showMessage("Autorise le micro pour dicter.")
+            showMessage(tr("Autorise le micro pour dicter."))
             return
         }
         if (!_ui.value.engine.isReady && !_ui.value.isActive) {
             showMessage(
                 when (_ui.value.engine.kind) {
-                    EngineStatus.Kind.LOADING -> "Le modèle se charge, encore un instant…"
-                    else -> "Choisis un modèle ou un service dans l'onglet Modèles."
+                    EngineStatus.Kind.LOADING -> tr("Le modèle se charge, encore un instant…")
+                    else -> tr("Choisis un modèle ou un service dans l'onglet Modèles.")
                 },
             )
             return
@@ -267,8 +268,8 @@ class DictationController(private val context: Context) : DictationListener {
 
     /** « Reformuler » : retouche tout le texte de l'écran Dictée avec un préréglage. */
     suspend fun refineTranscript(presetId: String): Result<Unit> = runCatching {
-        val client = refineClient() ?: throw IllegalStateException("configure la retouche dans les Réglages")
-        val instruction = presetInstruction(presetId) ?: throw IllegalStateException("consigne vide")
+        val client = refineClient() ?: throw IllegalStateException(tr("configure la retouche dans les Réglages"))
+        val instruction = presetInstruction(presetId) ?: throw IllegalStateException(tr("consigne vide"))
         val text = _ui.value.transcript
         if (text.isBlank()) return@runCatching
         val refined = client.refine(instruction, text)
@@ -279,13 +280,13 @@ class DictationController(private val context: Context) : DictationListener {
     fun refreshEngine(force: Boolean = false) {
         val choice = app.settings.engine.value
         if (choice == null) {
-            setEngineStatus(EngineStatus(EngineStatus.Kind.NONE, "Aucun moteur"))
+            setEngineStatus(EngineStatus(EngineStatus.Kind.NONE, tr("Aucun moteur")))
             loadedEngineKey = null
             return
         }
         if (!force && choice.key == loadedEngineKey && _ui.value.engine.isReady) return
         engineJob?.cancel()
-        setEngineStatus(EngineStatus(EngineStatus.Kind.LOADING, engineLabel(choice), "chargement…"))
+        setEngineStatus(EngineStatus(EngineStatus.Kind.LOADING, engineLabel(choice), tr("chargement…")))
         engineJob = scope.launch(Dispatchers.IO) {
             try {
                 val engine = buildEngine(choice)
@@ -293,7 +294,7 @@ class DictationController(private val context: Context) : DictationListener {
                 loadedEngine = engine
                 loadedEngineKey = choice.key
                 setEngineStatus(
-                    EngineStatus(EngineStatus.Kind.READY, engineLabel(choice), if (engine.isLocal()) "local" else "en ligne"),
+                    EngineStatus(EngineStatus.Kind.READY, engineLabel(choice), if (engine.isLocal()) "local" else tr("en ligne")),
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "moteur ${choice.key}", e)
@@ -305,18 +306,18 @@ class DictationController(private val context: Context) : DictationListener {
 
     private fun buildEngine(choice: EngineChoice): Engine = when (choice) {
         is EngineChoice.Local -> {
-            if (!app.models.isInstalled(choice.modelId)) throw IllegalStateException("modèle non installé")
+            if (!app.models.isInstalled(choice.modelId)) throw IllegalStateException(tr("modèle non installé"))
             app.models.createEngine(choice.modelId, false)
         }
         is EngineChoice.Cloud -> {
             val cfg = app.settings.cloud.value[choice.provider]
-            val model = cfg?.model ?: throw IllegalStateException("aucun modèle choisi")
+            val model = cfg?.model ?: throw IllegalStateException(tr("aucun modèle choisi"))
             Engine.cloud(choice.provider, cfg.baseUrl, app.secrets.get(secretKeyFor(choice.provider)), model)
         }
     }
 
     private fun engineLabel(choice: EngineChoice): String = when (choice) {
-        is EngineChoice.Local -> app.models.models().firstOrNull { it.id == choice.modelId }?.name ?: choice.modelId
+        is EngineChoice.Local -> app.models.models().firstOrNull { it.id == choice.modelId }?.name?.let { tr(it) } ?: choice.modelId
         is EngineChoice.Cloud -> {
             val model = app.settings.cloud.value[choice.provider]?.model
             if (model != null) "${choice.provider.label} · $model" else choice.provider.label
@@ -332,7 +333,7 @@ class DictationController(private val context: Context) : DictationListener {
             DictationService.start(context)
             if (!recorder.start()) {
                 isCapturing = false
-                showMessage("Impossible d'ouvrir le micro.")
+                showMessage(tr("Impossible d'ouvrir le micro."))
                 dictation.trigger(uniffi.dicto_ffi.Trigger.CANCEL)
             }
         } else {
@@ -347,7 +348,7 @@ class DictationController(private val context: Context) : DictationListener {
     fun onServiceDenied(e: Exception) {
         Log.w(TAG, "service micro refusé", e)
         if (isCapturing) {
-            showMessage("Android a refusé l'accès au micro en arrière-plan.")
+            showMessage(tr("Android a refusé l'accès au micro en arrière-plan."))
             cancel()
         }
     }
@@ -398,7 +399,7 @@ class DictationController(private val context: Context) : DictationListener {
 
     override fun onError(utteranceId: ULong, error: FfiException) {
         _ui.update { it.copy(pending = (it.pending - 1).coerceAtLeast(0)) }
-        showMessage("Transcription impossible : ${error.userMessage()}")
+        showMessage(tr("Transcription impossible : %1\$s", error.userMessage()))
     }
 
     // ------------------------------------------------------------------------------------
@@ -422,15 +423,15 @@ class DictationController(private val context: Context) : DictationListener {
 
 /** Message lisible pour une erreur du cœur ou de Kotlin. */
 fun Throwable.userMessage(): String = when (this) {
-    is FfiException.Network -> "réseau indisponible ($detail)"
+    is FfiException.Network -> tr("réseau indisponible (%1\$s)", detail)
     is FfiException.Api -> when (status.toInt()) {
-        401, 403 -> "$provider refuse la clé d'API"
-        429 -> "$provider : quota dépassé, réessaie plus tard"
+        401, 403 -> tr("%1\$s refuse la clé d'API", provider)
+        429 -> tr("%1\$s : quota dépassé, réessaie plus tard", provider)
         else -> "$provider ($status) : $detail"
     }
     is FfiException.Model -> detail
-    is FfiException.Storage -> "stockage : $detail"
-    is FfiException.Cancelled -> "annulé"
+    is FfiException.Storage -> tr("stockage : %1\$s", detail)
+    is FfiException.Cancelled -> tr("annulé")
     is FfiException.Other -> detail
     else -> message ?: javaClass.simpleName
 }

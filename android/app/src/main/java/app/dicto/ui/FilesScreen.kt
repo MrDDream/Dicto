@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -71,9 +72,9 @@ fun FilesScreen(onBack: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader("Fichiers audio", onBack)
+        ScreenHeader(tr("Fichiers audio"), onBack)
         Text(
-            "Transcrire un enregistrement",
+            tr("Transcrire un enregistrement"),
             style = MaterialTheme.typography.bodyMedium,
             color = Dicto.InkMuted,
             modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp),
@@ -89,30 +90,30 @@ fun FilesScreen(onBack: () -> Unit) {
                     Icon(DictoIcons.Share, null, tint = Dicto.Accent, modifier = Modifier.size(22.dp))
                 }
                 Text("MP3, M4A, WAV, OGG, OPUS, FLAC", style = MaterialTheme.typography.titleSmall)
-                Text("et l'audio des vidéos MP4 ou MKV", style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted)
-                PrimaryButton("Choisir un fichier", { pick.launch(arrayOf("audio/*", "video/*")) })
+                Text(tr("et l'audio des vidéos MP4 ou MKV"), style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted)
+                PrimaryButton(tr("Choisir un fichier"), { pick.launch(arrayOf("audio/*", "video/*")) })
                 Text(
-                    "Ou partage un message vocal vers Dicto depuis n'importe quelle app.",
+                    tr("Ou partage un message vocal vers Dicto depuis n'importe quelle app."),
                     style = MaterialTheme.typography.labelSmall,
                     color = Dicto.InkMuted,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
             }
             DictoCard {
-                SettingRow("Moteur", null) {
+                SettingRow(tr("Moteur"), null) {
                     Text(ui.engine.label, style = MaterialTheme.typography.labelMedium, color = if (ui.engine.isReady) Dicto.Accent else Dicto.OnRecordingContainer)
                 }
                 HorizontalDivider(color = Dicto.SurfaceSunken)
-                SettingRow("Langue", null) {
-                    Text(LANGUAGES.first { it.first == language }.second, style = MaterialTheme.typography.labelMedium)
+                SettingRow(tr("Langue"), null) {
+                    Text(tr(LANGUAGES.first { it.first == language }.second), style = MaterialTheme.typography.labelMedium)
                 }
                 HorizontalDivider(color = Dicto.SurfaceSunken)
-                SettingRow("Horodatage", "Chaque passage avec son minutage") { Pill("Toujours", Dicto.AccentContainer, Dicto.Accent) }
+                SettingRow(tr("Horodatage"), tr("Chaque passage avec son minutage")) { Pill(tr("Toujours"), Dicto.AccentContainer, Dicto.Accent) }
                 HorizontalDivider(color = Dicto.SurfaceSunken)
-                SettingRow("Séparer les voix", "Arrive dans une prochaine version") { Pill("Bientôt", Dicto.SurfaceSunken, Dicto.InkSecondary) }
+                SettingRow(tr("Séparer les voix"), tr("Arrive dans une prochaine version")) { Pill(tr("Bientôt"), Dicto.SurfaceSunken, Dicto.InkSecondary) }
             }
             if (items.isNotEmpty()) {
-                SectionTitle("File d'attente")
+                SectionTitle(tr("File d'attente"))
                 DictoCard(padding = PaddingValues(0.dp)) {
                     Column {
                         items.forEachIndexed { i, item ->
@@ -136,12 +137,12 @@ private fun QueueRow(item: FileItem, onOpen: () -> Unit) {
                     listOfNotNull(
                         item.durationMs.takeIf { it > 0 }?.let(::duration),
                         when (item.status) {
-                            FileItem.Status.QUEUED -> "En attente"
-                            FileItem.Status.DECODING -> "Lecture ${(item.progress * 100).toInt()} %"
+                            FileItem.Status.QUEUED -> tr("En attente")
+                            FileItem.Status.DECODING -> tr("Lecture %1\$s %%", (item.progress * 100).toInt())
                             FileItem.Status.TRANSCRIBING -> "${(item.progress * 100).toInt()} %"
-                            FileItem.Status.DONE -> "Terminé"
-                            FileItem.Status.FAILED -> "Échec : ${item.error}"
-                            FileItem.Status.CANCELLED -> "Annulé"
+                            FileItem.Status.DONE -> tr("Terminé")
+                            FileItem.Status.FAILED -> tr("Échec : %1\$s", item.error)
+                            FileItem.Status.CANCELLED -> tr("Annulé")
                         },
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.labelSmall,
@@ -149,10 +150,10 @@ private fun QueueRow(item: FileItem, onOpen: () -> Unit) {
                 )
             }
             when (item.status) {
-                FileItem.Status.DONE -> TonalButton("Ouvrir", onOpen)
+                FileItem.Status.DONE -> TonalButton(tr("Ouvrir"), onOpen)
                 FileItem.Status.QUEUED, FileItem.Status.DECODING, FileItem.Status.TRANSCRIBING ->
-                    TextButton(onClick = { FilesController.cancel(item.id) }) { Text("Annuler") }
-                else -> GhostButton(null, DictoIcons.Close, { FilesController.remove(item.id) }, contentDescription = "Retirer", tint = Dicto.InkMuted)
+                    TextButton(onClick = { FilesController.cancel(item.id) }) { Text(tr("Annuler")) }
+                else -> GhostButton(null, DictoIcons.Close, { FilesController.remove(item.id) }, contentDescription = tr("Retirer"), tint = Dicto.InkMuted)
             }
         }
         if (item.active) {
@@ -187,7 +188,7 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             summary?.let {
                 DictoCard {
-                    Text("Résumé", style = MaterialTheme.typography.titleSmall)
+                    Text(tr("Résumé"), style = MaterialTheme.typography.titleSmall)
                     Text(it, style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -198,7 +199,7 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
                         Text(s.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     }
                 }
-                if (t.segments.isEmpty()) Text(t.text.ifBlank { "Aucune parole détectée." }, style = MaterialTheme.typography.bodyMedium)
+                if (t.segments.isEmpty()) Text(t.text.ifBlank { tr("Aucune parole détectée.") }, style = MaterialTheme.typography.bodyMedium)
             }
         }
         FlowRow(
@@ -206,7 +207,7 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            TonalButton("Copier", { copy(context, t.text) }, icon = DictoIcons.Copy)
+            TonalButton(tr("Copier"), { copy(context, t.text) }, icon = DictoIcons.Copy)
             for ((format, ext) in listOf(ExportFormat.TXT to "txt", ExportFormat.SRT to "srt", ExportFormat.VTT to "vtt", ExportFormat.MD to "md")) {
                 TonalButton(".$ext", {
                     pending = format to base
@@ -214,7 +215,7 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
                 })
             }
             if (refineProvider != null) {
-                PrimaryButton(if (summary == null) "Résumer avec un LLM" else "Résumé ✓", {
+                PrimaryButton(if (summary == null) tr("Résumer avec un LLM") else tr("Résumé ✓"), {
                     scope.launch {
                         summary = "…"
                         summary = try {
@@ -223,7 +224,7 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
                                 t.text,
                             )
                         } catch (e: Exception) {
-                            "Résumé impossible : ${e.userMessage()}"
+                            tr("Résumé impossible : %1\$s", e.userMessage())
                         }
                     }
                 })

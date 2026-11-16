@@ -2,10 +2,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { Brand } from "./logos";
+import { i18n, t } from "./i18n.svelte";
 
 export type ListenMode = "pushToTalk" | "continuous" | "hold";
 export type Output = "type" | "paste" | "review";
 export type PillPosition = "bottom" | "hidden";
+export type UiLanguage = "auto" | "fr" | "en";
+export type Theme = "auto" | "light" | "dark";
 
 export interface EngineStatus {
   kind: "none" | "loading" | "ready" | "error";
@@ -43,6 +46,9 @@ export interface Settings {
   refinePreset: string;
   refineCustom: string;
   autoRefine: boolean;
+  /** Langue de l'interface et thème. */
+  uiLanguage: UiLanguage;
+  theme: Theme;
 }
 
 export interface ResultView {
@@ -155,6 +161,8 @@ export const api = {
   cancel: () => invoke<void>("cancel"),
   copyText: (text: string) => invoke<void>("copy_text", { text }),
   pauseShortcuts: (paused: boolean) => invoke<string[]>("pause_shortcuts", { paused }),
+  /** La langue effective de l'interface (« auto » résolu), pour le menu de l'icône et les fenêtres du système. */
+  setUiLocale: (lang: "fr" | "en") => invoke<void>("set_ui_locale", { lang }),
   listModels: () => invoke<ModelView[]>("list_models"),
   downloadModel: (id: string) => invoke<void>("download_model", { id }),
   cancelDownload: (id: string) => invoke<void>("cancel_download", { id }),
@@ -216,6 +224,7 @@ export const events = {
     listen<DownloadEvent>("dicto://download", (e) => f(e.payload)),
   fileProgress: (f: (fraction: number) => void): Promise<UnlistenFn> =>
     listen<number>("dicto://file-progress", (e) => f(e.payload)),
+  settings: (f: (s: Settings) => void): Promise<UnlistenFn> => listen<Settings>("dicto://settings", (e) => f(e.payload)),
   update: (f: (u: UpdateView) => void): Promise<UnlistenFn> => listen<UpdateView>("dicto://update", (e) => f(e.payload)),
   updateProgress: (f: (p: { done: number; total: number }) => void): Promise<UnlistenFn> =>
     listen<{ done: number; total: number }>("dicto://update-progress", (e) => f(e.payload)),
@@ -230,14 +239,14 @@ export const MODE_LABELS: Record<ListenMode, string> = {
 /** « Ctrl+Alt+Space » → ["Ctrl", "Alt", "Espace"], pour l'affichage en touches. */
 export function shortcutKeys(shortcut: string): string[] {
   const names: Record<string, string> = {
-    space: "Espace",
-    escape: "Échap",
-    enter: "Entrée",
-    backspace: "Retour",
+    space: t("Espace"),
+    escape: t("Échap"),
+    enter: t("Entrée"),
+    backspace: t("Retour"),
     tab: "Tab",
     commandorcontrol: navigator.platform.startsWith("Mac") ? "⌘" : "Ctrl",
     super: navigator.platform.startsWith("Mac") ? "⌘" : "Win",
-    shift: "Maj",
+    shift: t("Maj"),
   };
   const arrows: Record<string, string> = { arrowup: "↑", arrowdown: "↓", arrowleft: "←", arrowright: "→" };
   return shortcut
@@ -251,7 +260,7 @@ export function shortcutKeys(shortcut: string): string[] {
       // Codes du navigateur : KeyA → A, Digit1 → 1, Numpad1 → Pavé 1.
       if (/^key[a-z]$/i.test(k)) return k.slice(3).toUpperCase();
       if (/^digit\d$/i.test(k)) return k.slice(5);
-      if (/^numpad\d$/i.test(k)) return `Pavé ${k.slice(6)}`;
+      if (/^numpad\d$/i.test(k)) return t("Pavé %1", k.slice(6));
       return k.length === 1 ? k.toUpperCase() : k;
     });
 }
@@ -270,8 +279,9 @@ export function shortcutFromEvent(e: KeyboardEvent): string | null {
 }
 
 export function formatSize(bytes: number): string {
-  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1).replace(".", ",")} Go`;
-  return `${Math.max(1, Math.round(bytes / 1e6))} Mo`;
+  const fr = i18n.lang === "fr";
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1).replace(".", fr ? "," : ".")} ${fr ? "Go" : "GB"}`;
+  return `${Math.max(1, Math.round(bytes / 1e6))} ${fr ? "Mo" : "MB"}`;
 }
 
 export function formatDuration(ms: number): string {

@@ -1,5 +1,6 @@
 package app.dicto.ui
 
+import app.dicto.i18n.tr
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -55,7 +56,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) handleShare(intent)
-        setContent { DictoTheme { DictoRoot() } }
+        setContent {
+            DictoTheme {
+                // Barres du système : icônes claires sur le thème sombre, foncées sur le clair.
+                val dark = Dicto.palette.dark
+                androidx.compose.runtime.LaunchedEffect(dark) {
+                    val style = if (dark) androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    else androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                    enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                }
+                DictoRoot()
+            }
+        }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -169,7 +181,7 @@ private fun BottomNav(current: Tab, onSelect: (Tab) -> Unit) {
                             Icon(tab.icon, contentDescription = null, modifier = Modifier.size(20.dp))
                         }
                         Text(
-                            tab.label,
+                            tr(tab.label),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
                         )

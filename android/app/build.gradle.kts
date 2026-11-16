@@ -92,6 +92,12 @@ android {
             it.systemProperty("dicto.whisperModel", project.findProperty("dicto.whisperModel")?.toString().orEmpty())
             it.systemProperty("dicto.sampleWav", project.findProperty("dicto.sampleWav")?.toString().orEmpty())
             it.systemProperty("dicto.frWav", project.findProperty("dicto.frWav")?.toString().orEmpty())
+            // Captures d'écran : langue (fr, en) et thème (light, dark).
+            it.systemProperty("dicto.screenshotLang", project.findProperty("dicto.screenshotLang")?.toString() ?: "fr")
+            it.systemProperty("dicto.screenshotTheme", project.findProperty("dicto.screenshotTheme")?.toString() ?: "light")
+            // Une autre langue ou un autre thème : les tests doivent tourner de nouveau.
+            it.inputs.property("dicto.screenshotLang", project.findProperty("dicto.screenshotLang")?.toString() ?: "fr")
+            it.inputs.property("dicto.screenshotTheme", project.findProperty("dicto.screenshotTheme")?.toString() ?: "light")
             // sherpa-onnx et onnxruntime sont à côté de la bibliothèque de test.
             it.environment("LD_LIBRARY_PATH", hostLib.parent)
             // Captures d'écran écrites dans app/build/screenshots/ (ScreenshotTest).

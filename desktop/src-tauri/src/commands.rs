@@ -40,7 +40,17 @@ pub fn set_settings(core: Core_, settings: Settings) -> Vec<String> {
         || previous.shortcut_hold != settings.shortcut_hold;
     let errors = if shortcuts_changed { core.register_shortcuts() } else { Vec::new() };
     core.emit_snapshot();
+    // L'autre fenêtre (la pastille) suit la langue et le thème.
+    let _ = core.app.emit("dicto://settings", &settings);
     errors
+}
+
+/// La langue effective de l'interface (« auto » résolu par la fenêtre) : menu de l'icône et fenêtres du système.
+#[tauri::command]
+pub fn set_ui_locale(app: AppHandle, lang: String) {
+    if crate::locale::set(&lang) {
+        crate::tray::relabel(&app);
+    }
 }
 
 #[tauri::command]
@@ -501,7 +511,7 @@ pub async fn pick_audio_file(app: AppHandle) -> Option<String> {
     use tauri_plugin_dialog::DialogExt;
     app.dialog()
         .file()
-        .set_title("Fichier audio à transcrire")
+        .set_title(crate::locale::tr("Fichier audio à transcrire", "Audio file to transcribe"))
         .add_filter("Audio", &["mp3", "m4a", "aac", "mp4", "wav", "flac", "ogg", "oga", "mkv", "webm"])
         .blocking_pick_file()
         .and_then(|p| p.into_path().ok())
@@ -564,7 +574,7 @@ pub async fn export_file(app: AppHandle, core: State<'_, Arc<Core>>, format: Str
     let Some(path) = app
         .dialog()
         .file()
-        .set_title("Enregistrer la transcription")
+        .set_title(crate::locale::tr("Enregistrer la transcription", "Save the transcript"))
         .set_file_name(format!("{name}.{format}"))
         .add_filter(format.to_uppercase(), &[format.as_str()])
         .blocking_save_file()

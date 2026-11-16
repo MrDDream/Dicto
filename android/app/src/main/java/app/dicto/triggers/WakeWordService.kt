@@ -1,5 +1,6 @@
 package app.dicto.triggers
 
+import app.dicto.i18n.tr
 import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
@@ -42,7 +43,7 @@ class WakeWordService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     @Volatile private var detector: WakeWordDetector? = null
     private val recorder = MicRecorder(onAudio = ::onAudio, onLevel = {})
-    private var status = "Préparation…"
+    private var status = tr("Préparation…")
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = updateListening()
@@ -79,7 +80,7 @@ class WakeWordService : Service() {
             ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), micType())
         } catch (e: RuntimeException) {
             Log.w(TAG, "démarrage refusé", e)
-            state.value = "Android a refusé de démarrer l'écoute en arrière-plan : ouvre Dicto pour la relancer."
+            state.value = tr("Android a refusé de démarrer l'écoute en arrière-plan : ouvre Dicto pour la relancer.")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -92,7 +93,7 @@ class WakeWordService : Service() {
         val app = DictoApp.instance
         try {
             val dir = app.models.supportPath(KWS_MODEL) ?: run {
-                setStatus("Téléchargement du modèle (18 Mo)…")
+                setStatus(tr("Téléchargement du modèle (18 Mo)…"))
                 app.models.downloadSupport(KWS_MODEL, object : DownloadListener {
                     override fun onProgress(downloaded: ULong, total: ULong) = Unit
                 })
@@ -105,11 +106,11 @@ class WakeWordService : Service() {
                 if (phrase.trim().uppercase().startsWith("OK ")) add("OKAY " + phrase.trim().substring(3))
             }
             detector = WakeWordDetector(dir, variants, 0.75f)
-            setStatus("J'écoute « ${phrase.lowercase().replaceFirstChar { it.uppercase() }} »")
+            setStatus(tr("J'écoute « %1\$s »", phrase.lowercase().replaceFirstChar { it.uppercase() }))
             updateListening()
         } catch (e: Exception) {
             Log.w(TAG, "préparation", e)
-            setStatus("Indisponible : ${e.message}")
+            setStatus(tr("Indisponible : %1\$s", e.message))
         }
     }
 
@@ -145,8 +146,8 @@ class WakeWordService : Service() {
                     NOTIFICATION_ID + 1,
                     NotificationCompat.Builder(this, DictoApp.CHANNEL_DICTATION)
                         .setSmallIcon(R.drawable.ic_launcher_monochrome)
-                        .setContentTitle("Touche pour dicter")
-                        .setContentText("Autorise « Afficher par-dessus les autres apps » pour ouvrir la dictée directement.")
+                        .setContentTitle(tr("Touche pour dicter"))
+                        .setContentText(tr("Autorise « Afficher par-dessus les autres apps » pour ouvrir la dictée directement."))
                         .setContentIntent(intent)
                         .setAutoCancel(true)
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -168,7 +169,7 @@ class WakeWordService : Service() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, DictoApp.CHANNEL_DICTATION)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle("Mot d'activation")
+            .setContentTitle(tr("Mot d'activation"))
             .setContentText(status)
             .setOngoing(true)
             .setSilent(true)

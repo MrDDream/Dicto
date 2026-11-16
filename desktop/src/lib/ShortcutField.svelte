@@ -2,6 +2,7 @@
   // Bouton qui affiche un raccourci et en capture un nouveau au clavier.
   // Pendant la saisie, les raccourcis globaux sont suspendus (sinon ils se déclencheraient).
   import { api, shortcutFromEvent, shortcutKeys } from "./api";
+  import { t } from "./i18n.svelte";
 
   let { value, label, onchange }: { value: string; label: string; onchange: (v: string) => void } = $props();
 
@@ -39,17 +40,17 @@
 <button
   class="shortcut"
   class:capturing
-  aria-label="Modifier le raccourci {label}"
+  aria-label={t("Modifier le raccourci %1", label)}
   onclick={() => (capturing ? stop(null) : start())}
   onkeydown={keydown}
   onblur={() => capturing && stop(null)}
 >
   {#if capturing}
-    <span class="prompt">Appuie sur une touche… (Échap : annuler, ⌫ : aucun)</span>
+    <span class="prompt">{t("Appuie sur une touche… (Échap : annuler, ⌫ : aucun)")}</span>
   {:else if value}
     {#each shortcutKeys(value) as k (k)}<kbd>{k}</kbd>{/each}
   {:else}
-    <span class="none">Aucun</span>
+    <span class="none">{t("Aucun")}</span>
   {/if}
 </button>
 

@@ -48,6 +48,28 @@ pub enum Pill {
     Hidden,
 }
 
+/// Langue de l'interface.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum UiLanguage {
+    /// Celle du système.
+    #[default]
+    Auto,
+    Fr,
+    En,
+}
+
+/// Thème de l'interface.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Theme {
+    /// Clair ou sombre comme le système.
+    #[default]
+    Auto,
+    Light,
+    Dark,
+}
+
 /// Réglage d'un service en ligne (la clé, elle, est dans le coffre du système).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -86,6 +108,8 @@ pub struct Settings {
     pub refine_custom: String,
     /// Retoucher chaque dictée (sinon seulement avec « Reformuler »).
     pub auto_refine: bool,
+    pub ui_language: UiLanguage,
+    pub theme: Theme,
 }
 
 impl Default for Settings {
@@ -110,6 +134,8 @@ impl Default for Settings {
             refine_preset: "clean".into(),
             refine_custom: String::new(),
             auto_refine: false,
+            ui_language: UiLanguage::Auto,
+            theme: Theme::Auto,
         }
     }
 }
@@ -150,6 +176,10 @@ mod tests {
         assert_eq!(s.output, Output::Paste);
         assert_eq!(s.shortcut_toggle, "Ctrl+Alt+Space");
         assert!(s.voice_commands);
+        assert_eq!(s.ui_language, UiLanguage::Auto);
+        assert_eq!(s.theme, Theme::Auto);
+        let s: Settings = serde_json::from_str(r#"{"uiLanguage":"en","theme":"dark"}"#).unwrap();
+        assert_eq!((s.ui_language, s.theme), (UiLanguage::En, Theme::Dark));
     }
 
     #[test]

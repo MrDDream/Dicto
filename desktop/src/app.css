@@ -30,6 +30,8 @@
   --disabled: #a0948a;
   --accent: #2f5d50;
   --accent-soft: #e3ece7;
+  /* Fond des boutons et pastilles pleins (texte --on-accent dessus). */
+  --accent-fill: #2f5d50;
   --on-accent: #fffcf8;
   --rec: #d9622b;
   --rec-container: #fbe5d8;
@@ -44,11 +46,90 @@
   --overlay-line: #3d332c;
   --overlay-rec: #4a2a1a;
   --shadow-card: 0 1px 2px rgba(43, 35, 29, 0.06), 0 12px 32px rgba(43, 35, 29, 0.07);
+  --shadow-soft: 0 1px 2px rgba(43, 35, 29, 0.08);
+  --shadow-pop: 0 10px 24px rgba(43, 35, 29, 0.3);
+  --shadow-dialog: 0 24px 64px rgba(43, 35, 29, 0.3);
+  --backdrop: rgba(43, 35, 29, 0.35);
+  --nav-hover: rgba(255, 252, 248, 0.5);
   --display: "Bricolage Grotesque", system-ui, sans-serif;
   --body: "Figtree", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
   color-scheme: light;
 }
+/* Thème sombre : mêmes teintes chaudes, encre et papier inversés. Appliqué si on le choisit, ou
+   automatiquement quand le système est en sombre. */
+:root[data-theme="dark"] {
+  --bg: #1c1815;
+  --surface: #27211d;
+  --sunken: #221d19;
+  --border: #3d342d;
+  --ink: #f3ece4;
+  --ink-2: #ddd2c6;
+  --ink-nav: #d0c4b7;
+  --muted: #b3a597;
+  --disabled: #7d7065;
+  --accent: #8fd0b6;
+  --accent-soft: #233a32;
+  --accent-fill: #2f6d5c;
+  --on-accent: #fffcf8;
+  --rec: #e06a32;
+  --rec-container: #44271a;
+  --on-rec-container: #f5ab85;
+  --wave: #f08a55;
+  --success: #5fb07a;
+  --success-ink: #84d39c;
+  --brand: #f0b44c;
+  --overlay: #302823;
+  --overlay-ink: #f6f1ea;
+  --overlay-muted: #c4b8ab;
+  --overlay-line: #463b33;
+  --overlay-rec: #4f2c1b;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.25);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 10px 24px rgba(0, 0, 0, 0.5);
+  --shadow-dialog: 0 24px 64px rgba(0, 0, 0, 0.55);
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --nav-hover: rgba(255, 252, 248, 0.06);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #1c1815;
+    --surface: #27211d;
+    --sunken: #221d19;
+    --border: #3d342d;
+    --ink: #f3ece4;
+    --ink-2: #ddd2c6;
+    --ink-nav: #d0c4b7;
+    --muted: #b3a597;
+    --disabled: #7d7065;
+    --accent: #8fd0b6;
+    --accent-soft: #233a32;
+    --accent-fill: #2f6d5c;
+    --on-accent: #fffcf8;
+    --rec: #e06a32;
+    --rec-container: #44271a;
+    --on-rec-container: #f5ab85;
+    --wave: #f08a55;
+    --success: #5fb07a;
+    --success-ink: #84d39c;
+    --brand: #f0b44c;
+    --overlay: #302823;
+    --overlay-ink: #f6f1ea;
+    --overlay-muted: #c4b8ab;
+    --overlay-line: #463b33;
+    --overlay-rec: #4f2c1b;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.25);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-pop: 0 10px 24px rgba(0, 0, 0, 0.5);
+    --shadow-dialog: 0 24px 64px rgba(0, 0, 0, 0.55);
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --nav-hover: rgba(255, 252, 248, 0.06);
+    color-scheme: dark;
+  }
+}
+
 
 * {
   box-sizing: border-box;
@@ -133,7 +214,7 @@ h2 {
 }
 
 .pill-btn.primary {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-weight: 700;
 }
@@ -229,12 +310,12 @@ kbd {
   height: 20px;
   border-radius: 10px;
   background: var(--surface);
-  box-shadow: 0 1px 2px rgba(43, 35, 29, 0.2);
+  box-shadow: var(--shadow-soft);
   transition: transform 0.15s;
 }
 
 .switch:checked {
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .switch:checked::after {

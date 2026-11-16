@@ -1,5 +1,6 @@
 package app.dicto.update
 
+import app.dicto.i18n.tr
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
@@ -149,7 +150,7 @@ object UpdateChecker {
     /** La somme que doit avoir [file] ; sans liste, ou sans ligne pour ce fichier, la mise à jour est refusée. */
     fun requireSha256(sums: String?, file: String): String =
         sums?.let { expectedSha256(it, file) }?.takeIf { it.matches(Regex("[0-9a-f]{64}")) }
-            ?: throw IOException("Somme de contrôle introuvable pour $file : mise à jour refusée.")
+            ?: throw IOException(tr("Somme de contrôle introuvable pour %1\$s : mise à jour refusée.", file))
 
     private const val MAX_SUMS_BYTES = 1 shl 20
 
@@ -211,7 +212,7 @@ object UpdateChecker {
             !signersMatch(installed.current, archive.current, archive.history)
         ) {
             apk.delete()
-            throw IOException("La mise à jour n'est pas signée par la même clé que l'application installée : elle a été supprimée.")
+            throw IOException(tr("La mise à jour n'est pas signée par la même clé que l'application installée : elle a été supprimée."))
         }
     }
 
@@ -249,7 +250,7 @@ object UpdateChecker {
             val got = digest.digest().joinToString("") { "%02x".format(it) }
             if (expected != got) {
                 file.delete()
-                throw IOException("Le fichier téléchargé ne correspond pas à la somme de contrôle de la version : il a été supprimé.")
+                throw IOException(tr("Le fichier téléchargé ne correspond pas à la somme de contrôle de la version : il a été supprimé."))
             }
             checkSigner(context, file)
             file
