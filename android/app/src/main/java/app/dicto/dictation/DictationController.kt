@@ -38,6 +38,7 @@ import uniffi.dicto_ffi.Mode
 import uniffi.dicto_ffi.RefineClient
 import uniffi.dicto_ffi.State
 import uniffi.dicto_ffi.refinePresets
+import uniffi.dicto_ffi.translationInstruction
 import uniffi.dicto_ffi.TextEdit
 import uniffi.dicto_ffi.renderEdits
 
@@ -137,6 +138,10 @@ class DictationController(private val context: Context) : DictationListener {
         }
         scope.launch { settings.livePreview.flow.collect { dictation.setLivePreview(it) } }
         scope.launch { settings.paragraphs.flow.drop(1).collect { applyOptions() } }
+        scope.launch {
+            combine(settings.spokenPunctuation.flow, settings.removeFillers.flow, settings.translateTo.flow) { a, b, c -> Triple(a, b, c) }
+                .distinctUntilChanged().drop(1).collect { applyOptions() }
+        }
         scope.launch {
             combine(settings.language, settings.voiceCommands) { l, v -> l to v }
                 .distinctUntilChanged().drop(1).collect { applyOptions() }
@@ -242,9 +247,12 @@ class DictationController(private val context: Context) : DictationListener {
         val language = profile?.language?.takeIf { it.isNotBlank() } ?: s.language.value
         dictation.setOptions(language, vocabulary, s.voiceCommands.value)
         dictation.setParagraphs(s.paragraphs.value.toUIntOrNull()?.takeIf { it > 0u })
+        val replacements = runCatching { app.storage.replacements() }.getOrDefault(emptyList())
+        dictation.setTextOptions(s.spokenPunctuation.value, s.removeFillers.value, replacements)
 
         val presetId = profile?.refinePreset?.takeIf { it.isNotBlank() } ?: if (s.autoRefine.value) s.refinePreset.value else null
-        val instruction = presetInstruction(presetId)
+        // La traduction à la volée passe avant la retouche du profil ou automatique.
+        val instruction = translationTarget()?.let { translationInstruction(it) } ?: presetInstruction(presetId)
         dictation.setRefiner(instruction?.let { refineClient() }, instruction)
 
         val mode = profile?.mode?.let { m -> Mode.entries.firstOrNull { it.name == m } }
@@ -253,6 +261,9 @@ class DictationController(private val context: Context) : DictationListener {
             dictation.setMode(mode)
         }
     }
+
+    /** Langue de la traduction à la volée, ou `null` si elle est coupée. */
+    fun translationTarget(): String? = app.settings.translateTo.value.takeIf { it.isNotBlank() && it != "none" }
 
     /** Client de retouche configuré, ou `null` si la retouche est désactivée. */
     fun refineClient(): RefineClient? {
@@ -330,6 +341,7 @@ class DictationController(private val context: Context) : DictationListener {
     // --- Rappels du cœur Rust (threads variés) -----------------------------------------
 
     override fun onCapture(active: Boolean) {
+        if (app.settings.vibrate.value) haptic(context, start = active)
         if (active) {
             isCapturing = true
             WakeWordService.pause()
@@ -437,4 +449,21 @@ fun Throwable.userMessage(): String = when (this) {
     is FfiException.Cancelled -> tr("annulé")
     is FfiException.Other -> detail
     else -> message ?: javaClass.simpleName
+}
+
+/** Petite vibration : une impulsion au début de l'écoute, deux à la fin. */
+fun haptic(context: Context, start: Boolean) {
+    val vibrator = if (android.os.Build.VERSION.SDK_INT >= 31) {
+        context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(android.os.Vibrator::class.java)
+    } ?: return
+    if (!vibrator.hasVibrator()) return
+    val effect = if (start) {
+        android.os.VibrationEffect.createOneShot(30, android.os.VibrationEffect.DEFAULT_AMPLITUDE)
+    } else {
+        android.os.VibrationEffect.createWaveform(longArrayOf(0, 25, 80, 25), -1)
+    }
+    runCatching { vibrator.vibrate(effect) }
 }

@@ -1,8 +1,27 @@
 <script lang="ts">
-  import type { Output, PillPosition, Settings } from "../lib/api";
+  import { onMount } from "svelte";
+  import { api, LANGUAGE_NAMES, type MouseAction, type Output, type PillPosition, type PlatformView, type Settings } from "../lib/api";
   import ShortcutField from "../lib/ShortcutField.svelte";
   import { app } from "../lib/store.svelte";
   import { t } from "../lib/i18n.svelte";
+
+  let targets = $state<string[]>(["en", "fr"]);
+  let platform = $state<PlatformView>({ os: "", wayland: false });
+  onMount(async () => {
+    targets = await api.translationTargets();
+    platform = await api.platformInfo();
+  });
+
+  const MOUSE_ACTIONS: [MouseAction, string][] = [
+    ["none", "Rien (bouton normal)"],
+    ["pushToTalk", "Marche/arrêt"],
+    ["continuous", "Continu"],
+    ["hold", "Maintenu"],
+  ];
+  const BUTTONS: { key: "mouseBack" | "mouseForward"; title: string; hint: string }[] = [
+    { key: "mouseBack", title: "Bouton « précédent »", hint: "Bouton latéral 4, sous le pouce" },
+    { key: "mouseForward", title: "Bouton « suivant »", hint: "Bouton latéral 5" },
+  ];
 
   const OUTPUTS: { id: Output; title: string; hint: string }[] = [
     { id: "type", title: "Taper dans la fenêtre", hint: "Comme un clavier" },
@@ -42,6 +61,56 @@
         {/each}
       </section>
 
+      <section class="card" aria-labelledby="traduction">
+        <h2 id="traduction" class="pad">{t("Traduction à la volée")}</h2>
+        <div class="row">
+          <div class="label">
+            <div class="title">{t("Dicter et traduire")}</div>
+            <div class="hint">{t("Marche/arrêt ; le texte est traduit par le fournisseur de retouche avant d'être écrit")}</div>
+          </div>
+          <ShortcutField value={s.shortcutTranslate} label={t("Dicter et traduire")} onchange={(v) => app.update({ shortcutTranslate: v })} />
+        </div>
+        <div class="row">
+          <div class="label">
+            <div class="title">{t("Traduire en")}</div>
+            {#if !s.refineProvider}<div class="hint">{t("Active d'abord un fournisseur de retouche dans Réglages.")}</div>{/if}
+          </div>
+          <label>
+            <span class="sr-only">{t("Traduire en")}</span>
+            <select class="field" value={s.translateTo} onchange={(e) => app.update({ translateTo: e.currentTarget.value })}>
+              {#each targets as code (code)}<option value={code}>{t(LANGUAGE_NAMES[code] ?? code)}</option>{/each}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="souris">
+        <h2 id="souris" class="pad">{t("Boutons de la souris")}</h2>
+        {#if platform.wayland}
+          <p class="note inset">{t("Sous Wayland, les apps ne peuvent pas lire les boutons de la souris hors de leur fenêtre : utilise les raccourcis clavier.")}</p>
+        {:else}
+          {#each BUTTONS as b (b.key)}
+            <div class="row">
+              <div class="label">
+                <div class="title">{t(b.title)}</div>
+                <div class="hint">{t(b.hint)}</div>
+              </div>
+              <label>
+                <span class="sr-only">{t(b.title)}</span>
+                <select class="field" value={s[b.key]} onchange={(e) => app.update({ [b.key]: e.currentTarget.value as MouseAction })}>
+                  {#each MOUSE_ACTIONS as [id, name] (id)}<option value={id}>{t(name)}</option>{/each}
+                </select>
+              </label>
+            </div>
+          {/each}
+          {#if isLinux}
+            <p class="note inset">{t("Sous X11, l'app au premier plan reçoit aussi le clic (par exemple, le navigateur revient en arrière).")}</p>
+          {:else if isMac}
+            <p class="note inset">{t("Sous macOS, autorise Dicto dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée.")}</p>
+          {/if}
+        {/if}
+      </section>
+
       <section class="card out" aria-labelledby="sortie">
         <h2 id="sortie">{t("Où va le texte")}</h2>
         <div role="radiogroup" aria-label={t("Sortie du texte")} class="choices">
@@ -54,7 +123,9 @@
         </div>
         {#if isLinux}
           <p class="note">
-            {t("Sous Linux, les raccourcis globaux et la frappe fonctionnent avec X11. Sous Wayland, ils ne marchent que dans certaines apps pour l'instant ; « Presse-papiers » est le plus sûr.")}
+            {platform.wayland
+              ? t("Sous Wayland, les raccourcis passent par le bureau (GNOME 48+, KDE, Hyprland…), qui demande de les confirmer une fois. « Presse-papiers » est la sortie la plus sûre.")
+              : t("Sous Linux, les raccourcis globaux et la frappe fonctionnent avec X11. Sous Wayland, ils ne marchent que dans certaines apps pour l'instant ; « Presse-papiers » est le plus sûr.")}
           </p>
         {:else if isMac}
           <p class="note">
@@ -153,6 +224,10 @@
   .hint {
     font-size: 12px;
     color: var(--muted);
+  }
+
+  .note.inset {
+    margin: 4px 22px 18px;
   }
 
   .note {

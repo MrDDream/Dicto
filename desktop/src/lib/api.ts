@@ -9,6 +9,7 @@ export type Output = "type" | "paste" | "review";
 export type PillPosition = "bottom" | "hidden";
 export type UiLanguage = "auto" | "fr" | "en";
 export type Theme = "auto" | "light" | "dark";
+export type MouseAction = "none" | ListenMode;
 
 export interface EngineStatus {
   kind: "none" | "loading" | "ready" | "error";
@@ -34,11 +35,21 @@ export interface Settings {
   livePreview: boolean;
   /** Pause (ms) qui ouvre un paragraphe, 0 = jamais. */
   paragraphPauseMs: number;
+  /** « virgule », « point d'interrogation »… écrits comme de la ponctuation. */
+  spokenPunctuation: boolean;
+  /** Retire « euh », « hum » et les mots répétés par erreur. */
+  removeFillers: boolean;
   output: Output;
   mode: ListenMode;
   shortcutToggle: string;
   shortcutContinuous: string;
   shortcutHold: string;
+  /** « Dicter et traduire » et sa langue cible. */
+  shortcutTranslate: string;
+  translateTo: string;
+  /** Boutons latéraux de la souris. */
+  mouseBack: MouseAction;
+  mouseForward: MouseAction;
   pill: PillPosition;
   sounds: boolean;
   cloud: string | null;
@@ -51,6 +62,8 @@ export interface Settings {
   /** Langue de l'interface et thème. */
   uiLanguage: UiLanguage;
   theme: Theme;
+  /** Fichiers audio : séparer les voix. */
+  diarize: boolean;
 }
 
 export interface ResultView {
@@ -94,11 +107,46 @@ export interface HistoryView {
   text: string;
   engine: string;
   durationMs: number;
+  /** Épinglée : en tête de l'historique, gardée par « Tout effacer ». */
+  pinned: boolean;
 }
 
 export interface Term {
   id: number;
   term: string;
+}
+
+/** Remplacement personnel : « mon adresse » → « 12 rue des Lilas ». */
+export interface Replacement {
+  id: number;
+  phrase: string;
+  replacement: string;
+}
+
+/** Réglages propres à une app ; null ou vide = réglage général. Mode : « PUSH_TO_TALK », « CONTINUOUS », « HOLD ». */
+export interface ProfileView {
+  id: number | null;
+  appId: string;
+  label: string | null;
+  language: string | null;
+  mode: string | null;
+  refinePreset: string | null;
+}
+
+export interface AppInfo {
+  id: string;
+  label: string;
+}
+
+export interface PlatformView {
+  os: string;
+  wayland: boolean;
+}
+
+export interface ImportView {
+  vocabulary: number;
+  replacements: number;
+  profiles: number;
 }
 
 export interface Credit {
@@ -137,6 +185,9 @@ export interface FileResult {
   durationMs: number;
   engine: string;
   segments: number;
+  /** Voix séparées (0 : pas de séparation). */
+  speakers: number;
+  lines: { startMs: number; speaker: number | null; text: string }[];
 }
 
 /** Mises à jour : la version installée, la réponse à la question du premier lancement, la version proposée. */
@@ -175,6 +226,22 @@ export const api = {
     invoke<HistoryView[]>("history", { query, limit, offset }),
   deleteHistory: (id: number) => invoke<void>("delete_history", { id }),
   clearHistory: () => invoke<void>("clear_history"),
+  setHistoryPinned: (id: number, pinned: boolean) => invoke<void>("set_history_pinned", { id, pinned }),
+  updateHistoryText: (id: number, text: string) => invoke<void>("update_history_text", { id, text }),
+  replacements: () => invoke<Replacement[]>("replacements"),
+  setReplacement: (phrase: string, replacement: string) => invoke<void>("set_replacement", { phrase, replacement }),
+  removeReplacement: (id: number) => invoke<void>("remove_replacement", { id }),
+  profiles: () => invoke<ProfileView[]>("profiles"),
+  saveProfile: (profile: ProfileView) => invoke<number>("save_profile", { profile }),
+  deleteProfile: (id: number) => invoke<void>("delete_profile", { id }),
+  lastApp: () => invoke<AppInfo | null>("last_app"),
+  translationTargets: () => invoke<string[]>("translation_targets"),
+  exportBundle: () => invoke<boolean>("export_bundle"),
+  importBundle: () => invoke<ImportView | null>("import_bundle"),
+  platformInfo: () => invoke<PlatformView>("platform_info"),
+  /** Fenêtre « Enregistrer sous » pour un texte préparé ici ; false si annulée. */
+  saveText: (name: string, extension: string, content: string) => invoke<boolean>("save_text", { name, extension, content }),
+  meetingMinutes: () => invoke<string>("meeting_minutes"),
   vocabulary: () => invoke<Term[]>("vocabulary"),
   addTerm: (term: string) => invoke<void>("add_term", { term }),
   removeTerm: (id: number) => invoke<void>("remove_term", { id }),
@@ -227,10 +294,24 @@ export const events = {
     listen<DownloadEvent>("dicto://download", (e) => f(e.payload)),
   fileProgress: (f: (fraction: number) => void): Promise<UnlistenFn> =>
     listen<number>("dicto://file-progress", (e) => f(e.payload)),
+  /** « model » : téléchargement du modèle de séparation des voix ; « transcribe » : transcription. */
+  fileStage: (f: (stage: "model" | "transcribe") => void): Promise<UnlistenFn> =>
+    listen<"model" | "transcribe">("dicto://file-stage", (e) => f(e.payload)),
   settings: (f: (s: Settings) => void): Promise<UnlistenFn> => listen<Settings>("dicto://settings", (e) => f(e.payload)),
   update: (f: (u: UpdateView) => void): Promise<UnlistenFn> => listen<UpdateView>("dicto://update", (e) => f(e.payload)),
   updateProgress: (f: (p: { done: number; total: number }) => void): Promise<UnlistenFn> =>
     listen<{ done: number; total: number }>("dicto://update-progress", (e) => f(e.payload)),
+};
+
+/** Langues (codes ISO 639-1) et leur nom, pour la dictée, les profils et la traduction. */
+export const LANGUAGE_NAMES: Record<string, string> = {
+  fr: "Français",
+  en: "Anglais",
+  es: "Espagnol",
+  de: "Allemand",
+  it: "Italien",
+  pt: "Portugais",
+  nl: "Néerlandais",
 };
 
 export const MODE_LABELS: Record<ListenMode, string> = {

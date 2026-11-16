@@ -70,11 +70,17 @@ const settings = {
   voiceCommands: true,
   livePreview: true,
   paragraphPauseMs: 2500,
+  spokenPunctuation: false,
+  removeFillers: true,
   output: "type",
   mode: "continuous",
   shortcutToggle: "Ctrl+Alt+Space",
   shortcutContinuous: "Ctrl+Alt+C",
   shortcutHold: "Ctrl+Shift+Space",
+  shortcutTranslate: "Ctrl+Alt+T",
+  translateTo: "en",
+  mouseBack: "hold",
+  mouseForward: "none",
   pill: "bottom",
   sounds: true,
   cloud: null,
@@ -86,6 +92,7 @@ const settings = {
   autoRefine: false,
   uiLanguage: lang,
   theme,
+  diarize: false,
 };
 
 // Le texte d'exemple, dans la langue des captures.
@@ -164,7 +171,28 @@ const mock = {
     [SAMPLE.history[2], 260, 4600],
     [SAMPLE.history[3], 1500, 2800],
     [SAMPLE.history[4], 3000, 6100],
-  ].map(([text, minutesAgo, durationMs], i) => ({ id: i + 1, createdAtMs: now - minutesAgo * 60_000, text, engine: "Parakeet v3", durationMs })),
+  ].map(([text, minutesAgo, durationMs], i) => ({
+    id: i + 1,
+    createdAtMs: now - minutesAgo * 60_000,
+    text,
+    engine: "Parakeet v3",
+    durationMs,
+    pinned: i === 0,
+  })),
+  replacements: (fr
+    ? [
+        ["mon adresse", "12 rue des Lilas, 69003 Lyon"],
+        ["ma signature", "Bonne journée,\nCamille"],
+      ]
+    : [
+        ["my address", "12 Lilac Street, Bristol"],
+        ["my signature", "Best,\nCamille"],
+      ]
+  ).map(([phrase, replacement], i) => ({ id: i + 1, phrase, replacement })),
+  profiles: [
+    { id: 1, appId: "slack", label: "Slack", language: "en", mode: null, refinePreset: "message" },
+    { id: 2, appId: "thunderbird", label: "Thunderbird", language: null, mode: "HOLD", refinePreset: "email" },
+  ],
   vocabulary: ["Dicto", "Tauri", "sherpa-onnx", "Parakeet", "Nextcloud"].map((term, i) => ({ id: i + 1, term })),
   presets: [
     ["clean", "Nettoyer"],
@@ -195,6 +223,11 @@ function fakeTauri(mock) {
     refine_presets: () => mock.presets,
     credits: () => [],
     update_state: () => mock.update,
+    replacements: () => mock.replacements,
+    profiles: () => mock.profiles,
+    last_app: () => null,
+    platform_info: () => ({ os: "linux", wayland: false }),
+    translation_targets: () => ["en", "fr", "es", "de", "it", "pt", "nl"],
     pause_shortcuts: () => [],
     set_ui_locale: () => null,
   };

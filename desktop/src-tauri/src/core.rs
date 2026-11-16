@@ -7,14 +7,15 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use dicto_ffi::{
-    Dictation, DictationListener, DictationResult, DiscardReason, Engine, FfiError, ModelManager, RefineClient, State,
-    Storage, TextEdit, Trigger, refine_presets, render_edits,
+    AppProfile, Dictation, DictationListener, DictationResult, DiscardReason, Engine, FfiError, ModelManager,
+    RefineClient, State, Storage, TextEdit, Trigger, refine_presets, render_edits, translation_instruction,
 };
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 use crate::audio::Recorder;
+use crate::foreground::{self, AppInfo};
 use crate::insert::{self, Written};
 use crate::providers::{self, Kind};
 use crate::secrets;
@@ -71,7 +72,32 @@ pub enum Hotkey {
     Toggle,
     Continuous,
     Hold,
+    /// « Dicter et traduire » : marche/arrêt, texte traduit.
+    Translate,
     Escape,
+}
+
+/// Nom d'un raccourci dans la fenêtre du portail Wayland.
+#[cfg(target_os = "linux")]
+fn portal_label(h: Hotkey) -> &'static str {
+    use crate::locale::tr;
+    match h {
+        Hotkey::Toggle => tr("marche/arrêt", "on/off"),
+        Hotkey::Continuous => tr("écoute continue", "continuous listening"),
+        Hotkey::Hold => tr("maintenu", "hold to talk"),
+        Hotkey::Translate => tr("dicter et traduire", "dictate and translate"),
+        Hotkey::Escape => tr("annuler", "cancel"),
+    }
+}
+
+/// Mode d'un profil : celui d'Android (« PUSH_TO_TALK »…) ou celui du bureau (« pushToTalk »…).
+fn profile_mode(mode: &str) -> Option<ListenMode> {
+    match mode.to_ascii_lowercase().replace('_', "").as_str() {
+        "pushtotalk" => Some(ListenMode::PushToTalk),
+        "continuous" => Some(ListenMode::Continuous),
+        "hold" => Some(ListenMode::Hold),
+        _ => None,
+    }
 }
 
 /// D'où vient la dictée en cours : de la fenêtre Dicto (le texte y reste) ou d'un raccourci.
@@ -132,6 +158,14 @@ pub struct Core {
     /// Transcription de fichier en cours (annulable) et dernier résultat (pour l'export).
     pub file_job: Mutex<Option<Arc<dicto_ffi::FileJob>>>,
     pub last_file: Mutex<Option<(String, dicto_ffi::FileTranscript)>>,
+    /// Réglages propres à la dictée en cours (profil de l'app, traduction) : remis à la fin.
+    context: AtomicBool,
+    /// Mode effectif de la dictée lancée par un raccourci (le relâchement arrête le mode maintenu).
+    shortcut_mode: Mutex<Option<ListenMode>>,
+    /// Dernière app au premier plan autre que Dicto (aide pour créer un profil).
+    pub last_app: Mutex<Option<AppInfo>>,
+    #[cfg(target_os = "linux")]
+    portal: crate::portal::Portal,
 }
 
 struct Listener(AppHandle);
@@ -216,6 +250,11 @@ impl Core {
             silero_applied: AtomicBool::new(false),
             file_job: Mutex::new(None),
             last_file: Mutex::new(None),
+            context: AtomicBool::new(false),
+            shortcut_mode: Mutex::new(None),
+            last_app: Mutex::new(None),
+            #[cfg(target_os = "linux")]
+            portal: crate::portal::Portal::default(),
         }))
     }
 
@@ -228,6 +267,10 @@ impl Core {
         if !errors.is_empty() {
             self.message(&errors.join("\n"));
         }
+        let core = self.clone();
+        foreground::watch(move |app| *core.last_app.lock().unwrap() = Some(app));
+        let core = self.clone();
+        crate::mouse::start(move |button, pressed| core.on_mouse(button, pressed));
     }
 
     // --- Instantané et messages ---------------------------------------------------------
@@ -256,6 +299,7 @@ impl Core {
 
     fn done_one(&self) {
         decrement(&self.pending);
+        self.restore_context();
         self.emit_snapshot();
         self.update_pill();
     }
@@ -263,11 +307,14 @@ impl Core {
     // --- Options et moteur --------------------------------------------------------------
 
     pub fn apply_options(&self) {
+        self.context.store(false, Ordering::SeqCst);
         let s = self.settings.lock().unwrap().clone();
-        let vocabulary = self.storage.vocabulary().map(|v| v.into_iter().map(|t| t.term).collect()).unwrap_or_default();
-        self.dictation.set_options(s.language_option(), vocabulary, s.voice_commands);
+        self.dictation.set_options(s.language_option(), self.vocabulary(), s.voice_commands);
         self.dictation.set_live_preview(s.live_preview);
         self.dictation.set_paragraphs((s.paragraph_pause_ms > 0).then_some(s.paragraph_pause_ms));
+        let replacements = self.storage.replacements().unwrap_or_default();
+        self.dictation.set_text_options(s.spoken_punctuation, s.remove_fillers, replacements);
+        crate::mouse::set_bound(s.mouse_back.mode().is_some(), s.mouse_forward.mode().is_some());
         if self.dictation.state() == State::Idle {
             self.dictation.set_mode(s.mode.into());
         }
@@ -276,6 +323,54 @@ impl Core {
         match (instruction, self.refine_client()) {
             (Some(i), Some(client)) => self.dictation.set_refiner(Some(client), Some(i)),
             _ => self.dictation.set_refiner(None, None),
+        }
+    }
+
+    fn vocabulary(&self) -> Vec<String> {
+        self.storage.vocabulary().map(|v| v.into_iter().map(|t| t.term).collect()).unwrap_or_default()
+    }
+
+    /// Réglages de la dictée qui commence : profil de l'app au premier plan (langue, retouche,
+    /// mode) et traduction à la volée. Rend le mode du profil, s'il en a un.
+    fn apply_context(&self, app: Option<&AppInfo>, translate: bool) -> Result<Option<ListenMode>, String> {
+        let profile: Option<AppProfile> = app.and_then(|a| self.storage.profile_for_app(a.id.clone()).ok().flatten());
+        if profile.is_none() && !translate {
+            return Ok(None);
+        }
+        let s = self.settings.lock().unwrap().clone();
+        let refine = if translate {
+            let client = self
+                .refine_client()
+                .ok_or("Pour traduire, active d'abord un fournisseur de retouche dans Réglages.")?;
+            let instruction = translation_instruction(s.translate_to.clone()).ok_or("Langue de traduction inconnue.")?;
+            Some(Some((client, instruction)))
+        } else {
+            match profile.as_ref().and_then(|p| p.refine_preset.clone()).filter(|p| !p.is_empty()) {
+                Some(p) if p == "none" => Some(None),
+                Some(p) => self.preset_instruction(&p).zip(self.refine_client()).map(|(i, c)| Some((c, i))),
+                None => None,
+            }
+        };
+        if let Some(language) = profile.as_ref().and_then(|p| p.language.clone()).filter(|l| !l.is_empty()) {
+            let language = (language != "auto").then_some(language);
+            self.dictation.set_options(language, self.vocabulary(), s.voice_commands);
+        }
+        match refine {
+            Some(Some((client, instruction))) => self.dictation.set_refiner(Some(client), Some(instruction)),
+            Some(None) => self.dictation.set_refiner(None, None),
+            None => {}
+        }
+        self.context.store(true, Ordering::SeqCst);
+        Ok(profile.and_then(|p| p.mode).and_then(|m| profile_mode(&m)))
+    }
+
+    /// Fin de la dictée (et de ses transcriptions) : les réglages généraux reviennent.
+    fn restore_context(&self) {
+        if self.context.load(Ordering::SeqCst)
+            && self.dictation.state() == State::Idle
+            && self.pending.load(Ordering::SeqCst) == 0
+        {
+            self.apply_options();
         }
     }
 
@@ -413,16 +508,18 @@ impl Core {
         self.press();
     }
 
-    fn press(&self) {
+    /// Rend faux si la dictée n'a pas pu commencer (moteur pas prêt).
+    fn press(&self) -> bool {
         if self.dictation.state() == State::Idle && self.engine.lock().unwrap().kind != "ready" {
             let e = self.engine.lock().unwrap().clone();
             self.message(match e.kind {
                 "loading" => "Le modèle se charge, encore un instant…",
                 _ => "Choisis et télécharge un modèle dans Modèles.",
             });
-            return;
+            return false;
         }
         self.dictation.trigger(Trigger::Pressed);
+        true
     }
 
     pub fn release(&self) {
@@ -433,49 +530,143 @@ impl Core {
         self.dictation.trigger(Trigger::Cancel);
     }
 
+    /// Raccourci global (identifiant du greffon des raccourcis).
     pub fn on_hotkey(&self, id: u32, pressed: bool) {
         let Some(hotkey) = self.hotkeys.lock().unwrap().get(&id).copied() else { return };
-        let mode = match hotkey {
+        self.on_shortcut(hotkey, pressed);
+    }
+
+    /// Raccourci appuyé ou relâché, d'où qu'il vienne (greffon, portail Wayland).
+    pub fn on_shortcut(&self, hotkey: Hotkey, pressed: bool) {
+        let (mode, translate) = match hotkey {
             Hotkey::Escape => {
                 if pressed {
                     self.cancel();
                 }
                 return;
             }
-            Hotkey::Toggle => ListenMode::PushToTalk,
-            Hotkey::Continuous => ListenMode::Continuous,
-            Hotkey::Hold => ListenMode::Hold,
+            Hotkey::Toggle => (ListenMode::PushToTalk, false),
+            Hotkey::Continuous => (ListenMode::Continuous, false),
+            Hotkey::Hold => (ListenMode::Hold, false),
+            Hotkey::Translate => (ListenMode::PushToTalk, true),
         };
-        if pressed {
-            if self.dictation.state() == State::Idle {
-                *self.source.lock().unwrap() = Source::Shortcut;
-                self.dictation.set_mode(mode.into());
+        // Le profil de l'app peut choisir le mode du raccourci marche/arrêt (les autres ont le leur).
+        self.shortcut_trigger(mode, pressed, translate, hotkey == Hotkey::Toggle);
+    }
+
+    /// Bouton latéral de la souris.
+    pub fn on_mouse(&self, button: crate::mouse::Button, pressed: bool) {
+        let action = {
+            let s = self.settings.lock().unwrap();
+            match button {
+                crate::mouse::Button::Back => s.mouse_back,
+                crate::mouse::Button::Forward => s.mouse_forward,
             }
+        };
+        if let Some(mode) = action.mode() {
+            self.shortcut_trigger(mode, pressed, false, false);
+        }
+    }
+
+    /// Dictée lancée hors de Dicto : le texte va dans l'app au premier plan, avec son profil.
+    fn shortcut_trigger(&self, mode: ListenMode, pressed: bool, translate: bool, profile_mode: bool) {
+        if !pressed {
+            if *self.shortcut_mode.lock().unwrap() == Some(ListenMode::Hold) {
+                self.release();
+            }
+            return;
+        }
+        if self.dictation.state() != State::Idle {
             self.press();
-        } else if mode == ListenMode::Hold {
-            self.release();
+            return;
+        }
+        *self.source.lock().unwrap() = Source::Shortcut;
+        let app = foreground::current();
+        if let Some(a) = &app {
+            *self.last_app.lock().unwrap() = Some(a.clone());
+        }
+        let mode = match self.apply_context(app.as_ref(), translate) {
+            Ok(from_profile) if profile_mode => from_profile.unwrap_or(mode),
+            Ok(_) => mode,
+            Err(e) => {
+                self.message(&e);
+                return;
+            }
+        };
+        *self.shortcut_mode.lock().unwrap() = Some(mode);
+        self.dictation.set_mode(mode.into());
+        if !self.press() {
+            self.restore_context();
         }
     }
 
     // --- Raccourcis globaux -------------------------------------------------------------
 
+    /// Raccourcis des réglages : (raccourci, texte, nom).
+    fn shortcut_list(&self) -> Vec<(Hotkey, String, &'static str)> {
+        let s = self.settings.lock().unwrap().clone();
+        [
+            (Hotkey::Toggle, s.shortcut_toggle, "Marche/arrêt"),
+            (Hotkey::Continuous, s.shortcut_continuous, "Continu"),
+            (Hotkey::Hold, s.shortcut_hold, "Maintenu"),
+            (Hotkey::Translate, s.shortcut_translate, "Dicter et traduire"),
+        ]
+        .into_iter()
+        .filter(|(_, text, _)| !text.trim().is_empty())
+        .collect()
+    }
+
+    /// Suspend les raccourcis pendant qu'on en saisit un nouveau (sinon il se déclencherait).
+    pub fn pause_shortcuts(self: &Arc<Self>, paused: bool) -> Vec<String> {
+        if !paused {
+            return self.register_shortcuts();
+        }
+        let _ = self.app.global_shortcut().unregister_all();
+        #[cfg(target_os = "linux")]
+        self.portal.bind(Vec::new(), |_, _| {}, |_| {});
+        Vec::new()
+    }
+
     /// (Ré)enregistre les raccourcis des réglages. Renvoie les erreurs lisibles.
-    pub fn register_shortcuts(&self) -> Vec<String> {
+    /// Sous Wayland, ils passent par le portail du bureau ; sinon (ou s'il refuse), par X11.
+    pub fn register_shortcuts(self: &Arc<Self>) -> Vec<String> {
+        #[cfg(target_os = "linux")]
+        if foreground::is_wayland() {
+            let _ = self.app.global_shortcut().unregister_all();
+            self.hotkeys.lock().unwrap().clear();
+            self.escape.store(false, Ordering::SeqCst);
+            let list = self
+                .shortcut_list()
+                .into_iter()
+                .map(|(h, text, _)| (h, text, format!("Dicto : {}", portal_label(h))))
+                .collect();
+            let core = self.clone();
+            let fallback = self.clone();
+            self.portal.bind(
+                list,
+                move |h, pressed| core.on_shortcut(h, pressed),
+                move |e| {
+                    log::warn!("portail des raccourcis : {e}");
+                    let mut errors = fallback.register_global_shortcuts();
+                    errors.insert(0, format!("Raccourcis Wayland indisponibles ({e}) : ils ne marchent que dans certaines apps."));
+                    fallback.message(&errors.join("\n"));
+                },
+            );
+            return Vec::new();
+        }
+        self.register_global_shortcuts()
+    }
+
+    /// Raccourcis par le greffon (Windows, macOS, X11).
+    fn register_global_shortcuts(&self) -> Vec<String> {
         let gs = self.app.global_shortcut();
         let _ = gs.unregister_all();
         self.escape.store(false, Ordering::SeqCst);
         let mut map = self.hotkeys.lock().unwrap();
         map.clear();
-        let s = self.settings.lock().unwrap().clone();
         let mut errors = Vec::new();
-        for (text, hotkey, name) in [
-            (&s.shortcut_toggle, Hotkey::Toggle, "Marche/arrêt"),
-            (&s.shortcut_continuous, Hotkey::Continuous, "Continu"),
-            (&s.shortcut_hold, Hotkey::Hold, "Maintenu"),
-        ] {
-            if text.trim().is_empty() {
-                continue;
-            }
+        for (hotkey, text, name) in self.shortcut_list() {
+            let text = &text;
             match text.parse::<Shortcut>() {
                 Ok(sc) => match gs.register(sc) {
                     Ok(()) => {
@@ -509,6 +700,9 @@ impl Core {
     // --- Rappels de la dictée -----------------------------------------------------------
 
     fn on_capture(self: &Arc<Self>, active: bool) {
+        if self.settings.lock().unwrap().sounds {
+            crate::sound::play(if active { crate::sound::Cue::Start } else { crate::sound::Cue::Stop });
+        }
         if active {
             let core = self.clone();
             let result = self.recorder.start(Box::new(move |pcm, level| {
@@ -537,7 +731,9 @@ impl Core {
             // Le mode imposé par un raccourci ne dure que le temps de la dictée.
             let mode = self.settings.lock().unwrap().mode;
             self.dictation.set_mode(mode.into());
+            *self.shortcut_mode.lock().unwrap() = None;
             self.apply_silero();
+            self.restore_context();
         } else if previous == State::Idle {
             *self.started_at.lock().unwrap() = Some(now_ms());
         }
@@ -568,12 +764,15 @@ impl Core {
                 new_paragraph: result.new_paragraph,
             },
         );
+        self.restore_context();
         self.emit_snapshot();
         self.update_pill();
     }
 
     /// Écrit dans la fenêtre active, avec « efface ça » et une espace entre deux phrases.
+    /// « Envoie le message » valide ensuite le champ (Entrée).
     fn write_to_window(&self, edits: &[TextEdit], output: Output) {
+        let send = edits.contains(&TextEdit::Send);
         let mut erase = 0;
         let mut rest = Vec::new();
         {
@@ -606,8 +805,12 @@ impl Core {
         // La frappe peut prendre un moment : hors du fil de la transcription.
         std::thread::spawn(move || {
             insert::erase(erase);
-            if let Written::Copied(msg) = insert::write(&text, output) {
-                let _ = app.emit("dicto://message", msg);
+            match insert::write(&text, output) {
+                Written::Copied(msg) => {
+                    let _ = app.emit("dicto://message", msg);
+                }
+                _ if send => insert::press_enter(),
+                _ => {}
             }
         });
     }

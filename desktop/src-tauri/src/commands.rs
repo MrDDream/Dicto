@@ -37,7 +37,8 @@ pub fn set_settings(core: Core_, settings: Settings) -> Vec<String> {
     }
     let shortcuts_changed = previous.shortcut_toggle != settings.shortcut_toggle
         || previous.shortcut_continuous != settings.shortcut_continuous
-        || previous.shortcut_hold != settings.shortcut_hold;
+        || previous.shortcut_hold != settings.shortcut_hold
+        || previous.shortcut_translate != settings.shortcut_translate;
     let errors = if shortcuts_changed { core.register_shortcuts() } else { Vec::new() };
     core.emit_snapshot();
     // L'autre fenêtre (la pastille) suit la langue et le thème.
@@ -76,13 +77,39 @@ pub fn copy_text(text: String) -> Result<(), String> {
 /// Suspend les raccourcis pendant qu'on en saisit un nouveau (sinon il se déclencherait).
 #[tauri::command]
 pub fn pause_shortcuts(core: Core_, paused: bool) -> Vec<String> {
-    use tauri_plugin_global_shortcut::GlobalShortcutExt;
-    if paused {
-        let _ = core.app.global_shortcut().unregister_all();
-        Vec::new()
-    } else {
-        core.register_shortcuts()
-    }
+    core.inner().pause_shortcuts(paused)
+}
+
+/// Ce que l'interface doit savoir du système (Wayland : pas de boutons de souris ni de profils par app).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlatformView {
+    os: &'static str,
+    wayland: bool,
+}
+
+#[tauri::command]
+pub fn platform_info() -> PlatformView {
+    PlatformView { os: std::env::consts::OS, wayland: crate::foreground::is_wayland() }
+}
+
+/// Enregistre un texte préparé par l'interface (export de l'historique) : fenêtre « Enregistrer sous ».
+#[tauri::command]
+pub async fn save_text(app: AppHandle, name: String, extension: String, content: String) -> Result<bool, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let Some(path) = app
+        .dialog()
+        .file()
+        .set_title(crate::locale::tr("Enregistrer", "Save"))
+        .set_file_name(format!("{name}.{extension}"))
+        .add_filter(extension.to_uppercase(), &[extension.as_str()])
+        .blocking_save_file()
+        .and_then(|p| p.into_path().ok())
+    else {
+        return Ok(false);
+    };
+    std::fs::write(&path, content).map_err(|e| format!("Enregistrement impossible : {e}"))?;
+    Ok(true)
 }
 
 // --- Modèles -----------------------------------------------------------------------------
@@ -229,6 +256,7 @@ pub struct HistoryView {
     text: String,
     engine: String,
     duration_ms: u64,
+    pinned: bool,
 }
 
 #[tauri::command]
@@ -236,7 +264,14 @@ pub fn history(core: Core_, query: Option<String>, limit: u32, offset: u32) -> R
     let items = core.storage.history(query.filter(|q| !q.trim().is_empty()), limit, offset).map_err(|e| e.to_string())?;
     Ok(items
         .into_iter()
-        .map(|h| HistoryView { id: h.id, created_at_ms: h.created_at_ms, text: h.text, engine: h.engine, duration_ms: h.duration_ms })
+        .map(|h| HistoryView {
+            id: h.id,
+            created_at_ms: h.created_at_ms,
+            text: h.text,
+            engine: h.engine,
+            duration_ms: h.duration_ms,
+            pinned: h.pinned,
+        })
         .collect())
 }
 
@@ -245,9 +280,168 @@ pub fn delete_history(core: Core_, id: i64) -> Result<(), String> {
     core.storage.delete_history(id).map_err(|e| e.to_string())
 }
 
+/// Efface l'historique, sauf les dictées épinglées.
 #[tauri::command]
 pub fn clear_history(core: Core_) -> Result<(), String> {
     core.storage.clear_history().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_history_pinned(core: Core_, id: i64, pinned: bool) -> Result<(), String> {
+    core.storage.set_history_pinned(id, pinned).map_err(|e| e.to_string())
+}
+
+/// Retouche après coup : le nouveau texte remplace l'ancien (gardé comme texte d'origine).
+#[tauri::command]
+pub fn update_history_text(core: Core_, id: i64, text: String) -> Result<(), String> {
+    core.storage.update_history_text(id, text).map_err(|e| e.to_string())
+}
+
+// --- Remplacements, profils par app, sauvegarde ------------------------------------------
+
+#[derive(Serialize)]
+pub struct ReplacementView {
+    id: i64,
+    phrase: String,
+    replacement: String,
+}
+
+#[tauri::command]
+pub fn replacements(core: Core_) -> Result<Vec<ReplacementView>, String> {
+    Ok(core
+        .storage
+        .replacements()
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|r| ReplacementView { id: r.id, phrase: r.phrase, replacement: r.replacement })
+        .collect())
+}
+
+#[tauri::command]
+pub fn set_replacement(core: Core_, phrase: String, replacement: String) -> Result<(), String> {
+    core.storage.set_replacement(phrase, replacement).map_err(|e| e.to_string())?;
+    core.apply_options();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn remove_replacement(core: Core_, id: i64) -> Result<(), String> {
+    core.storage.remove_replacement(id).map_err(|e| e.to_string())?;
+    core.apply_options();
+    Ok(())
+}
+
+#[derive(Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileView {
+    id: Option<i64>,
+    app_id: String,
+    label: Option<String>,
+    language: Option<String>,
+    mode: Option<String>,
+    refine_preset: Option<String>,
+}
+
+#[tauri::command]
+pub fn profiles(core: Core_) -> Result<Vec<ProfileView>, String> {
+    Ok(core
+        .storage
+        .profiles()
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|p| ProfileView {
+            id: p.id,
+            app_id: p.app_id,
+            label: p.label,
+            language: p.language,
+            mode: p.mode,
+            refine_preset: p.refine_preset,
+        })
+        .collect())
+}
+
+/// Ajoute ou met à jour le profil d'une app (identifiée par `appId`).
+#[tauri::command]
+pub fn save_profile(core: Core_, profile: ProfileView) -> Result<i64, String> {
+    let app_id = profile.app_id.trim().to_lowercase();
+    if app_id.is_empty() {
+        return Err("Indique l'app (nom de l'exécutable ou identifiant).".into());
+    }
+    let clean = |v: Option<String>| v.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    core.storage
+        .save_profile(dicto_ffi::AppProfile {
+            id: profile.id,
+            app_id,
+            label: clean(profile.label),
+            language: clean(profile.language),
+            engine: None,
+            mode: clean(profile.mode),
+            refine_preset: clean(profile.refine_preset),
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_profile(core: Core_, id: i64) -> Result<(), String> {
+    core.storage.delete_profile(id).map_err(|e| e.to_string())
+}
+
+/// Dernière app au premier plan autre que Dicto (pour créer un profil d'un clic).
+#[tauri::command]
+pub fn last_app(core: Core_) -> Option<crate::foreground::AppInfo> {
+    core.last_app.lock().unwrap().clone()
+}
+
+#[tauri::command]
+pub fn translation_targets() -> Vec<String> {
+    dicto_ffi::translation_targets()
+}
+
+/// Exporte vocabulaire, remplacements et profils dans un fichier JSON.
+#[tauri::command]
+pub async fn export_bundle(app: AppHandle, core: State<'_, Arc<Core>>) -> Result<bool, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let json = core.storage.export_bundle().map_err(|e| e.to_string())?;
+    let Some(path) = app
+        .dialog()
+        .file()
+        .set_title(crate::locale::tr("Exporter les réglages de Dicto", "Export Dicto settings"))
+        .set_file_name("dicto-export.json")
+        .add_filter("JSON", &["json"])
+        .blocking_save_file()
+        .and_then(|p| p.into_path().ok())
+    else {
+        return Ok(false);
+    };
+    std::fs::write(&path, json).map_err(|e| format!("Enregistrement impossible : {e}"))?;
+    Ok(true)
+}
+
+#[derive(Serialize)]
+pub struct ImportView {
+    vocabulary: u32,
+    replacements: u32,
+    profiles: u32,
+}
+
+/// Importe un fichier exporté par Dicto (ce téléphone ou un autre ordinateur) ; rien n'est supprimé.
+#[tauri::command]
+pub async fn import_bundle(app: AppHandle, core: State<'_, Arc<Core>>) -> Result<Option<ImportView>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let Some(path) = app
+        .dialog()
+        .file()
+        .set_title(crate::locale::tr("Importer des réglages de Dicto", "Import Dicto settings"))
+        .add_filter("JSON", &["json"])
+        .blocking_pick_file()
+        .and_then(|p| p.into_path().ok())
+    else {
+        return Ok(None);
+    };
+    let json = std::fs::read_to_string(&path).map_err(|e| format!("Lecture impossible : {e}"))?;
+    let c = core.storage.import_bundle(json).map_err(|e| e.to_string())?;
+    core.apply_options();
+    Ok(Some(ImportView { vocabulary: c.vocabulary, replacements: c.replacements, profiles: c.profiles }))
 }
 
 #[derive(Serialize)]
@@ -495,6 +689,31 @@ pub struct FileResult {
     duration_ms: u64,
     engine: String,
     segments: usize,
+    /// Nombre de voix séparées (0 : pas de séparation).
+    speakers: u32,
+    lines: Vec<LineView>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LineView {
+    start_ms: u64,
+    /// Voix (0, 1…), si la séparation des voix a été faite.
+    speaker: Option<u32>,
+    text: String,
+}
+
+const DIARIZATION: &str = "diarization";
+
+/// Téléchargement du modèle de séparation des voix, sur la barre de progression du fichier.
+struct DiarizationDownload(AppHandle);
+
+impl dicto_ffi::DownloadListener for DiarizationDownload {
+    fn on_progress(&self, downloaded: u64, total: u64) {
+        if total > 0 {
+            let _ = self.0.emit("dicto://file-progress", downloaded as f32 / total as f32);
+        }
+    }
 }
 
 struct FileProgress(AppHandle);
@@ -531,25 +750,70 @@ pub async fn transcribe_file(app: AppHandle, core: State<'_, Arc<Core>>, path: S
         let vocab = core.storage.vocabulary().map(|v| v.into_iter().map(|t| t.term).collect()).unwrap_or_default();
         (s.language_option(), vocab)
     };
+    // Séparation des voix : le modèle (~46 Mo) est téléchargé la première fois.
+    let diarization_dir = if core.settings.lock().unwrap().diarize {
+        match core.models.support_path(DIARIZATION.into()) {
+            Some(dir) => Some(dir),
+            None => {
+                let _ = app.emit("dicto://file-stage", "model");
+                let dir = core
+                    .models
+                    .download_support(DIARIZATION.into(), Arc::new(DiarizationDownload(app.clone())))
+                    .await
+                    .map_err(|e| format!("Modèle de séparation des voix : {e}"))?;
+                Some(dir)
+            }
+        }
+    } else {
+        None
+    };
+    let _ = app.emit("dicto://file-stage", "transcribe");
     let job = dicto_ffi::FileJob::new();
     *core.file_job.lock().unwrap() = Some(job.clone());
     let result = job
-        .transcribe(engine, decoded.pcm, decoded.sample_rate, decoded.channels, language, vocabulary, Arc::new(FileProgress(app)))
+        .transcribe(
+            engine,
+            decoded.pcm,
+            decoded.sample_rate,
+            decoded.channels,
+            language,
+            vocabulary,
+            diarization_dir,
+            Arc::new(FileProgress(app)),
+        )
         .await;
     *core.file_job.lock().unwrap() = None;
     let transcript = result.map_err(|e| match e {
         dicto_ffi::FfiError::Cancelled => "Transcription annulée.".to_string(),
         e => e.to_string(),
     })?;
+    let mut voices: Vec<u32> = transcript.segments.iter().filter_map(|s| s.speaker).collect();
+    voices.sort_unstable();
+    voices.dedup();
     let view = FileResult {
         name: name.clone(),
         text: transcript.text.clone(),
         duration_ms: transcript.duration_ms,
         engine: transcript.engine.clone(),
         segments: transcript.segments.len(),
+        speakers: voices.len() as u32,
+        lines: transcript
+            .segments
+            .iter()
+            .map(|s| LineView { start_ms: s.start_ms, speaker: s.speaker, text: s.text.clone() })
+            .collect(),
     };
     *core.last_file.lock().unwrap() = Some((name, transcript));
     Ok(view)
+}
+
+/// Compte rendu de réunion de la dernière transcription, par le fournisseur de retouche.
+#[tauri::command]
+pub async fn meeting_minutes(core: State<'_, Arc<Core>>) -> Result<String, String> {
+    let client = core.refine_client().ok_or("Active d'abord un fournisseur de retouche dans Réglages.")?;
+    let (_, transcript) = core.last_file.lock().unwrap().clone().ok_or("Aucune transcription.")?;
+    let text = dicto_ffi::transcript_for_llm(transcript);
+    client.refine(dicto_ffi::meeting_minutes_instruction(), text).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

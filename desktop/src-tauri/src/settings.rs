@@ -38,6 +38,28 @@ impl From<ListenMode> for Mode {
     }
 }
 
+/// Ce que lance un bouton latéral de la souris.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum MouseAction {
+    #[default]
+    None,
+    PushToTalk,
+    Continuous,
+    Hold,
+}
+
+impl MouseAction {
+    pub fn mode(self) -> Option<ListenMode> {
+        match self {
+            MouseAction::None => None,
+            MouseAction::PushToTalk => Some(ListenMode::PushToTalk),
+            MouseAction::Continuous => Some(ListenMode::Continuous),
+            MouseAction::Hold => Some(ListenMode::Hold),
+        }
+    }
+}
+
 /// Pastille d'enregistrement.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -90,6 +112,10 @@ pub struct Settings {
     pub live_preview: bool,
     /// Paragraphes automatiques : pause (ms) qui ouvre un paragraphe, 0 = jamais.
     pub paragraph_pause_ms: u32,
+    /// « virgule », « point d'interrogation »… écrits comme de la ponctuation.
+    pub spoken_punctuation: bool,
+    /// Retire « euh », « hum » et les mots répétés par erreur.
+    pub remove_fillers: bool,
     pub output: Output,
     /// Mode du bouton micro de la fenêtre Dicto.
     pub mode: ListenMode,
@@ -97,6 +123,13 @@ pub struct Settings {
     pub shortcut_toggle: String,
     pub shortcut_continuous: String,
     pub shortcut_hold: String,
+    /// « Dicter et traduire » : une dictée marche/arrêt traduite vers `translate_to`.
+    pub shortcut_translate: String,
+    /// Langue cible de la traduction à la volée (code ISO 639-1).
+    pub translate_to: String,
+    /// Boutons latéraux de la souris (précédent, suivant).
+    pub mouse_back: MouseAction,
+    pub mouse_forward: MouseAction,
     pub pill: Pill,
     pub sounds: bool,
     /// Service de transcription en ligne en service (sinon le modèle local).
@@ -112,6 +145,8 @@ pub struct Settings {
     pub auto_refine: bool,
     pub ui_language: UiLanguage,
     pub theme: Theme,
+    /// Fichiers audio : séparer les voix (« Voix 1 », « Voix 2 »…).
+    pub diarize: bool,
 }
 
 impl Default for Settings {
@@ -123,11 +158,17 @@ impl Default for Settings {
             voice_commands: true,
             live_preview: true,
             paragraph_pause_ms: 2500,
+            spoken_punctuation: false,
+            remove_fillers: true,
             output: Output::Type,
             mode: ListenMode::PushToTalk,
             shortcut_toggle: "Ctrl+Alt+Space".into(),
             shortcut_continuous: "Ctrl+Alt+C".into(),
             shortcut_hold: "Ctrl+Shift+Space".into(),
+            shortcut_translate: "Ctrl+Alt+T".into(),
+            translate_to: "en".into(),
+            mouse_back: MouseAction::None,
+            mouse_forward: MouseAction::None,
             pill: Pill::Bottom,
             sounds: true,
             cloud: None,
@@ -139,6 +180,7 @@ impl Default for Settings {
             auto_refine: false,
             ui_language: UiLanguage::Auto,
             theme: Theme::Auto,
+            diarize: false,
         }
     }
 }
@@ -182,6 +224,15 @@ mod tests {
         assert_eq!(s.paragraph_pause_ms, 2500);
         assert_eq!(s.ui_language, UiLanguage::Auto);
         assert_eq!(s.theme, Theme::Auto);
+        assert!(!s.spoken_punctuation);
+        assert!(s.remove_fillers);
+        assert_eq!(s.shortcut_translate, "Ctrl+Alt+T");
+        assert_eq!(s.translate_to, "en");
+        assert_eq!((s.mouse_back, s.mouse_forward), (MouseAction::None, MouseAction::None));
+        assert!(!s.diarize);
+        let s: Settings = serde_json::from_str(r#"{"mouseBack":"hold","mouseForward":"pushToTalk"}"#).unwrap();
+        assert_eq!(s.mouse_back.mode(), Some(ListenMode::Hold));
+        assert_eq!(s.mouse_forward.mode(), Some(ListenMode::PushToTalk));
         let s: Settings = serde_json::from_str(r#"{"uiLanguage":"en","theme":"dark"}"#).unwrap();
         assert_eq!((s.ui_language, s.theme), (UiLanguage::En, Theme::Dark));
     }

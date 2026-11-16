@@ -40,13 +40,15 @@ data class FileItem(
     val result: FileTranscript? = null,
     val error: String? = null,
 ) {
-    enum class Status { QUEUED, DECODING, TRANSCRIBING, DONE, FAILED, CANCELLED }
+    enum class Status { QUEUED, VOICE_MODEL, DECODING, TRANSCRIBING, DONE, FAILED, CANCELLED }
 
-    val active get() = status == Status.DECODING || status == Status.TRANSCRIBING
+    val active get() = status == Status.VOICE_MODEL || status == Status.DECODING || status == Status.TRANSCRIBING
 }
 
 /** File de transcription des fichiers audio, traitée un par un hors de l'interface. */
 object FilesController {
+    /** Modèle de séparation des voix (catalogue, fichiers annexes). */
+    const val DIARIZATION = "diarization"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val queue = Channel<Long>(Channel.UNLIMITED)
     private val _items = MutableStateFlow<List<FileItem>>(emptyList())
@@ -84,6 +86,22 @@ object FilesController {
         currentId = id
         try {
             val engine = app.dictation.currentEngine() ?: throw IllegalStateException(tr("choisis d'abord un modèle"))
+            // Séparation des voix : son modèle (~46 Mo) est téléchargé la première fois.
+            val voices = if (app.settings.diarize.value) {
+                app.models.supportPath(DIARIZATION) ?: run {
+                    update(id) { it.copy(status = FileItem.Status.VOICE_MODEL, progress = 0f) }
+                    app.models.downloadSupport(
+                        DIARIZATION,
+                        object : uniffi.dicto_ffi.DownloadListener {
+                            override fun onProgress(downloaded: ULong, total: ULong) {
+                                if (total > 0u) update(id) { it.copy(progress = downloaded.toFloat() / total.toFloat()) }
+                            }
+                        },
+                    )
+                }
+            } else {
+                null
+            }
             update(id) { it.copy(status = FileItem.Status.DECODING, progress = 0f) }
             val decoded = AudioDecoder.decode(app, item.uri) { p -> update(id) { it.copy(progress = p) } }
             update(id) { it.copy(status = FileItem.Status.TRANSCRIBING, progress = 0f, durationMs = decoded.durationMs) }
@@ -91,7 +109,7 @@ object FilesController {
             val vocabulary = runCatching { app.storage.vocabulary().map { it.term } }.getOrDefault(emptyList())
             val result = fileJob.transcribe(
                 engine, decoded.pcm, AudioDecoder.TARGET_RATE.toUInt(), 1u.toUShort(),
-                app.settings.language.value, vocabulary,
+                app.settings.language.value, vocabulary, voices,
                 object : ProgressListener {
                     override fun onProgress(fraction: Float) = update(id) { it.copy(progress = fraction) }
                 },

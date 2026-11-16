@@ -229,6 +229,17 @@ class DictoImeService : InputMethodService(), LifecycleOwner, SavedStateRegistry
         }
         commitSpaced(renderEdits(rest))
         wrote = true
+        // « envoie le message » : le bouton d'action du champ (Envoyer, OK…), sinon Entrée.
+        if (rest.any { it is TextEdit.Send }) send()
+    }
+
+    private fun send() {
+        val action = currentInputEditorInfo?.imeOptions?.and(EditorInfo.IME_MASK_ACTION) ?: EditorInfo.IME_ACTION_NONE
+        if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
+            currentInputConnection?.performEditorAction(action)
+        } else {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
+        }
     }
 
     /** Insère au curseur, avec une espace si le texte précédent n'en finit pas par une. */

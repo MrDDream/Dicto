@@ -51,6 +51,8 @@ import kotlinx.coroutines.launch
 import uniffi.dicto_ffi.ExportFormat
 import uniffi.dicto_ffi.FileTranscript
 import uniffi.dicto_ffi.exportTranscript
+import uniffi.dicto_ffi.meetingMinutesInstruction
+import uniffi.dicto_ffi.transcriptForLlm
 
 /** Écran « Fichiers audio » : transcrire un enregistrement, une réunion, un message vocal. */
 @Composable
@@ -60,6 +62,7 @@ fun FilesScreen(onBack: () -> Unit) {
     val items by FilesController.items.collectAsStateWithLifecycle()
     val ui by app.dictation.ui.collectAsStateWithLifecycle()
     val language by app.settings.language.collectAsStateWithLifecycle()
+    val diarize by app.settings.diarize.flow.collectAsStateWithLifecycle()
     var open by remember { mutableStateOf<Long?>(null) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         uris.forEach { FilesController.add(context, it) }
@@ -110,7 +113,12 @@ fun FilesScreen(onBack: () -> Unit) {
                 HorizontalDivider(color = Dicto.SurfaceSunken)
                 SettingRow(tr("Horodatage"), tr("Chaque passage avec son minutage")) { Pill(tr("Toujours"), Dicto.AccentContainer, Dicto.Accent) }
                 HorizontalDivider(color = Dicto.SurfaceSunken)
-                SettingRow(tr("Séparer les voix"), tr("Arrive dans une prochaine version")) { Pill(tr("Bientôt"), Dicto.SurfaceSunken, Dicto.InkSecondary) }
+                SettingRow(
+                    tr("Séparer les voix"),
+                    tr("« Voix 1 », « Voix 2 »… devant chaque passage. Modèle de 46 Mo téléchargé une fois, transcription un peu plus longue."),
+                ) {
+                    DictoSwitch(diarize, app.settings.diarize::set, tr("Séparer les voix"))
+                }
             }
             if (items.isNotEmpty()) {
                 SectionTitle(tr("File d'attente"))
@@ -138,6 +146,7 @@ private fun QueueRow(item: FileItem, onOpen: () -> Unit) {
                         item.durationMs.takeIf { it > 0 }?.let(::duration),
                         when (item.status) {
                             FileItem.Status.QUEUED -> tr("En attente")
+                            FileItem.Status.VOICE_MODEL -> tr("Modèle des voix %1\$s %%", (item.progress * 100).toInt())
                             FileItem.Status.DECODING -> tr("Lecture %1\$s %%", (item.progress * 100).toInt())
                             FileItem.Status.TRANSCRIBING -> "${(item.progress * 100).toInt()} %"
                             FileItem.Status.DONE -> tr("Terminé")
@@ -174,6 +183,7 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
     val t = item.result ?: return
     val scope = rememberCoroutineScope()
     var summary by remember { mutableStateOf<String?>(null) }
+    var minutes by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf<Pair<ExportFormat, String>?>(null) }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         val (format, title) = pending ?: return@rememberLauncherForActivityResult
@@ -186,6 +196,15 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(item.name, onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            minutes?.let {
+                DictoCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(tr("Compte rendu"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        GhostButton(null, DictoIcons.Copy, { copy(context, it) }, contentDescription = tr("Copier le compte rendu"))
+                    }
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
             summary?.let {
                 DictoCard {
                     Text(tr("Résumé"), style = MaterialTheme.typography.titleSmall)
@@ -196,7 +215,12 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
                 for (s in t.segments) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(timestamp(s.startMs.toLong()), fontFamily = Mono, style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted, modifier = Modifier.width(52.dp))
-                        Text(s.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        Column(Modifier.weight(1f)) {
+                            s.speaker?.let { v ->
+                                Text(tr("Voix %1\$s", (v.toInt() + 1)), style = MaterialTheme.typography.labelSmall, color = speakerColor(v.toInt()))
+                            }
+                            Text(s.text, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
                 if (t.segments.isEmpty()) Text(t.text.ifBlank { tr("Aucune parole détectée.") }, style = MaterialTheme.typography.bodyMedium)
@@ -215,6 +239,16 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
                 })
             }
             if (refineProvider != null) {
+                TonalButton(if (minutes == null) tr("Compte rendu") else tr("Compte rendu ✓"), {
+                    scope.launch {
+                        minutes = "…"
+                        minutes = try {
+                            app.dictation.refineClient()?.refine(meetingMinutesInstruction(), transcriptForLlm(t))
+                        } catch (e: Exception) {
+                            tr("Compte rendu impossible : %1\$s", e.userMessage())
+                        }
+                    }
+                })
                 PrimaryButton(if (summary == null) tr("Résumer avec un LLM") else tr("Résumé ✓"), {
                     scope.launch {
                         summary = "…"
@@ -233,6 +267,9 @@ private fun TranscriptView(item: FileItem, onBack: () -> Unit) {
         }
     }
 }
+
+/** Une couleur par voix, pour repérer qui parle d'un coup d'œil. */
+private fun speakerColor(v: Int) = listOf(Dicto.Accent, Dicto.Recording, Dicto.InkSecondary)[v % 3]
 
 private fun timestamp(ms: Long): String {
     val s = ms / 1000

@@ -4,11 +4,16 @@ mod audio;
 mod commands;
 mod core;
 mod decode;
+mod foreground;
 mod insert;
 mod locale;
+mod mouse;
+#[cfg(target_os = "linux")]
+mod portal;
 mod providers;
 mod secrets;
 mod settings;
+mod sound;
 mod tray;
 mod update;
 
@@ -76,6 +81,21 @@ pub fn run() {
             commands::history,
             commands::delete_history,
             commands::clear_history,
+            commands::set_history_pinned,
+            commands::update_history_text,
+            commands::replacements,
+            commands::set_replacement,
+            commands::remove_replacement,
+            commands::profiles,
+            commands::save_profile,
+            commands::delete_profile,
+            commands::last_app,
+            commands::translation_targets,
+            commands::export_bundle,
+            commands::import_bundle,
+            commands::platform_info,
+            commands::save_text,
+            commands::meeting_minutes,
             commands::vocabulary,
             commands::add_term,
             commands::remove_term,

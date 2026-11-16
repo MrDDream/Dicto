@@ -142,6 +142,18 @@ class Settings(private val storage: Storage) {
     val refinePreset = text("refine.preset", "clean")
     val refineCustom = text("refine.custom", "")
     val autoRefine = flag("refine.auto", false)
+    /** « virgule », « point d'interrogation »… dits à voix haute. */
+    val spokenPunctuation = flag("dictation.spoken_punctuation", false)
+    /** Retire « euh », « hum » et les mots répétés par erreur. */
+    val removeFillers = flag("dictation.remove_fillers", true)
+    /** Petite vibration au début et à la fin de l'écoute. */
+    val vibrate = flag("dictation.vibrate", true)
+    /** Traduction à la volée : code de la langue cible, « none » = désactivée. */
+    val translateTo = text("refine.translate", "none")
+    /** Dernière langue de traduction choisie (pour la remettre d'un geste depuis l'écran Dictée). */
+    val lastTranslateTo = text("refine.translate.last", "en")
+    /** Fichiers audio : séparer les voix (modèle téléchargé une fois). */
+    val diarize = flag("files.diarize", false)
     /** Paragraphes automatiques : pause (ms) qui ouvre un paragraphe, « 0 » = jamais. */
     val paragraphs = text("dictation.paragraphs", "2500")
     /** Texte provisoire pendant qu'on parle, pour les modèles qui transcrivent une phrase entière. */

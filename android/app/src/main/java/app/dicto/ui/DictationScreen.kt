@@ -152,6 +152,7 @@ fun DictationScreen(onOpenSettings: () -> Unit, onOpenModels: () -> Unit, onOpen
                     ) {
                         EngineSwitcher(ui.engine, onOpenModels, Modifier.weight(1f, fill = false))
                         LanguageChip(language) { app.settings.setLanguage(it) }
+                        TranslateChip()
                     }
 
                     ModeSelector(ui.mode, enabled = !ui.isActive) { controller.setMode(it) }
@@ -267,6 +268,36 @@ private fun EngineSwitcher(status: EngineStatus, onOpenModels: () -> Unit, modif
                 onClick = { open = false; onOpenModels() },
             )
         }
+    }
+}
+
+/** Traduction à la volée : « → EN » allumé quand elle est active, un toucher la coupe ou la remet. */
+@Composable
+private fun TranslateChip() {
+    val app = DictoApp.instance
+    val provider by app.settings.refineProvider.collectAsStateWithLifecycle()
+    val target by app.settings.translateTo.flow.collectAsStateWithLifecycle()
+    val last by app.settings.lastTranslateTo.flow.collectAsStateWithLifecycle()
+    if (provider == null) return
+    val active = target != "none"
+    val code = if (active) target else last
+    ChipButton(
+        onClick = {
+            app.settings.translateTo.set(if (active) "none" else code)
+            app.dictation.applyOptions()
+        },
+        accent = active,
+    ) {
+        Text(
+            "→ " + code.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            softWrap = false,
+            color = if (active) Dicto.Accent else Dicto.InkMuted,
+            modifier = Modifier.semantics {
+                contentDescription = if (active) tr("Traduction en %1\$s activée", translationLanguageName(code)) else tr("Traduire en %1\$s", translationLanguageName(code))
+            },
+        )
     }
 }
 

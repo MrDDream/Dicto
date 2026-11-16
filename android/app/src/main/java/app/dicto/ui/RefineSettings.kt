@@ -19,6 +19,7 @@ import app.dicto.DictoApp
 import app.dicto.ui.providers.RefineProviders
 import app.dicto.ui.theme.Dicto
 import uniffi.dicto_ffi.refinePresets
+import uniffi.dicto_ffi.translationTargets
 
 /** Retouche par IA : fournisseurs (même rendu que Nautile), consigne, retouche automatique. */
 @Composable
@@ -60,6 +61,58 @@ fun RefineSettingsCard() {
                 }
                 SettingRow(tr("Retoucher chaque dictée"), tr("Sinon, utilise « Reformuler » dans l'écran Dictée")) {
                     DictoSwitch(auto, { s.autoRefine.set(it); saved() }, tr("Retoucher chaque dictée"))
+                }
+            }
+            TranslationCard()
+        } else {
+            Text(
+                tr("Active un fournisseur pour retoucher ou traduire tes dictées."),
+                style = MaterialTheme.typography.labelSmall,
+                color = Dicto.InkMuted,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    }
+}
+
+/** Nom d'une langue de traduction, dans la langue de l'interface. */
+fun translationLanguageName(code: String): String = tr(
+    when (code) {
+        "en" -> "Anglais"
+        "fr" -> "Français"
+        "es" -> "Espagnol"
+        "de" -> "Allemand"
+        "it" -> "Italien"
+        "pt" -> "Portugais"
+        "nl" -> "Néerlandais"
+        else -> code
+    },
+)
+
+/** Traduction à la volée : chaque dictée est écrite directement dans la langue choisie. */
+@Composable
+private fun TranslationCard() {
+    val s = DictoApp.instance.settings
+    val target by s.translateTo.flow.collectAsStateWithLifecycle()
+    fun choose(code: String) {
+        s.translateTo.set(code)
+        if (code != "none") s.lastTranslateTo.set(code)
+        DictoApp.instance.dictation.applyOptions()
+    }
+    DictoCard {
+        Text(tr("Traduire en"), style = MaterialTheme.typography.titleSmall)
+        Text(
+            tr("Tu parles dans ta langue, Dicto écrit dans celle-ci. Passe avant la retouche automatique."),
+            style = MaterialTheme.typography.labelSmall,
+            color = Dicto.InkMuted,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChipButton(onClick = { choose("none") }, accent = target == "none") {
+                Text(tr("Non"), style = MaterialTheme.typography.labelMedium)
+            }
+            for (code in translationTargets()) {
+                ChipButton(onClick = { choose(code) }, accent = target == code) {
+                    Text(translationLanguageName(code), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

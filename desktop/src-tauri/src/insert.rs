@@ -102,6 +102,14 @@ fn paste(text: &str) -> Written {
     }
 }
 
+/// Valide le champ (« envoie le message ») : touche Entrée, un instant après le texte.
+pub fn press_enter() {
+    thread::sleep(Duration::from_millis(120));
+    if let Ok(mut e) = enigo() {
+        let _ = e.key(Key::Return, Direction::Click);
+    }
+}
+
 /// Efface les `count` derniers caractères écrits (« efface ça »).
 pub fn erase(count: usize) {
     if count == 0 {

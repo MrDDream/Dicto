@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +35,7 @@ import app.dicto.data.Journal
 import app.dicto.BuildConfig
 import app.dicto.DictoApp
 import app.dicto.data.LANGUAGES
+import app.dicto.dictation.userMessage
 import app.dicto.ui.theme.Dicto
 import app.dicto.ui.theme.DictoIcons
 import kotlinx.coroutines.launch
@@ -52,6 +54,9 @@ fun SettingsScreen(onBack: () -> Unit) {
     val livePreview by app.settings.livePreview.flow.collectAsStateWithLifecycle()
     val imeAutoStart by app.settings.imeAutoStart.flow.collectAsStateWithLifecycle()
     val imeAutoReturn by app.settings.imeAutoReturn.flow.collectAsStateWithLifecycle()
+    val spokenPunctuation by app.settings.spokenPunctuation.flow.collectAsStateWithLifecycle()
+    val removeFillers by app.settings.removeFillers.flow.collectAsStateWithLifecycle()
+    val vibrate by app.settings.vibrate.flow.collectAsStateWithLifecycle()
     var refresh by remember { mutableIntStateOf(0) }
     val terms = remember(refresh) { runCatching { app.storage.vocabulary() }.getOrDefault(emptyList()) }
     var newTerm by remember { mutableStateOf("") }
@@ -83,8 +88,14 @@ fun SettingsScreen(onBack: () -> Unit) {
 
             SectionTitle(tr("Pendant la dictée"))
             DictoCard(padding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-                SettingRow(tr("Commandes vocales"), tr("« nouvelle ligne », « nouveau paragraphe », « efface ça »")) {
+                SettingRow(tr("Commandes vocales"), tr("« nouvelle ligne », « efface ça », « majuscule », « tout en majuscules », « envoie le message »")) {
                     DictoSwitch(voiceCommands, app.settings::setVoiceCommands, tr("Commandes vocales"))
+                }
+                SettingRow(tr("Ponctuation dictée"), tr("« virgule », « point », « point d'interrogation », « ouvrez les guillemets »…")) {
+                    DictoSwitch(spokenPunctuation, app.settings.spokenPunctuation::set, tr("Ponctuation dictée"))
+                }
+                SettingRow(tr("Retirer les hésitations"), tr("« euh », « hum » et les mots répétés par erreur")) {
+                    DictoSwitch(removeFillers, app.settings.removeFillers::set, tr("Retirer les hésitations"))
                 }
                 ParagraphsSetting()
                 SettingRow(
@@ -92,6 +103,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                     tr("Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de batterie."),
                 ) {
                     DictoSwitch(livePreview, app.settings.livePreview::set, tr("Texte en direct"))
+                }
+                SettingRow(tr("Vibrer au début et à la fin"), tr("Pour savoir sans regarder que Dicto t'écoute.")) {
+                    DictoSwitch(vibrate, app.settings.vibrate::set, tr("Vibrer au début et à la fin"))
                 }
             }
 
@@ -138,11 +152,17 @@ fun SettingsScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle(tr("Remplacements"), tr("Dis l'expression, Dicto écrit le texte. Ex. « mon adresse » → ton adresse complète."))
+            ReplacementsCard()
+
             SectionTitle(tr("Retouche par IA"), tr("Ponctuation, style, traduction."))
             RefineSettingsCard()
 
             SectionTitle(tr("Profils par app"), tr("Langue, retouche et mode selon l'app où tu écris."))
             ProfilesCard()
+
+            SectionTitle(tr("Sauvegarde"), tr("Vocabulaire, remplacements et profils, pour les retrouver sur un autre appareil (téléphone ou ordinateur)."))
+            BackupCard()
 
             SectionTitle(tr("Diagnostic"), tr("Les derniers événements du clavier et de la bulle, gardés sur le téléphone."))
             DictoCard {
@@ -181,6 +201,95 @@ fun SettingsScreen(onBack: () -> Unit) {
                 TonalButton(tr("Crédits et licences"), { creditsOpen = true })
             }
         }
+    }
+}
+
+/** Remplacements personnels : « expression → texte ». */
+@Composable
+private fun ReplacementsCard() {
+    val app = DictoApp.instance
+    var refresh by remember { mutableIntStateOf(0) }
+    val list = remember(refresh) { runCatching { app.storage.replacements() }.getOrDefault(emptyList()) }
+    var phrase by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
+    fun add() {
+        if (phrase.isBlank() || text.isBlank()) return
+        runCatching { app.storage.setReplacement(phrase.trim(), text) }
+        phrase = ""
+        text = ""
+        refresh++
+        app.dictation.applyOptions()
+    }
+    DictoCard {
+        for (r in list) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(r.phrase, style = MaterialTheme.typography.titleSmall)
+                    Text("→ " + r.replacement, style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted)
+                }
+                GhostButton(null, DictoIcons.Close, {
+                    runCatching { app.storage.removeReplacement(r.id) }
+                    refresh++
+                    app.dictation.applyOptions()
+                }, contentDescription = tr("Retirer %1\$s", r.phrase), tint = Dicto.InkMuted)
+            }
+        }
+        OutlinedTextField(
+            value = phrase,
+            onValueChange = { phrase = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(tr("Expression dite")) },
+            placeholder = { Text(tr("mon adresse")) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+        )
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(tr("Texte écrit")) },
+            placeholder = { Text(tr("12 rue des Lilas, 69000 Lyon")) },
+            minLines = 1,
+            maxLines = 4,
+            shape = RoundedCornerShape(14.dp),
+        )
+        TonalButton(tr("Ajouter"), ::add, icon = DictoIcons.Plus)
+    }
+}
+
+/** Export et import du vocabulaire, des remplacements et des profils (fichier JSON). */
+@Composable
+private fun BackupCard() {
+    val app = DictoApp.instance
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var status by remember { mutableStateOf<String?>(null) }
+    val export = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        status = runCatching {
+            val json = app.storage.exportBundle()
+            context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+            tr("Fichier enregistré.")
+        }.getOrElse { tr("Export impossible : %1\$s", it.message ?: "") }
+    }
+    val import = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        status = runCatching {
+            val json = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }.orEmpty()
+            val c = app.storage.importBundle(json)
+            app.dictation.applyOptions()
+            tr("Importé : %1\$s mots, %2\$s remplacements, %3\$s profils.", c.vocabulary, c.replacements, c.profiles)
+        }.getOrElse { tr("Import impossible : %1\$s", it.userMessage()) }
+    }
+    DictoCard {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TonalButton(tr("Exporter"), { export.launch("dicto-export.json") }, icon = DictoIcons.Share)
+            TonalButton(tr("Importer"), { import.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) })
+        }
+        status?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted) }
     }
 }
 

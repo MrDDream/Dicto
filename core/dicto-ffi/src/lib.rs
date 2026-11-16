@@ -148,6 +148,8 @@ pub enum TextEdit {
     Newline,
     Paragraph,
     DeletePrevious,
+    /// Valider le champ (Entrée ou « Envoyer ») une fois le texte écrit.
+    Send,
 }
 
 impl From<Edit> for TextEdit {
@@ -157,6 +159,7 @@ impl From<Edit> for TextEdit {
             Edit::Newline => TextEdit::Newline,
             Edit::Paragraph => TextEdit::Paragraph,
             Edit::DeletePrevious => TextEdit::DeletePrevious,
+            Edit::Send => TextEdit::Send,
         }
     }
 }
@@ -168,6 +171,7 @@ impl From<TextEdit> for Edit {
             TextEdit::Newline => Edit::Newline,
             TextEdit::Paragraph => Edit::Paragraph,
             TextEdit::DeletePrevious => Edit::DeletePrevious,
+            TextEdit::Send => Edit::Send,
         }
     }
 }
@@ -333,7 +337,7 @@ struct Job {
 struct JobSettings {
     engine: Option<Arc<dyn SttEngine>>,
     options: TranscribeOptions,
-    voice_commands: bool,
+    text: commands::TextOptions,
     refine: Option<(Refiner, String)>,
     /// Paragraphes automatiques : pause qui en ouvre un (`None` = jamais).
     paragraph_pause_ms: Option<u32>,
@@ -373,7 +377,7 @@ impl Dictation {
         let settings = Arc::new(RwLock::new(JobSettings {
             engine: None,
             options: TranscribeOptions::default(),
-            voice_commands: true,
+            text: commands::TextOptions::commands_only(),
             refine: None,
             paragraph_pause_ms: None,
         }));
@@ -467,7 +471,15 @@ impl Dictation {
         let mut s = self.settings.write().unwrap();
         s.options.language = language.filter(|l| !l.is_empty() && l != "auto");
         s.options.prompt = vocabulary_prompt(&vocabulary);
-        s.voice_commands = voice_commands;
+        s.text.voice_commands = voice_commands;
+    }
+
+    /// Ponctuation dictée, nettoyage des hésitations et remplacements personnels.
+    pub fn set_text_options(&self, spoken_punctuation: bool, remove_fillers: bool, replacements: Vec<Replacement>) {
+        let mut s = self.settings.write().unwrap();
+        s.text.spoken_punctuation = spoken_punctuation;
+        s.text.remove_fillers = remove_fillers;
+        s.text.replacements = replacements.into_iter().map(|r| (r.phrase, r.replacement)).collect();
     }
 
     /// Paragraphes automatiques : une pause d'au moins `pause_ms` ouvre un nouveau paragraphe
@@ -641,7 +653,7 @@ async fn worker(
         }
         let pieces: Vec<Vec<Edit>> = texts
             .iter()
-            .map(|text| if s.voice_commands { commands::parse_voice_commands(text) } else { vec![Edit::Text(text.clone())] })
+            .map(|text| commands::process_text(text, &s.text))
             .collect();
         let mut edits = commands::join_paragraphs(pieces);
         if edits.is_empty() {
@@ -696,6 +708,30 @@ pub fn parse_voice_commands(text: String) -> Vec<TextEdit> {
 pub fn render_edits(edits: Vec<TextEdit>) -> String {
     let edits: Vec<Edit> = edits.into_iter().map(Into::into).collect();
     commands::render(&edits)
+}
+
+/// Langues proposées pour la traduction à la volée (codes ISO 639-1).
+#[uniffi::export]
+pub fn translation_targets() -> Vec<String> {
+    dicto_core::refine::TRANSLATION_TARGETS.iter().map(|(c, _)| c.to_string()).collect()
+}
+
+/// Consigne de retouche qui traduit vers `code`, ou `None` si la langue n'est pas proposée.
+#[uniffi::export]
+pub fn translation_instruction(code: String) -> Option<String> {
+    dicto_core::refine::translation_instruction(&code)
+}
+
+/// Consigne du compte rendu de réunion (à passer à `RefineClient::refine` avec `transcript_for_llm`).
+#[uniffi::export]
+pub fn meeting_minutes_instruction() -> String {
+    dicto_core::refine::MINUTES_INSTRUCTION.to_string()
+}
+
+/// Transcription d'un fichier mise en forme pour un LLM : heure et voix de chaque passage.
+#[uniffi::export]
+pub fn transcript_for_llm(transcript: FileTranscript) -> String {
+    dicto_core::refine::transcript_for_llm(&transcript.to_core().segments)
 }
 
 // --- Retouche par IA -------------------------------------------------------------
@@ -1012,6 +1048,7 @@ impl FileJob {
         channels: u16,
         language: Option<String>,
         vocabulary: Vec<String>,
+        diarization_dir: Option<String>,
         listener: Arc<dyn ProgressListener>,
     ) -> FfiResult<FileTranscript> {
         let samples: Vec<f32> = pcm
@@ -1025,7 +1062,18 @@ impl FileJob {
             prompt: vocabulary_prompt(&vocabulary),
             timestamps: true,
         };
-        let t = dicto_core::files::transcribe_long(engine.inner.as_ref(), &pcm16, &opts, &self.cancel, |p| listener.on_progress(p)).await?;
+        // Séparation des voix (si le modèle est installé) : 15 % de la barre de progression.
+        let diarize = diarization_dir.filter(|d| !d.is_empty());
+        let share = if diarize.is_some() { 0.85 } else { 1.0 };
+        let mut t = dicto_core::files::transcribe_long(engine.inner.as_ref(), &pcm16, &opts, &self.cancel, |p| {
+            listener.on_progress(p * share)
+        })
+        .await?;
+        if let Some(dir) = diarize {
+            let turns = speaker_turns(std::path::PathBuf::from(dir), pcm16.clone()).await?;
+            dicto_core::diarize::assign_speakers(&mut t.segments, &turns);
+            listener.on_progress(1.0);
+        }
         Ok(FileTranscript {
             text: t.text,
             language: t.language,
@@ -1038,6 +1086,20 @@ impl FileJob {
             engine: engine.inner.id(),
         })
     }
+}
+
+/// Tours de parole d'un enregistrement, calculés hors du fil asynchrone (plusieurs secondes).
+#[cfg(feature = "sherpa")]
+async fn speaker_turns(dir: PathBuf, pcm: Vec<f32>) -> FfiResult<Vec<dicto_core::diarize::Turn>> {
+    let turns = tokio::task::spawn_blocking(move || dicto_core::diarize::Diarizer::load(&dir, None)?.turns(&pcm))
+        .await
+        .map_err(|e| FfiError::Other { detail: e.to_string() })??;
+    Ok(turns)
+}
+
+#[cfg(not(feature = "sherpa"))]
+async fn speaker_turns(_dir: PathBuf, _pcm: Vec<f32>) -> FfiResult<Vec<dicto_core::diarize::Turn>> {
+    Err(FfiError::Model { detail: "cette version a été compilée sans sherpa-onnx".into() })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, uniffi::Enum)]
@@ -1115,12 +1177,31 @@ pub struct HistoryItem {
     pub language: Option<String>,
     pub duration_ms: u64,
     pub app: Option<String>,
+    /// Épinglée : reste en tête de l'historique et n'est pas effacée avec le reste.
+    pub pinned: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct VocabularyTerm {
     pub id: i64,
     pub term: String,
+}
+
+/// Remplacement personnel : l'expression dite, le texte écrit à sa place.
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
+pub struct Replacement {
+    /// 0 pour un remplacement pas encore enregistré.
+    pub id: i64,
+    pub phrase: String,
+    pub replacement: String,
+}
+
+/// Ce qu'un import a ajouté ou mis à jour.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, uniffi::Record)]
+pub struct ImportCounts {
+    pub vocabulary: u32,
+    pub replacements: u32,
+    pub profiles: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
@@ -1185,6 +1266,7 @@ impl Storage {
                 language: e.language,
                 duration_ms: e.duration_ms,
                 app: e.app,
+                pinned: e.pinned,
             })
             .collect())
     }
@@ -1193,8 +1275,46 @@ impl Storage {
         Ok(self.inner.lock().unwrap().delete_history(id)?)
     }
 
+    /// Efface l'historique, sauf les dictées épinglées.
     pub fn clear_history(&self) -> FfiResult<()> {
         Ok(self.inner.lock().unwrap().clear_history()?)
+    }
+
+    pub fn set_history_pinned(&self, id: i64, pinned: bool) -> FfiResult<()> {
+        Ok(self.inner.lock().unwrap().set_history_pinned(id, pinned)?)
+    }
+
+    /// Remplace le texte d'une dictée (retouche après coup) ; le texte d'origine est gardé.
+    pub fn update_history_text(&self, id: i64, text: String) -> FfiResult<()> {
+        Ok(self.inner.lock().unwrap().update_history_text(id, &text)?)
+    }
+
+    pub fn replacements(&self) -> FfiResult<Vec<Replacement>> {
+        let list = self.inner.lock().unwrap().replacements()?;
+        Ok(list
+            .into_iter()
+            .map(|r| Replacement { id: r.id, phrase: r.phrase, replacement: r.replacement })
+            .collect())
+    }
+
+    /// Ajoute un remplacement, ou change le texte d'une expression déjà connue.
+    pub fn set_replacement(&self, phrase: String, replacement: String) -> FfiResult<()> {
+        Ok(self.inner.lock().unwrap().set_replacement(&phrase, &replacement)?)
+    }
+
+    pub fn remove_replacement(&self, id: i64) -> FfiResult<()> {
+        Ok(self.inner.lock().unwrap().remove_replacement(id)?)
+    }
+
+    /// Vocabulaire, remplacements et profils en JSON, pour un autre appareil.
+    pub fn export_bundle(&self) -> FfiResult<String> {
+        Ok(self.inner.lock().unwrap().export_bundle()?)
+    }
+
+    /// Ajoute le contenu d'un export (rien n'est supprimé).
+    pub fn import_bundle(&self, json: String) -> FfiResult<ImportCounts> {
+        let c = self.inner.lock().unwrap().import_bundle(&json)?;
+        Ok(ImportCounts { vocabulary: c.vocabulary, replacements: c.replacements, profiles: c.profiles })
     }
 
     pub fn vocabulary(&self) -> FfiResult<Vec<VocabularyTerm>> {
@@ -1328,7 +1448,7 @@ mod tests {
                 Event::Capture(false),
                 Event::Transcribing(1),
                 Event::State(State::Idle),
-                Event::Result(1, "1000 ms\nfin".into()),
+                Event::Result(1, "1000 ms\nFin".into()),
             ]
         );
     }

@@ -80,6 +80,43 @@ pub fn builtin_presets() -> Vec<Preset> {
     ]
 }
 
+/// Langues proposées pour la traduction à la volée : (code, nom dans la consigne).
+pub const TRANSLATION_TARGETS: &[(&str, &str)] = &[
+    ("en", "anglais"),
+    ("fr", "français"),
+    ("es", "espagnol"),
+    ("de", "allemand"),
+    ("it", "italien"),
+    ("pt", "portugais"),
+    ("nl", "néerlandais"),
+];
+
+/// Consigne de traduction vers `code` (ISO 639-1), ou `None` si la langue n'est pas proposée.
+pub fn translation_instruction(code: &str) -> Option<String> {
+    TRANSLATION_TARGETS
+        .iter()
+        .find(|(c, _)| *c == code)
+        .map(|(_, name)| format!("Traduis ce texte en {name} naturel, en gardant le ton et la mise en forme. S'il est déjà en {name}, corrige seulement la ponctuation."))
+}
+
+/// Consigne du compte rendu de réunion, à partir d'une transcription horodatée par voix.
+pub const MINUTES_INSTRUCTION: &str = "Rédige le compte rendu de cette réunion, dans la langue de la transcription. \
+Rubriques, chacune avec un titre court sur sa propre ligne : Participants (les noms cités, sinon « Voix 1 », « Voix 2 »…), \
+Sujets abordés, Décisions, Actions à mener (qui, quoi, échéance si elle est dite), Questions en suspens. \
+Listes à puces « • », phrases courtes. N'invente rien : une rubrique sans contenu contient « Aucune ». \
+Pas de Markdown (ni #, ni **).";
+
+/// Transcription lisible par un LLM : une ligne par passage, avec l'heure et la voix.
+pub fn transcript_for_llm(segments: &[crate::Segment]) -> String {
+    let mut out = String::new();
+    for s in segments {
+        let t = s.start_ms / 1000;
+        let who = s.speaker.map(|v| format!(" Voix {}", v + 1)).unwrap_or_default();
+        out.push_str(&format!("[{:02}:{:02}{who}] {}\n", t / 60, t % 60, s.text.trim()));
+    }
+    out
+}
+
 fn system_prompt(instruction: &str) -> String {
     format!(
         "Tu retouches des transcriptions de dictée vocale. Consigne : {instruction}\n\
@@ -368,6 +405,17 @@ mod tests {
     async fn missing_key_is_reported() {
         let r = Refiner::new(RefineProvider::Anthropic, None, None, None);
         assert!(matches!(r.refine("x", "y").await, Err(DictoError::Unsupported(_))));
+    }
+
+    #[test]
+    fn translation_and_minutes() {
+        assert!(translation_instruction("es").unwrap().contains("espagnol"));
+        assert!(translation_instruction("xx").is_none());
+        let segs = vec![
+            crate::Segment { start_ms: 65_000, end_ms: 70_000, text: " On valide. ".into(), speaker: Some(1) },
+            crate::Segment { start_ms: 70_000, end_ms: 71_000, text: "D'accord.".into(), speaker: None },
+        ];
+        assert_eq!(transcript_for_llm(&segs), "[01:05 Voix 2] On valide.\n[01:10] D'accord.\n");
     }
 
     #[test]

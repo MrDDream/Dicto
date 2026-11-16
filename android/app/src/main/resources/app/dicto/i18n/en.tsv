@@ -399,3 +399,58 @@ Jamais	Never
 Après 1,5 s	After 1.5 s
 Après 2,5 s	After 2.5 s
 Après 4 s	After 4 s
+« nouvelle ligne », « efface ça », « majuscule », « tout en majuscules », « envoie le message »	“new line”, “delete that”, “capitalize”, “all caps”, “send message”
+Ponctuation dictée	Spoken punctuation
+« virgule », « point », « point d'interrogation », « ouvrez les guillemets »…	“comma”, “period”, “question mark”, “open quote”…
+Retirer les hésitations	Remove hesitations
+« euh », « hum » et les mots répétés par erreur	“um”, “uh” and words repeated by mistake
+Vibrer au début et à la fin	Vibrate at start and end
+Pour savoir sans regarder que Dicto t'écoute.	So you know Dicto is listening without looking.
+Remplacements	Replacements
+Dis l'expression, Dicto écrit le texte. Ex. « mon adresse » → ton adresse complète.	Say the phrase, Dicto writes the text. E.g. “my address” → your full address.
+Expression dite	Spoken phrase
+mon adresse	my address
+Texte écrit	Written text
+12 rue des Lilas, 69000 Lyon	12 Lilac Street, Springfield
+Sauvegarde	Backup
+Vocabulaire, remplacements et profils, pour les retrouver sur un autre appareil (téléphone ou ordinateur).	Vocabulary, replacements and profiles, to bring them to another device (phone or computer).
+Exporter	Export
+Importer	Import
+Fichier enregistré.	File saved.
+Export impossible : %1$s	Export failed: %1$s
+Importé : %1$s mots, %2$s remplacements, %3$s profils.	Imported: %1$s words, %2$s replacements, %3$s profiles.
+Import impossible : %1$s	Import failed: %1$s
+Active un fournisseur pour retoucher ou traduire tes dictées.	Turn on a provider to touch up or translate your dictations.
+Traduire en	Translate to
+Tu parles dans ta langue, Dicto écrit dans celle-ci. Passe avant la retouche automatique.	You speak your language, Dicto writes in this one. Takes priority over the automatic touch-up.
+Non	No
+Anglais	English
+Espagnol	Spanish
+Allemand	German
+Italien	Italian
+Portugais	Portuguese
+Néerlandais	Dutch
+Traduction en %1$s activée	Translation to %1$s on
+Traduire en %1$s	Translate to %1$s
+Historique exporté.	History exported.
+Export impossible.	Export failed.
+Effacer l'historique ?	Clear history?
+Toutes les dictées seront supprimées, sauf celles que tu as épinglées.	All dictations will be deleted, except the ones you pinned.
+Texte (.txt)	Text (.txt)
+Markdown (.md)	Markdown (.md)
+Tout effacer	Clear all
+Épinglée	Pinned
+Retouche…	Touching up…
+Désépingler	Unpin
+Épingler	Pin
+Retoucher	Touch up
+Historique Dicto	Dicto history
+épinglée	pinned
+« Voix 1 », « Voix 2 »… devant chaque passage. Modèle de 46 Mo téléchargé une fois, transcription un peu plus longue.	“Voice 1”, “Voice 2”… before each passage. 46 MB model downloaded once, transcription takes a bit longer.
+Modèle des voix %1$s %%	Voice model %1$s %%
+Compte rendu	Meeting notes
+Copier le compte rendu	Copy meeting notes
+Voix %1$s	Voice %1$s
+Compte rendu ✓	Meeting notes ✓
+Compte rendu impossible : %1$s	Meeting notes failed: %1$s
+Français	French

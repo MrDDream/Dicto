@@ -61,6 +61,8 @@ object DictoIcons {
         "M12 9a3 3 0 1 1 0 6a3 3 0 1 1 0-6z",
     )
     val ChevronDown = icon("chevron-down", "M6 9l6 6 6-6")
+    val Pin = icon("pin", "M12 17v5", "M9 4h6l-1 6 3 3v2H7v-2l3-3z")
+    val Sparkle = icon("sparkle", "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", "M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z")
     val Pencil = icon("pencil", "M4 20h4L19 9l-4-4L4 16z", "M13.5 6.5l4 4")
     val Stop = icon("stop", "M9 6h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3z", filled = true)
 }

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import app.dicto.ime.KeyboardPanel
 import app.dicto.triggers.DictationPanel
@@ -73,6 +74,11 @@ class ScreenshotTest {
                 )
             }
         }
+        // Une dictée épinglée, en tête de l'historique.
+        runCatching {
+            d.storage.history(null, 50u, 0u).firstOrNull { it.text.startsWith(t("Liste", "Shopping")) }
+                ?.let { d.storage.setHistoryPinned(it.id, true) }
+        }
         d.dictation.showSample(
             app.dicto.dictation.DictationUi(
                 mode = uniffi.dicto_ffi.Mode.CONTINUOUS,
@@ -118,6 +124,20 @@ class ScreenshotTest {
         compose.onNodeWithText(app.dicto.i18n.tr("Fichier audio")).performClick()
         compose.waitForIdle()
         shot("05-fichiers")
+    }
+
+    @Test
+    fun settings() {
+        val d = app.dicto.DictoApp.instance
+        runCatching { d.storage.setReplacement(t("mon adresse", "my address"), t("12 rue des Lilas, 69000 Lyon", "12 Lilac Street, Springfield")) }
+        compose.setContent { DictoTheme(dark = dark) { app.dicto.ui.SettingsScreen(onBack = {}) } }
+        compose.waitForIdle()
+        compose.onNodeWithText(app.dicto.i18n.tr("Pendant la dictée")).performScrollTo()
+        compose.waitForIdle()
+        shot("11-reglages")
+        compose.onNodeWithText(app.dicto.i18n.tr("Ponctuation, style, traduction.")).performScrollTo()
+        compose.waitForIdle()
+        shot("11b-reglages-remplacements")
     }
 
     @Test

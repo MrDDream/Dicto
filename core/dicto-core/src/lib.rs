@@ -6,6 +6,7 @@
 
 pub mod audio;
 pub mod commands;
+pub mod diarize;
 pub mod engine;
 pub mod error;
 pub mod export;
