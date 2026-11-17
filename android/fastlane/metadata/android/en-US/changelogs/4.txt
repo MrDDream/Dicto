@@ -1,0 +1,7 @@
+- Replacements, spoken punctuation and filler removal.
+- Commands "capitalize", "undo that", "send the message".
+- On-the-fly translation ("→ EN" button).
+- History: pin, edit, share, export.
+- Backup of vocabulary, replacements and profiles.
+- Audio files: speaker separation and meeting notes.
+- Vibration when listening starts and stops.

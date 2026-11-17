@@ -1,0 +1,7 @@
+- Remplacements, ponctuation dictée et retrait des hésitations.
+- Commandes « majuscule », « annule ça », « envoie le message ».
+- Traduction à la volée (bouton « → EN »).
+- Historique : épingler, retoucher, partager, exporter.
+- Sauvegarde du vocabulaire, des remplacements et des profils.
+- Fichiers audio : séparation des voix et compte rendu.
+- Vibration au début et à la fin de l'écoute.
