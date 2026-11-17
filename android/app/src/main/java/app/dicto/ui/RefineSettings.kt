@@ -100,21 +100,12 @@ private fun TranslationCard() {
         DictoApp.instance.dictation.applyOptions()
     }
     DictoCard {
-        Text(tr("Traduire en"), style = MaterialTheme.typography.titleSmall)
-        Text(
+        ChoiceRow(
+            tr("Traduire en"),
             tr("Tu parles dans ta langue, Dicto écrit dans celle-ci. Passe avant la retouche automatique."),
-            style = MaterialTheme.typography.labelSmall,
-            color = Dicto.InkMuted,
+            listOf("none" to tr("Non")) + translationTargets().map { it to translationLanguageName(it) },
+            target,
+            ::choose,
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ChipButton(onClick = { choose("none") }, accent = target == "none") {
-                Text(tr("Non"), style = MaterialTheme.typography.labelMedium)
-            }
-            for (code in translationTargets()) {
-                ChipButton(onClick = { choose(code) }, accent = target == code) {
-                    Text(translationLanguageName(code), style = MaterialTheme.typography.labelMedium)
-                }
-            }
-        }
     }
 }

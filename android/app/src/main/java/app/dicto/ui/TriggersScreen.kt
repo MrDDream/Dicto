@@ -58,6 +58,11 @@ import app.dicto.triggers.DictoTileService
 import app.dicto.triggers.WakeWordService
 import app.dicto.ui.theme.Dicto
 import app.dicto.ui.theme.DictoIcons
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 @Composable
 fun TriggersScreen() {
@@ -95,6 +100,11 @@ fun TriggersScreen() {
                         imeEnabled -> tr("Activé")
                         else -> tr("Pour écrire le texte dans tes apps")
                     },
+                    info = if (imeEnabled) {
+                        tr("Pour passer à Dicto en une touche depuis Gboard : dans ses paramètres, Préférences, active « Afficher la touche de changement de langue ». Le globe 🌐 bascule alors sur le clavier Dicto, qui écoute aussitôt ; touche ■ quand tu as fini, le texte s'écrit et Gboard revient. Pour rester sur Dicto, coupe « Revenir à mon clavier » dans Réglages. La bulle et « OK Dicto » écrivent aussi par lui.")
+                    } else {
+                        tr("Active « Clavier Dicto » dans la liste des claviers d'Android. Sans lui, le texte dicté depuis la bulle est copié, à coller toi-même.")
+                    },
                 ) {
                     when {
                         imeCurrent -> Pill(tr("En cours"), Dicto.AccentContainer, Dicto.Accent)
@@ -104,37 +114,34 @@ fun TriggersScreen() {
                         })
                     }
                 }
-                Text(
-                    if (imeEnabled) {
-                        tr("Pour passer à Dicto en une touche depuis Gboard : dans ses paramètres, Préférences, active « Afficher la touche de changement de langue ». Le globe 🌐 bascule alors sur le clavier Dicto, qui écoute aussitôt ; touche ■ quand tu as fini, le texte s'écrit et Gboard revient. Pour rester sur Dicto, coupe « Revenir à mon clavier » dans Réglages. La bulle et « OK Dicto » écrivent aussi par lui.")
-                    } else {
-                        tr("Active « Clavier Dicto » dans la liste des claviers d'Android. Sans lui, le texte dicté depuis la bulle est copié, à coller toi-même.")
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Dicto.InkMuted,
-                )
             }
 
             // Bouton flottant
             DictoCard {
-                TriggerHeader(DictoIcons.Mic, Dicto.Accent, Dicto.OnAccent, tr("Bouton flottant"), tr("Une bulle au bord de l'écran")) {
+                TriggerHeader(
+                    DictoIcons.Mic, Dicto.Accent, Dicto.OnAccent, tr("Bouton flottant"), tr("Une bulle au bord de l'écran"),
+                    info = tr("Toucher la bulle lance la dictée dans le mode choisi sur l'écran Dictée. Un appui long écoute tant que ton doigt reste posé. Glisse-la pour la déplacer, ou jusqu'à la croix en bas à droite pour la masquer ; la tuile Réglages rapides la fait revenir."),
+                ) {
                     DictoSwitch(bubble && overlay, { on ->
                         if (on && !overlay) requestOverlay(context)
                         settings.bubble.set(on)
                         BubbleService.refresh(context)
                     }, tr("Bouton flottant"))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    GestureHint(tr("Toucher"), tr("mode choisi"), Modifier.weight(1f))
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GestureHint(tr("Toucher"), tr("dicter"), Modifier.weight(1f))
                     GestureHint(tr("Appui long"), tr("maintenu"), Modifier.weight(1f))
-                    GestureHint(tr("Glisser"), tr("déplacer, ou vers ✕ pour masquer"), Modifier.weight(1f))
+                    GestureHint(tr("Glisser"), tr("déplacer, masquer"), Modifier.weight(1f))
                 }
                 if (bubble && !overlay) OverlayWarning(context, tr("pour voir la bulle"))
             }
 
             // À la voix
             DictoCard {
-                TriggerHeader(DictoIcons.Wave, Dicto.RecordingContainer, Dicto.OnRecordingContainer, tr("À la voix"), tr("Écouté sur le téléphone uniquement")) {
+                TriggerHeader(
+                    DictoIcons.Wave, Dicto.RecordingContainer, Dicto.OnRecordingContainer, tr("À la voix"), tr("Écouté sur le téléphone uniquement"),
+                    info = tr("« Ok Google » est réservé à Google, choisis la tienne : deux ou trois mots, prononcés à l'anglaise. Mise en pause écran éteint et en économie d'énergie."),
+                ) {
                     DictoSwitch(wake, { on ->
                         if (on && ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                             Toast.makeText(context, tr("Autorise d'abord le micro depuis l'écran Dictée."), Toast.LENGTH_LONG).show()
@@ -161,11 +168,6 @@ fun TriggersScreen() {
                             }) { Text("OK") }
                         }
                     },
-                )
-                Text(
-                    tr("« Ok Google » est réservé à Google, choisis la tienne : deux ou trois mots, prononcés à l'anglaise. Mise en pause écran éteint et en économie d'énergie."),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Dicto.InkMuted,
                 )
                 val wakeState by WakeWordService.state.collectAsStateWithLifecycle()
                 if (wake) {
@@ -248,14 +250,34 @@ private fun requestOverlay(context: Context) {
 }
 
 @Composable
-private fun TriggerHeader(icon: ImageVector, bg: Color, fg: Color, title: String, subtitle: String, trailing: @Composable () -> Unit) {
+private fun TriggerHeader(
+    icon: ImageVector,
+    bg: Color,
+    fg: Color,
+    title: String,
+    subtitle: String,
+    info: String? = null,
+    trailing: @Composable () -> Unit,
+) {
+    var showInfo by remember { mutableStateOf(false) }
+    if (showInfo && info != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showInfo = false },
+            title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+            text = { Text(info, style = MaterialTheme.typography.bodyMedium) },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { showInfo = false }) { Text(tr("Compris")) } },
+        )
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(42.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
             Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                if (info != null) InfoButton(tr("En savoir plus : %1\$s", title)) { showInfo = true }
+            }
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted)
         }
         Spacer(Modifier.width(12.dp))
@@ -263,11 +285,32 @@ private fun TriggerHeader(icon: ImageVector, bg: Color, fg: Color, title: String
     }
 }
 
+/** Petit « i » rond qui ouvre une explication. */
+@Composable
+private fun InfoButton(description: String, onClick: () -> Unit) {
+    androidx.compose.material3.Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        contentColor = Dicto.InkMuted,
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, Dicto.InkMuted),
+        modifier = Modifier.size(20.dp).semantics { contentDescription = description },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text("i", style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        }
+    }
+}
+
 @Composable
 private fun GestureHint(title: String, subtitle: String, modifier: Modifier) {
-    Column(modifier.clip(RoundedCornerShape(14.dp)).background(Dicto.Background).padding(10.dp)) {
-        Text(title, style = MaterialTheme.typography.labelMedium)
-        Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted)
+    Column(
+        modifier.fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(Dicto.Background).padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+    ) {
+        Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 

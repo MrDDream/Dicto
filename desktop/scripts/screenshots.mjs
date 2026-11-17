@@ -295,6 +295,16 @@ for (const [label, file] of [
   await page.screenshot({ path: join(out, `${file}.png`) });
 }
 
+// Les autres rubriques des réglages, pour vérifier leur rendu (hors site).
+if (process.env.DICTO_ALL_SETTINGS) {
+  for (const tab of await page.getByRole("tab").all()) {
+    await tab.click();
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: join(out, `reglages-${(await tab.textContent()).trim()}.png`), fullPage: true });
+  }
+  await page.getByRole("tab").first().click();
+}
+
 // La pastille, sur fond transparent.
 const pill = await context.newPage();
 await pill.setViewportSize({ width: 300, height: 64 });

@@ -12,9 +12,9 @@
     type Theme,
     type UiLanguage,
   } from "../lib/api";
-  import Icon from "../lib/Icon.svelte";
+  import Icon, { type IconName } from "../lib/Icon.svelte";
   import ProviderList from "../lib/ProviderList.svelte";
-  import { app } from "../lib/store.svelte";
+  import { app, settingsTab, type SettingsTab } from "../lib/store.svelte";
   import { t, tr } from "../lib/i18n.svelte";
 
   const LANGUAGES = [
@@ -45,6 +45,15 @@
     ["auto", "Automatique"],
     ["light", "Clair"],
     ["dark", "Sombre"],
+  ];
+
+  /** Rubriques : chacune affiche ses cartes, la dernière choisie reste ouverte. */
+  const TABS: [SettingsTab, string, IconName][] = [
+    ["dictee", "Dictée", "mic"],
+    ["mots", "Mots et remplacements", "pencil"],
+    ["retouche", "Retouche par IA", "sparkle"],
+    ["profils", "Profils par app", "models"],
+    ["general", "Général", "settings"],
   ];
 
   let terms = $state<Term[]>([]);
@@ -205,293 +214,333 @@
       <h1>{t("Réglages")}</h1>
     </div>
 
-    <section class="card" aria-labelledby="apparence">
-      <h2 id="apparence" class="pad">{t("Apparence")}</h2>
-      <div class="row">
-        <div class="label">
-          <div class="title">{t("Langue de l'app")}</div>
-          <div class="hint">{t("« Automatique » suit la langue du système.")}</div>
-        </div>
-        <div class="segmented" role="radiogroup" aria-label={t("Langue de l'app")}>
-          {#each UI_LANGUAGES as [code, name] (code)}
-            <button role="radio" aria-checked={s.uiLanguage === code} class:on={s.uiLanguage === code} onclick={() => app.update({ uiLanguage: code })}
-              >{code === "auto" ? t(name) : name}</button
-            >
-          {/each}
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">
-          <div class="title">{t("Thème")}</div>
-          <div class="hint">{t("« Automatique » suit le mode clair ou sombre du système.")}</div>
-        </div>
-        <div class="segmented" role="radiogroup" aria-label={t("Thème")}>
-          {#each THEMES as [code, name] (code)}
-            <button role="radio" aria-checked={s.theme === code} class:on={s.theme === code} onclick={() => app.update({ theme: code })}>{t(name)}</button>
-          {/each}
-        </div>
-      </div>
-    </section>
+    <div class="tabs" role="tablist" aria-label={t("Rubriques des réglages")}>
+      {#each TABS as [id, name, icon] (id)}
+        <button role="tab" aria-selected={settingsTab.current === id} class:on={settingsTab.current === id} onclick={() => (settingsTab.current = id)}
+          ><Icon name={icon} size={16} />{t(name)}</button
+        >
+      {/each}
+    </div>
 
-    <section class="card" aria-labelledby="langue">
-      <h2 id="langue" class="pad">{t("Langue parlée")}</h2>
-      <div class="row">
-        <div class="label">
-          <div class="title">{t("Langue de la dictée")}</div>
-          <div class="hint">{t("« Automatique » détecte la langue à chaque phrase.")}</div>
-        </div>
-        <label>
-          <span class="sr-only">{t("Langue de la dictée")}</span>
-          <select class="field" value={s.language} onchange={(e) => app.update({ language: e.currentTarget.value })}>
-            {#each LANGUAGES as [code, name] (code)}<option value={code}>{t(name)}</option>{/each}
-          </select>
-        </label>
-      </div>
-    </section>
-
-    <section class="card" aria-labelledby="pendant">
-      <h2 id="pendant" class="pad">{t("Pendant la dictée")}</h2>
-      <label class="row">
-        <span class="label">
-          <span class="title">{t("Commandes vocales")}</span>
-          <span class="hint">{t("« nouvelle ligne », « efface ça », « majuscule », « tout en majuscules », « envoie le message »")}</span>
-        </span>
-        <input type="checkbox" class="switch" checked={s.voiceCommands} onchange={(e) => app.update({ voiceCommands: e.currentTarget.checked })} />
-      </label>
-      <label class="row">
-        <span class="label">
-          <span class="title">{t("Ponctuation dictée")}</span>
-          <span class="hint">{t("Dis « virgule », « point », « point d'interrogation », « ouvrez les guillemets »… pour les écrire.")}</span>
-        </span>
-        <input type="checkbox" class="switch" checked={s.spokenPunctuation} onchange={(e) => app.update({ spokenPunctuation: e.currentTarget.checked })} />
-      </label>
-      <label class="row">
-        <span class="label">
-          <span class="title">{t("Retirer les hésitations")}</span>
-          <span class="hint">{t("« euh », « hum » et les mots répétés par erreur (« le le »), sans IA.")}</span>
-        </span>
-        <input type="checkbox" class="switch" checked={s.removeFillers} onchange={(e) => app.update({ removeFillers: e.currentTarget.checked })} />
-      </label>
-      <div class="row">
-        <div class="label">
-          <div class="title">{t("Paragraphes automatiques")}</div>
-          <div class="hint">{t("Une pause marquée ouvre un nouveau paragraphe, entre deux phrases ou dans un long enregistrement.")}</div>
-        </div>
-        <label>
-          <span class="sr-only">{t("Paragraphes automatiques")}</span>
-          <select class="field" value={String(s.paragraphPauseMs ?? 2500)} onchange={(e) => app.update({ paragraphPauseMs: Number(e.currentTarget.value) })}>
-            {#each PARAGRAPH_PAUSES as [ms, name] (ms)}<option value={String(ms)}>{t(name)}</option>{/each}
-          </select>
-        </label>
-      </div>
-      <label class="row">
-        <span class="label">
-          <span class="title">{t("Texte en direct")}</span>
-          <span class="hint">{t("Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de processeur.")}</span>
-        </span>
-        <input type="checkbox" class="switch" checked={s.livePreview} onchange={(e) => app.update({ livePreview: e.currentTarget.checked })} />
-      </label>
-      <label class="row">
-        <span class="label">
-          <span class="title">{t("Sons de début et de fin")}</span>
-          <span class="hint">{t("Deux notes douces quand Dicto commence et arrête d'écouter.")}</span>
-        </span>
-        <input type="checkbox" class="switch" checked={s.sounds} onchange={(e) => app.update({ sounds: e.currentTarget.checked })} />
-      </label>
-    </section>
-
-    <section class="card vocab" aria-labelledby="vocabulaire">
-      <h2 id="vocabulaire">{t("Vocabulaire")}</h2>
-      <p class="hint">{t("Noms propres et mots techniques que le modèle doit connaître.")}</p>
-      <form onsubmit={addTerm}>
-        <label class="grow">
-          <span class="sr-only">{t("Nouveau mot")}</span>
-          <input class="field" placeholder={t("Ajouter un mot")} bind:value={newTerm} />
-        </label>
-        <button class="pill-btn tonal" type="submit"><Icon name="plus" size={16} />{t("Ajouter")}</button>
-      </form>
-      {#if terms.length}
-        <ul class="chips">
-          {#each terms as term (term.id)}
-            <li>
-              {term.term}
-              <button aria-label={t("Retirer %1", term.term)} onclick={() => removeTerm(term.id)}><Icon name="close" size={14} /></button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
-
-    <section class="card vocab" aria-labelledby="remplacements">
-      <h2 id="remplacements">{t("Remplacements")}</h2>
-      <p class="hint">{t("Ce que tu dis est remplacé par ton texte : « mon adresse » devient ton adresse complète.")}</p>
-      <form onsubmit={addReplacement} class="pair">
-        <label class="grow">
-          <span class="sr-only">{t("Ce que tu dis")}</span>
-          <input class="field" placeholder={t("Ce que tu dis")} bind:value={phrase} />
-        </label>
-        <label class="grow">
-          <span class="sr-only">{t("Ce qui est écrit")}</span>
-          <input class="field" placeholder={t("Ce qui est écrit")} bind:value={written} />
-        </label>
-        <button class="pill-btn tonal" type="submit"><Icon name="plus" size={16} />{t("Ajouter")}</button>
-      </form>
-      {#if replacements.length}
-        <ul class="pairs">
-          {#each replacements as r (r.id)}
-            <li>
-              <span class="said">{r.phrase}</span>
-              <span class="arrow" aria-hidden="true">→</span>
-              <span class="written">{r.replacement}</span>
-              <button aria-label={t("Retirer %1", r.phrase)} onclick={() => removeReplacement(r.id)}><Icon name="close" size={14} /></button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
-
-    <section class="card vocab" aria-labelledby="profils">
-      <h2 id="profils">{t("Profils par app")}</h2>
-      <p class="hint">
-        {t("Une langue, une retouche ou un mode propres à une app, appliqués quand tu dictes avec un raccourci pendant qu'elle est au premier plan.")}
-      </p>
-      {#if platform.wayland}
-        <p class="note">{t("Sous Wayland, Dicto ne peut pas savoir quelle app est au premier plan : les profils ne s'appliquent pas.")}</p>
-      {/if}
-      {#if profiles.length}
-        <ul class="profiles">
-          {#each profiles as p (p.id)}
-            <li>
-              <div class="who">
-                <span class="title">{p.label ?? p.appId}</span>
-                {#if p.label}<span class="hint">{p.appId}</span>{/if}
-              </div>
-              <label>
-                <span class="sr-only">{t("Langue de la dictée")}</span>
-                <select class="field" value={p.language ?? ""} onchange={(e) => updateProfile(p, { language: e.currentTarget.value || null })}>
-                  <option value="">{t("Langue par défaut")}</option>
-                  {#each LANGUAGES as [code, name] (code)}<option value={code}>{t(name)}</option>{/each}
-                </select>
-              </label>
-              <label>
-                <span class="sr-only">{t("Consigne de retouche")}</span>
-                <select class="field" value={p.refinePreset ?? ""} onchange={(e) => updateProfile(p, { refinePreset: e.currentTarget.value || null })}>
-                  <option value="">{t("Retouche par défaut")}</option>
-                  <option value="none">{t("Sans retouche")}</option>
-                  {#each presets as pr (pr.id)}<option value={pr.id}>{tr(pr.name)}</option>{/each}
-                </select>
-              </label>
-              <label>
-                <span class="sr-only">{t("Mode")}</span>
-                <select class="field" value={p.mode ?? ""} onchange={(e) => updateProfile(p, { mode: e.currentTarget.value || null })}>
-                  {#each PROFILE_MODES as [id, name] (id)}<option value={id}>{t(name)}</option>{/each}
-                </select>
-              </label>
-              <button class="pill-btn ghost" aria-label={t("Supprimer le profil %1", p.label ?? p.appId)} onclick={() => deleteProfile(p.id)}
-                ><Icon name="trash" size={15} /></button
-              >
-            </li>
-          {/each}
-        </ul>
-        <p class="hint">{t("Le mode s'applique au raccourci Marche/arrêt ; la retouche demande un fournisseur actif.")}</p>
-      {/if}
-      <form onsubmit={addProfile}>
-        <label class="grow">
-          <span class="sr-only">{t("App")}</span>
-          <input class="field" placeholder={t("App (ex. : slack, firefox, com.apple.mail)")} bind:value={newAppId} />
-        </label>
-        {#if !platform.wayland}
-          <button class="pill-btn" type="button" onclick={useLastApp}>{t("Dernière app active")}</button>
-        {/if}
-        <button class="pill-btn tonal" type="submit"><Icon name="plus" size={16} />{t("Ajouter")}</button>
-      </form>
-    </section>
-
-    <section class="card" aria-labelledby="retouche">
-      <h2 id="retouche" class="pad">{t("Retouche par IA")}</h2>
-      <p class="hint pad-x">
-        {t("Ponctuation, style, traduction. Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut tourner sur cet ordinateur. Les clés restent dans le coffre du système.")}
-      </p>
-      <ProviderList kind="refine" />
-    </section>
-
-    {#if s.refineProvider}
-      <section class="card vocab" aria-labelledby="consigne">
-        <h2 id="consigne">{t("Consigne")}</h2>
-        <div class="presets" role="radiogroup" aria-label={t("Consigne de retouche")}>
-          {#each [...presets, { id: "custom", name: "Personnalisée" }] as p (p.id)}
-            <button role="radio" aria-checked={s.refinePreset === p.id} class:on={s.refinePreset === p.id} onclick={() => app.update({ refinePreset: p.id })}
-              >{tr(p.name)}</button
-            >
-          {/each}
-        </div>
-        {#if s.refinePreset === "custom"}
-          <label class="custom">
-            <span class="sr-only">{t("Ta consigne")}</span>
-            <textarea
-              class="field"
-              rows="3"
-              placeholder={t("Ex. : mets le texte au format d'un e-mail poli, en vouvoyant.")}
-              value={s.refineCustom}
-              oninput={(e) => setCustom(e.currentTarget.value)}
-            ></textarea>
+    {#if settingsTab.current === "dictee"}
+      <section class="card" aria-labelledby="pendant">
+        <h2 id="pendant" class="pad">{t("Texte")}</h2>
+        <div class="row">
+          <div class="label">
+            <div class="title">{t("Langue de la dictée")}</div>
+            <div class="hint">{t("« Automatique » détecte la langue à chaque phrase.")}</div>
+          </div>
+          <label>
+            <span class="sr-only">{t("Langue de la dictée")}</span>
+            <select class="field" value={s.language} onchange={(e) => app.update({ language: e.currentTarget.value })}>
+              {#each LANGUAGES as [code, name] (code)}<option value={code}>{t(name)}</option>{/each}
+            </select>
           </label>
-        {/if}
-        <label class="inline-switch">
-          <span>
-            <span class="title">{t("Retoucher chaque dictée")}</span>
-            <span class="hint">{t("Sinon, utilise « Reformuler » dans l'écran Dictée.")}</span>
+        </div>
+        <label class="row">
+          <span class="label">
+            <span class="title">{t("Commandes vocales")}</span>
+            <span class="hint">{t("« nouvelle ligne », « efface ça », « majuscule », « tout en majuscules », « envoie le message »")}</span>
           </span>
-          <input type="checkbox" class="switch" checked={s.autoRefine} onchange={(e) => app.update({ autoRefine: e.currentTarget.checked })} />
+          <input type="checkbox" class="switch" checked={s.voiceCommands} onchange={(e) => app.update({ voiceCommands: e.currentTarget.checked })} />
+        </label>
+        <label class="row">
+          <span class="label">
+            <span class="title">{t("Ponctuation dictée")}</span>
+            <span class="hint">{t("Dis « virgule », « point », « point d'interrogation », « ouvrez les guillemets »… pour les écrire.")}</span>
+          </span>
+          <input type="checkbox" class="switch" checked={s.spokenPunctuation} onchange={(e) => app.update({ spokenPunctuation: e.currentTarget.checked })} />
+        </label>
+        <label class="row">
+          <span class="label">
+            <span class="title">{t("Retirer les hésitations")}</span>
+            <span class="hint">{t("« euh », « hum » et les mots répétés par erreur (« le le »), sans IA.")}</span>
+          </span>
+          <input type="checkbox" class="switch" checked={s.removeFillers} onchange={(e) => app.update({ removeFillers: e.currentTarget.checked })} />
+        </label>
+        <div class="row">
+          <div class="label">
+            <div class="title">{t("Paragraphes automatiques")}</div>
+            <div class="hint">{t("Une pause marquée ouvre un nouveau paragraphe, entre deux phrases ou dans un long enregistrement.")}</div>
+          </div>
+          <label>
+            <span class="sr-only">{t("Paragraphes automatiques")}</span>
+            <select class="field" value={String(s.paragraphPauseMs ?? 2500)} onchange={(e) => app.update({ paragraphPauseMs: Number(e.currentTarget.value) })}>
+              {#each PARAGRAPH_PAUSES as [ms, name] (ms)}<option value={String(ms)}>{t(name)}</option>{/each}
+            </select>
+          </label>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ecoute">
+        <h2 id="ecoute" class="pad">{t("Pendant l'écoute")}</h2>
+        <label class="row">
+          <span class="label">
+            <span class="title">{t("Texte en direct")}</span>
+            <span class="hint">{t("Affiche la phrase pendant que tu parles, avec les modèles rapides. Consomme un peu plus de processeur.")}</span>
+          </span>
+          <input type="checkbox" class="switch" checked={s.livePreview} onchange={(e) => app.update({ livePreview: e.currentTarget.checked })} />
+        </label>
+        <label class="row">
+          <span class="label">
+            <span class="title">{t("Sons de début et de fin")}</span>
+            <span class="hint">{t("Deux notes douces quand Dicto commence et arrête d'écouter.")}</span>
+          </span>
+          <input type="checkbox" class="switch" checked={s.sounds} onchange={(e) => app.update({ sounds: e.currentTarget.checked })} />
         </label>
       </section>
-    {/if}
-
-    <section class="card vocab" aria-labelledby="sauvegarde">
-      <h2 id="sauvegarde">{t("Sauvegarde")}</h2>
-      <p class="hint">{t("Vocabulaire, remplacements et profils, pour les retrouver sur un autre appareil (téléphone ou ordinateur).")}</p>
-      <div class="buttons">
-        <button class="pill-btn tonal" onclick={exportBundle}>{t("Exporter")}</button>
-        <button class="pill-btn" onclick={importBundle}>{t("Importer")}</button>
-      </div>
-    </section>
-
-    <section class="card" aria-labelledby="majs">
-      <h2 id="majs" class="pad">{t("Mises à jour")}</h2>
-      <label class="row">
-        <span class="label">
-          <span class="title">{t("Vérifier automatiquement")}</span>
-          <span class="hint">{t("Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.")}</span>
-        </span>
-        <input type="checkbox" class="switch" checked={app.updates?.consent === true} onchange={(e) => setAutoUpdate(e.currentTarget.checked)} />
-      </label>
-      <div class="row">
-        <span class="label">
-          <span class="title">{t("Version %1", app.updates?.current ?? "")}</span>
-          {#if updateStatus}<span class="hint">{updateStatus}</span>{/if}
-        </span>
-        <button class="pill-btn tonal" disabled={checking} onclick={checkUpdates}>{checking ? t("Vérification…") : t("Vérifier maintenant")}</button>
-      </div>
-    </section>
-
-    <section class="card about" aria-labelledby="apropos">
-      <h2 id="apropos">{t("À propos")}</h2>
-      <p class="hint">
-        {t("Dicto %1 · transcription locale par whisper.cpp et sherpa-onnx. Modèles de NVIDIA, Meta, OpenAI et Bofeng Huang.", app.updates?.current ?? "")}
-      </p>
-      <div><button class="pill-btn tonal" onclick={toggleCredits}>{t("Crédits et licences")}</button></div>
-      {#if showCredits}
-        <ul class="credits">
-          {#each credits as c (c.name)}
-            <li><strong>{c.name}</strong> · {c.license} · {tr(c.credit)}</li>
-          {/each}
-        </ul>
+    {:else if settingsTab.current === "mots"}
+      <section class="card vocab" aria-labelledby="vocabulaire">
+        <h2 id="vocabulaire">{t("Vocabulaire")}</h2>
+        <p class="hint">{t("Noms propres et mots techniques que le modèle doit connaître.")}</p>
+        <form onsubmit={addTerm}>
+          <label class="grow">
+            <span class="sr-only">{t("Nouveau mot")}</span>
+            <input class="field" placeholder={t("Ajouter un mot")} bind:value={newTerm} />
+          </label>
+          <button class="pill-btn tonal" type="submit"><Icon name="plus" size={16} />{t("Ajouter")}</button>
+        </form>
+        {#if terms.length}
+          <ul class="chips">
+            {#each terms as term (term.id)}
+              <li>
+                {term.term}
+                <button aria-label={t("Retirer %1", term.term)} onclick={() => removeTerm(term.id)}><Icon name="close" size={14} /></button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
+      <section class="card vocab" aria-labelledby="remplacements">
+        <h2 id="remplacements">{t("Remplacements")}</h2>
+        <p class="hint">{t("Ce que tu dis est remplacé par ton texte : « mon adresse » devient ton adresse complète.")}</p>
+        <form onsubmit={addReplacement} class="pair">
+          <label class="grow">
+            <span class="sr-only">{t("Ce que tu dis")}</span>
+            <input class="field" placeholder={t("Ce que tu dis")} bind:value={phrase} />
+          </label>
+          <label class="grow">
+            <span class="sr-only">{t("Ce qui est écrit")}</span>
+            <input class="field" placeholder={t("Ce qui est écrit")} bind:value={written} />
+          </label>
+          <button class="pill-btn tonal" type="submit"><Icon name="plus" size={16} />{t("Ajouter")}</button>
+        </form>
+        {#if replacements.length}
+          <ul class="pairs">
+            {#each replacements as r (r.id)}
+              <li>
+                <span class="said">{r.phrase}</span>
+                <span class="arrow" aria-hidden="true">→</span>
+                <span class="written">{r.replacement}</span>
+                <button aria-label={t("Retirer %1", r.phrase)} onclick={() => removeReplacement(r.id)}><Icon name="close" size={14} /></button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
+    {:else if settingsTab.current === "retouche"}
+      <section class="card" aria-labelledby="retouche">
+        <h2 id="retouche" class="pad">{t("Retouche par IA")}</h2>
+        <p class="hint pad-x">
+          {t("Ponctuation, style, traduction. Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut tourner sur cet ordinateur. Les clés restent dans le coffre du système.")}
+        </p>
+        <ProviderList kind="refine" />
+      </section>
+      {#if s.refineProvider}
+        <section class="card vocab" aria-labelledby="consigne">
+          <h2 id="consigne">{t("Consigne")}</h2>
+          <div class="presets" role="radiogroup" aria-label={t("Consigne de retouche")}>
+            {#each [...presets, { id: "custom", name: "Personnalisée" }] as p (p.id)}
+              <button role="radio" aria-checked={s.refinePreset === p.id} class:on={s.refinePreset === p.id} onclick={() => app.update({ refinePreset: p.id })}
+                >{tr(p.name)}</button
+              >
+            {/each}
+          </div>
+          {#if s.refinePreset === "custom"}
+            <label class="custom">
+              <span class="sr-only">{t("Ta consigne")}</span>
+              <textarea
+                class="field"
+                rows="3"
+                placeholder={t("Ex. : mets le texte au format d'un e-mail poli, en vouvoyant.")}
+                value={s.refineCustom}
+                oninput={(e) => setCustom(e.currentTarget.value)}
+              ></textarea>
+            </label>
+          {/if}
+          <label class="inline-switch">
+            <span>
+              <span class="title">{t("Retoucher chaque dictée")}</span>
+              <span class="hint">{t("Sinon, utilise « Reformuler » dans l'écran Dictée.")}</span>
+            </span>
+            <input type="checkbox" class="switch" checked={s.autoRefine} onchange={(e) => app.update({ autoRefine: e.currentTarget.checked })} />
+          </label>
+        </section>
       {/if}
-    </section>
+    {:else if settingsTab.current === "profils"}
+      <section class="card vocab" aria-labelledby="profils">
+        <h2 id="profils">{t("Profils par app")}</h2>
+        <p class="hint">
+          {t("Une langue, une retouche ou un mode propres à une app, appliqués quand tu dictes avec un raccourci pendant qu'elle est au premier plan.")}
+        </p>
+        {#if platform.wayland}
+          <p class="note">{t("Sous Wayland, Dicto ne peut pas savoir quelle app est au premier plan : les profils ne s'appliquent pas.")}</p>
+        {/if}
+        {#if profiles.length}
+          <ul class="profiles">
+            {#each profiles as p (p.id)}
+              <li>
+                <div class="who">
+                  <span class="title">{p.label ?? p.appId}</span>
+                  {#if p.label}<span class="hint">{p.appId}</span>{/if}
+                </div>
+                <label>
+                  <span class="sr-only">{t("Langue de la dictée")}</span>
+                  <select class="field" value={p.language ?? ""} onchange={(e) => updateProfile(p, { language: e.currentTarget.value || null })}>
+                    <option value="">{t("Langue par défaut")}</option>
+                    {#each LANGUAGES as [code, name] (code)}<option value={code}>{t(name)}</option>{/each}
+                  </select>
+                </label>
+                <label>
+                  <span class="sr-only">{t("Consigne de retouche")}</span>
+                  <select class="field" value={p.refinePreset ?? ""} onchange={(e) => updateProfile(p, { refinePreset: e.currentTarget.value || null })}>
+                    <option value="">{t("Retouche par défaut")}</option>
+                    <option value="none">{t("Sans retouche")}</option>
+                    {#each presets as pr (pr.id)}<option value={pr.id}>{tr(pr.name)}</option>{/each}
+                  </select>
+                </label>
+                <label>
+                  <span class="sr-only">{t("Mode")}</span>
+                  <select class="field" value={p.mode ?? ""} onchange={(e) => updateProfile(p, { mode: e.currentTarget.value || null })}>
+                    {#each PROFILE_MODES as [id, name] (id)}<option value={id}>{t(name)}</option>{/each}
+                  </select>
+                </label>
+                <button class="pill-btn ghost" aria-label={t("Supprimer le profil %1", p.label ?? p.appId)} onclick={() => deleteProfile(p.id)}
+                  ><Icon name="trash" size={15} /></button
+                >
+              </li>
+            {/each}
+          </ul>
+          <p class="hint">{t("Le mode s'applique au raccourci Marche/arrêt ; la retouche demande un fournisseur actif.")}</p>
+        {/if}
+        <form onsubmit={addProfile}>
+          <label class="grow">
+            <span class="sr-only">{t("App")}</span>
+            <input class="field" placeholder={t("App (ex. : slack, firefox, com.apple.mail)")} bind:value={newAppId} />
+          </label>
+          {#if !platform.wayland}
+            <button class="pill-btn" type="button" onclick={useLastApp}>{t("Dernière app active")}</button>
+          {/if}
+          <button class="pill-btn tonal" type="submit"><Icon name="plus" size={16} />{t("Ajouter")}</button>
+        </form>
+      </section>
+    {:else}
+      <section class="card" aria-labelledby="apparence">
+        <h2 id="apparence" class="pad">{t("Apparence")}</h2>
+        <div class="row">
+          <div class="label">
+            <div class="title">{t("Langue de l'app")}</div>
+            <div class="hint">{t("« Automatique » suit la langue du système.")}</div>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label={t("Langue de l'app")}>
+            {#each UI_LANGUAGES as [code, name] (code)}
+              <button role="radio" aria-checked={s.uiLanguage === code} class:on={s.uiLanguage === code} onclick={() => app.update({ uiLanguage: code })}
+                >{code === "auto" ? t(name) : name}</button
+              >
+            {/each}
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">
+            <div class="title">{t("Thème")}</div>
+            <div class="hint">{t("« Automatique » suit le mode clair ou sombre du système.")}</div>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label={t("Thème")}>
+            {#each THEMES as [code, name] (code)}
+              <button role="radio" aria-checked={s.theme === code} class:on={s.theme === code} onclick={() => app.update({ theme: code })}>{t(name)}</button>
+            {/each}
+          </div>
+        </div>
+      </section>
+      <section class="card vocab" aria-labelledby="sauvegarde">
+        <h2 id="sauvegarde">{t("Sauvegarde")}</h2>
+        <p class="hint">{t("Vocabulaire, remplacements et profils, pour les retrouver sur un autre appareil (téléphone ou ordinateur).")}</p>
+        <div class="buttons">
+          <button class="pill-btn tonal" onclick={exportBundle}>{t("Exporter")}</button>
+          <button class="pill-btn" onclick={importBundle}>{t("Importer")}</button>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="majs">
+        <h2 id="majs" class="pad">{t("Mises à jour")}</h2>
+        <label class="row">
+          <span class="label">
+            <span class="title">{t("Vérifier automatiquement")}</span>
+            <span class="hint">{t("Une fois par jour, Dicto regarde sur GitHub si une version plus récente existe.")}</span>
+          </span>
+          <input type="checkbox" class="switch" checked={app.updates?.consent === true} onchange={(e) => setAutoUpdate(e.currentTarget.checked)} />
+        </label>
+        <div class="row">
+          <span class="label">
+            <span class="title">{t("Version %1", app.updates?.current ?? "")}</span>
+            {#if updateStatus}<span class="hint">{updateStatus}</span>{/if}
+          </span>
+          <button class="pill-btn tonal" disabled={checking} onclick={checkUpdates}>{checking ? t("Vérification…") : t("Vérifier maintenant")}</button>
+        </div>
+      </section>
+      <section class="card about" aria-labelledby="apropos">
+        <h2 id="apropos">{t("À propos")}</h2>
+        <p class="hint">
+          {t("Dicto %1 · transcription locale par whisper.cpp et sherpa-onnx. Modèles de NVIDIA, Meta, OpenAI et Bofeng Huang.", app.updates?.current ?? "")}
+        </p>
+        <div><button class="pill-btn tonal" onclick={toggleCredits}>{t("Crédits et licences")}</button></div>
+        {#if showCredits}
+          <ul class="credits">
+            {#each credits as c (c.name)}
+              <li><strong>{c.name}</strong> · {c.license} · {tr(c.credit)}</li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
+    {/if}
   </div>
 {/if}
 
 <style>
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 5px;
+    border-radius: 18px;
+    background: var(--surface-sunken, var(--bg));
+    border: 1px solid var(--border);
+    align-self: flex-start;
+  }
+
+  .tabs button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 13px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .tabs button:hover {
+    color: var(--ink);
+  }
+
+  .tabs button.on {
+    background: var(--surface);
+    color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+
   .segmented {
     display: inline-flex;
     padding: 4px;

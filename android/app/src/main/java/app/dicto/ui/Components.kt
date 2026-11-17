@@ -33,6 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -227,6 +230,84 @@ fun SettingRow(title: String, subtitle: String?, modifier: Modifier = Modifier, 
         }
         Spacer(Modifier.width(12.dp))
         trailing()
+    }
+}
+
+/** Ligne de réglage à choix : la valeur actuelle à droite, la liste s'ouvre au toucher. */
+@Composable
+fun <T> ChoiceRow(title: String, subtitle: String?, options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    SettingRow(title, subtitle) {
+        Box {
+            ChipButton(onClick = { open = true }) {
+                Text(options.firstOrNull { it.first == selected }?.second.orEmpty(), style = MaterialTheme.typography.labelMedium)
+                Icon(app.dicto.ui.theme.DictoIcons.ChevronDown, null, Modifier.size(14.dp))
+            }
+            androidx.compose.material3.DropdownMenu(
+                expanded = open,
+                onDismissRequest = { open = false },
+                containerColor = Dicto.Surface,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                for ((value, name) in options) {
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = {
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (value == selected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (value == selected) Dicto.Accent else Dicto.Ink,
+                            )
+                        },
+                        trailingIcon = if (value == selected) {
+                            { Icon(app.dicto.ui.theme.DictoIcons.Check, null, Modifier.size(16.dp), tint = Dicto.Accent) }
+                        } else null,
+                        onClick = {
+                            open = false
+                            onSelect(value)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Entrée d'une liste de rubriques : icône, titre, résumé de l'état actuel, chevron. */
+@Composable
+fun NavRow(icon: ImageVector, title: String, summary: String?, onClick: () -> Unit) {
+    Surface(onClick = onClick, color = Color.Transparent, contentColor = Dicto.Ink) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(Dicto.AccentContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, Modifier.size(19.dp), tint = Dicto.Accent)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                if (!summary.isNullOrBlank()) {
+                    Text(
+                        summary,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Dicto.InkMuted,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Icon(
+                app.dicto.ui.theme.DictoIcons.Back,
+                null,
+                Modifier.size(18.dp).graphicsLayer { rotationZ = 180f },
+                tint = Dicto.InkMuted,
+            )
+        }
     }
 }
 

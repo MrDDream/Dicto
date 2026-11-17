@@ -82,3 +82,7 @@ class AppState {
 }
 
 export const app = new AppState();
+
+/** Rubrique ouverte dans les Réglages (gardée quand on change d'écran). */
+export type SettingsTab = "dictee" | "mots" | "retouche" | "profils" | "general";
+export const settingsTab = $state<{ current: SettingsTab }>({ current: "dictee" });

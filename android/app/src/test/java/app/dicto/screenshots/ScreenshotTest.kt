@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -112,6 +113,11 @@ class ScreenshotTest {
         compose.onNodeWithText(app.dicto.i18n.tr("Déclencheurs")).performClick()
         compose.waitForIdle()
         shot("03-declencheurs")
+        compose.onNodeWithContentDescription(app.dicto.i18n.tr("En savoir plus : %1\$s", app.dicto.i18n.tr("Clavier Dicto"))).performClick()
+        compose.waitForIdle()
+        shot("03b-declencheurs-info")
+        compose.onNodeWithText(app.dicto.i18n.tr("Compris")).performClick()
+        compose.waitForIdle()
         compose.onNodeWithText(app.dicto.i18n.tr("Historique")).performClick()
         compose.waitForIdle()
         shot("04-historique")
@@ -132,12 +138,15 @@ class ScreenshotTest {
         runCatching { d.storage.setReplacement(t("mon adresse", "my address"), t("12 rue des Lilas, 69000 Lyon", "12 Lilac Street, Springfield")) }
         compose.setContent { DictoTheme(dark = dark) { app.dicto.ui.SettingsScreen(onBack = {}) } }
         compose.waitForIdle()
-        compose.onNodeWithText(app.dicto.i18n.tr("Pendant la dictée")).performScrollTo()
-        compose.waitForIdle()
         shot("11-reglages")
-        compose.onNodeWithText(app.dicto.i18n.tr("Ponctuation, style, traduction.")).performScrollTo()
+        compose.onNodeWithText(app.dicto.i18n.tr("Dictée")).performClick()
         compose.waitForIdle()
-        shot("11b-reglages-remplacements")
+        shot("11b-reglages-dictee")
+        compose.onNodeWithContentDescription(app.dicto.i18n.tr("Retour")).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText(app.dicto.i18n.tr("Mots et remplacements")).performClick()
+        compose.waitForIdle()
+        shot("11c-reglages-remplacements")
     }
 
     @Test
