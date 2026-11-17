@@ -1,0 +1,3 @@
+- Réglages réorganisés : 8 rubriques résumées, une page chacune.
+- Listes déroulantes à la place des longues rangées de boutons.
+- Écran Déclencheurs allégé : explications derrière un « i ».

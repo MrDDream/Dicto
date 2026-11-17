@@ -1,0 +1,3 @@
+- Reorganised settings: 8 summarised sections, one page each.
+- Drop-down lists instead of long rows of buttons.
+- Lighter Triggers screen: explanations behind an "i".

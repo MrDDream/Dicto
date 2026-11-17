@@ -35,8 +35,8 @@ android {
         applicationId = "app.dicto"
         minSdk = 29
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 5
+        versionName = "0.1.4"
     }
 
     // Les bibliothèques natives (cœur Rust + whisper.cpp) viennent de scripts/build-android-libs.sh.
