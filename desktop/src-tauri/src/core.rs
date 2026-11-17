@@ -164,6 +164,9 @@ pub struct Core {
     shortcut_mode: Mutex<Option<ListenMode>>,
     /// Dernière app au premier plan autre que Dicto (aide pour créer un profil).
     pub last_app: Mutex<Option<AppInfo>>,
+    /// Heure (ms) du dernier placement de la pastille par Dicto : ce déplacement-là n'est pas
+    /// celui de l'utilisateur.
+    pill_placed_at: std::sync::atomic::AtomicU64,
     #[cfg(target_os = "linux")]
     portal: crate::portal::Portal,
 }
@@ -253,6 +256,7 @@ impl Core {
             context: AtomicBool::new(false),
             shortcut_mode: Mutex::new(None),
             last_app: Mutex::new(None),
+            pill_placed_at: std::sync::atomic::AtomicU64::new(0),
             #[cfg(target_os = "linux")]
             portal: crate::portal::Portal::default(),
         }))
@@ -829,21 +833,67 @@ impl Core {
         if pill.is_visible().unwrap_or(false) {
             return;
         }
-        // En bas, au centre de l'écran où se trouve la souris, au-dessus de la barre des tâches.
-        let monitor = self
-            .app
-            .cursor_position()
-            .ok()
-            .and_then(|p| pill.monitor_from_point(p.x, p.y).ok().flatten())
-            .or_else(|| pill.primary_monitor().ok().flatten());
-        if let (Some(m), Ok(size)) = (monitor, pill.outer_size()) {
-            let area = m.work_area();
-            let margin = (24.0 * m.scale_factor()) as i32;
+        // À la place choisie par l'utilisateur si elle est encore sur un écran ; sinon en bas,
+        // au centre de l'écran où se trouve la souris, au-dessus de la barre des tâches.
+        let saved = self.pill_position().filter(|(x, y)| {
+            pill.available_monitors().unwrap_or_default().iter().any(|m| {
+                let (p, s) = (m.position(), m.size());
+                *x >= p.x && *y >= p.y && *x < p.x + s.width as i32 && *y < p.y + s.height as i32
+            })
+        });
+        let position = saved.map(|(x, y)| PhysicalPosition::new(x, y)).or_else(|| {
+            let monitor = self
+                .app
+                .cursor_position()
+                .ok()
+                .and_then(|p| pill.monitor_from_point(p.x, p.y).ok().flatten())
+                .or_else(|| pill.primary_monitor().ok().flatten())?;
+            let size = pill.outer_size().ok()?;
+            let area = monitor.work_area();
+            let margin = (24.0 * monitor.scale_factor()) as i32;
             let x = area.position.x + (area.size.width as i32 - size.width as i32) / 2;
             let y = area.position.y + area.size.height as i32 - size.height as i32 - margin;
-            let _ = pill.set_position(PhysicalPosition::new(x, y));
+            Some(PhysicalPosition::new(x, y))
+        });
+        if let Some(p) = position {
+            self.pill_placed_at.store(now_ms(), Ordering::SeqCst);
+            let _ = pill.set_position(p);
         }
         let _ = pill.show();
+    }
+}
+
+const PILL_POSITION: &str = "desktop.pill_position";
+
+impl Core {
+    /// Place de la pastille choisie par l'utilisateur (coin haut-gauche, en pixels physiques).
+    fn pill_position(&self) -> Option<(i32, i32)> {
+        let text = self.storage.setting(PILL_POSITION.into()).ok().flatten()?;
+        let (x, y) = text.split_once(',')?;
+        Some((x.trim().parse().ok()?, y.trim().parse().ok()?))
+    }
+
+    /// La pastille a bougé : si c'est l'utilisateur qui l'a glissée, on retient sa place.
+    pub fn on_pill_moved(&self, x: i32, y: i32) {
+        let placed = self.pill_placed_at.load(Ordering::SeqCst);
+        if now_ms().saturating_sub(placed) < 600 {
+            return;
+        }
+        let visible = self.app.get_webview_window("pill").is_some_and(|w| w.is_visible().unwrap_or(false));
+        if visible {
+            let _ = self.storage.set_setting(PILL_POSITION.into(), format!("{x},{y}"));
+        }
+    }
+
+    /// Oublie la place choisie : la pastille revient en bas au centre.
+    pub fn reset_pill_position(&self) {
+        let _ = self.storage.set_setting(PILL_POSITION.into(), String::new());
+        if let Some(pill) = self.app.get_webview_window("pill") {
+            if pill.is_visible().unwrap_or(false) {
+                let _ = pill.hide();
+                self.update_pill();
+            }
+        }
     }
 }
 

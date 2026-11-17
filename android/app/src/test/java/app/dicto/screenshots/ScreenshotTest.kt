@@ -101,6 +101,8 @@ class ScreenshotTest {
         compose.setContent { DictoTheme(dark = dark) { DictoRoot() } }
         compose.waitForIdle()
         shot("01-dictee")
+        compose.onNodeWithText(app.dicto.i18n.tr("Réglages")).performClick()
+        compose.waitForIdle()
         compose.onNodeWithText(app.dicto.i18n.tr("Modèles")).performClick()
         compose.waitForIdle()
         shot("02-modeles")
@@ -110,6 +112,8 @@ class ScreenshotTest {
         compose.onNodeWithText(app.dicto.i18n.tr("En ligne")).performClick()
         compose.waitForIdle()
         shot("02c-modeles-en-ligne")
+        compose.onNodeWithContentDescription(app.dicto.i18n.tr("Retour")).performClick()
+        compose.waitForIdle()
         compose.onNodeWithText(app.dicto.i18n.tr("Déclencheurs")).performClick()
         compose.waitForIdle()
         shot("03-declencheurs")
@@ -136,7 +140,12 @@ class ScreenshotTest {
     fun settings() {
         val d = app.dicto.DictoApp.instance
         runCatching { d.storage.setReplacement(t("mon adresse", "my address"), t("12 rue des Lilas, 69000 Lyon", "12 Lilac Street, Springfield")) }
-        compose.setContent { DictoTheme(dark = dark) { app.dicto.ui.SettingsScreen(onBack = {}) } }
+        compose.setContent {
+            DictoTheme(dark = dark) {
+                val page = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<app.dicto.ui.SettingsPage?>(null) }
+                app.dicto.ui.SettingsScreen(page.value) { page.value = it }
+            }
+        }
         compose.waitForIdle()
         shot("11-reglages")
         compose.onNodeWithText(app.dicto.i18n.tr("Dictée")).performClick()

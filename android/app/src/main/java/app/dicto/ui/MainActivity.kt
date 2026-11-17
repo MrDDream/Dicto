@@ -47,8 +47,7 @@ import app.dicto.ui.theme.DictoTheme
 enum class Tab(val label: String, val icon: ImageVector) {
     Dictation("Dictée", DictoIcons.Mic),
     History("Historique", DictoIcons.History),
-    Models("Modèles", DictoIcons.Models),
-    Triggers("Déclencheurs", DictoIcons.Triggers),
+    Settings("Réglages", DictoIcons.Settings),
 }
 
 class MainActivity : ComponentActivity() {
@@ -112,7 +111,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun DictoRoot() {
     var tab by rememberSaveable { mutableStateOf(Tab.Dictation) }
-    var settingsOpen by rememberSaveable { mutableStateOf(false) }
+    var settingsPage by rememberSaveable { mutableStateOf<SettingsPage?>(null) }
     var filesOpen by rememberSaveable { mutableStateOf(false) }
     val shareRequest by MainActivity.openFiles.collectAsStateWithLifecycle()
     androidx.compose.runtime.LaunchedEffect(shareRequest) {
@@ -122,34 +121,33 @@ fun DictoRoot() {
         }
     }
 
-    BackHandler(enabled = settingsOpen || filesOpen || tab != Tab.Dictation) {
-        when {
-            filesOpen -> filesOpen = false
-            settingsOpen -> settingsOpen = false
-            else -> tab = Tab.Dictation
-        }
+    BackHandler(enabled = filesOpen || tab != Tab.Dictation) {
+        if (filesOpen) filesOpen = false else tab = Tab.Dictation
     }
 
     Column(Modifier.fillMaxSize().background(Dicto.Background)) {
         Box(Modifier.weight(1f).fillMaxWidth().statusBarsPadding()) {
             if (filesOpen) {
                 FilesScreen(onBack = { filesOpen = false })
-            } else if (settingsOpen) {
-                SettingsScreen(onBack = { settingsOpen = false })
             } else {
                 when (tab) {
                     Tab.Dictation -> DictationScreen(
-                        onOpenSettings = { settingsOpen = true },
-                        onOpenModels = { tab = Tab.Models },
+                        onOpenModels = {
+                            settingsPage = SettingsPage.Models
+                            tab = Tab.Settings
+                        },
                         onOpenFiles = { filesOpen = true },
                     )
                     Tab.History -> HistoryScreen()
-                    Tab.Models -> ModelsScreen()
-                    Tab.Triggers -> TriggersScreen()
+                    Tab.Settings -> SettingsScreen(settingsPage) { settingsPage = it }
                 }
             }
         }
-        if (!settingsOpen && !filesOpen) BottomNav(tab) { tab = it }
+        if (!filesOpen) BottomNav(tab) {
+            // Toucher « Réglages » depuis une rubrique ramène à l'accueil des réglages.
+            if (it == Tab.Settings && tab == Tab.Settings) settingsPage = null
+            tab = it
+        }
     }
     app.dicto.update.UpdateDialogs()
 }

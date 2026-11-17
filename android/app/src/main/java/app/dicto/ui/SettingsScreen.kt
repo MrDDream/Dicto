@@ -37,13 +37,16 @@ import app.dicto.BuildConfig
 import app.dicto.DictoApp
 import app.dicto.data.LANGUAGES
 import app.dicto.data.label
+import app.dicto.dictation.EngineStatus
 import app.dicto.dictation.userMessage
 import app.dicto.ui.theme.Dicto
 import app.dicto.ui.theme.DictoIcons
 import kotlinx.coroutines.launch
 
 /** Rubriques des réglages : chacune ouvre sa page. */
-private enum class SettingsPage(val title: String) {
+enum class SettingsPage(val title: String) {
+    Models("Modèles"),
+    Triggers("Déclencheurs"),
     Dictation("Dictée"),
     Words("Mots et remplacements"),
     Refine("Retouche par IA"),
@@ -55,8 +58,7 @@ private enum class SettingsPage(val title: String) {
 }
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
-    var page by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<SettingsPage?>(null) }
+fun SettingsScreen(page: SettingsPage?, onPage: (SettingsPage?) -> Unit) {
     var creditsOpen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     if (creditsOpen) {
         androidx.activity.compose.BackHandler { creditsOpen = false }
@@ -65,12 +67,18 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
     val current = page
     if (current == null) {
-        SettingsHome(onBack, open = { page = it })
+        SettingsHome(open = onPage)
         return
     }
-    androidx.activity.compose.BackHandler { page = null }
+    androidx.activity.compose.BackHandler { onPage(null) }
+    // Modèles et Déclencheurs gardent leur propre écran, avec un retour vers les réglages.
+    when (current) {
+        SettingsPage.Models -> return ModelsScreen(onBack = { onPage(null) })
+        SettingsPage.Triggers -> return TriggersScreen(onBack = { onPage(null) })
+        else -> Unit
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader(tr(current.title), onBack = { page = null })
+        ScreenHeader(tr(current.title), onBack = { onPage(null) })
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (current) {
                 SettingsPage.Dictation -> DictationPage()
@@ -81,6 +89,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 SettingsPage.Appearance -> AppearanceCard()
                 SettingsPage.Backup -> BackupCard()
                 SettingsPage.About -> AboutPage(openCredits = { creditsOpen = true })
+                SettingsPage.Models, SettingsPage.Triggers -> Unit
             }
         }
     }
@@ -88,7 +97,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 
 /** Accueil des réglages : les rubriques, avec un résumé de leur état. */
 @Composable
-private fun SettingsHome(onBack: () -> Unit, open: (SettingsPage) -> Unit) {
+private fun SettingsHome(open: (SettingsPage) -> Unit) {
     val app = DictoApp.instance
     val s = app.settings
     val language by s.language.collectAsStateWithLifecycle()
@@ -102,6 +111,10 @@ private fun SettingsHome(onBack: () -> Unit, open: (SettingsPage) -> Unit) {
     val imeAutoStart by s.imeAutoStart.flow.collectAsStateWithLifecycle()
     val imeAutoReturn by s.imeAutoReturn.flow.collectAsStateWithLifecycle()
     val appLanguage by s.appLanguage.flow.collectAsStateWithLifecycle()
+    val ui by app.dictation.ui.collectAsStateWithLifecycle()
+    val bubble by s.bubble.flow.collectAsStateWithLifecycle()
+    val wake by s.wakeWord.flow.collectAsStateWithLifecycle()
+    val edge by s.edgeSwipe.flow.collectAsStateWithLifecycle()
     val theme by s.theme.flow.collectAsStateWithLifecycle()
     val counts = remember {
         Triple(
@@ -129,17 +142,29 @@ private fun SettingsHome(onBack: () -> Unit, open: (SettingsPage) -> Unit) {
         tr("écoute dès l'ouverture").takeIf { imeAutoStart },
         tr("retour à ton clavier").takeIf { imeAutoReturn },
     ).joinToString(" · ").replaceFirstChar { it.uppercase() }.ifBlank { tr("Le micro s'ouvre quand tu le touches") }
+    val engine = if (ui.engine.kind == EngineStatus.Kind.NONE) tr("Choisir un modèle") else ui.engine.label
+    val triggers = listOfNotNull(
+        tr("bouton flottant").takeIf { bubble },
+        tr("à la voix").takeIf { wake },
+        tr("geste depuis le bord").takeIf { edge },
+    ).joinToString(" · ").replaceFirstChar { it.uppercase() }.ifBlank { tr("Clavier, bulle, voix, gestes") }
     val themeName = when (theme) { "light" -> tr("Clair"); "dark" -> tr("Sombre"); else -> tr("Thème auto") }
     val appLanguageName = when (appLanguage) { "fr" -> "Français"; "en" -> "English"; else -> tr("Langue auto") }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader(tr("Réglages"), onBack)
+        ScreenHeader(tr("Réglages"))
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            NavCard(
+                Triple(SettingsPage.Models, DictoIcons.Models, engine),
+                Triple(SettingsPage.Triggers, DictoIcons.Triggers, triggers),
+                open = open,
+            )
+            Spacer(Modifier.height(8.dp))
             NavCard(
                 Triple(SettingsPage.Dictation, DictoIcons.Mic, dictation),
                 Triple(SettingsPage.Words, DictoIcons.Pencil, words(counts.first, counts.second)),
                 Triple(SettingsPage.Refine, DictoIcons.Sparkle, refine),
-                Triple(SettingsPage.Profiles, DictoIcons.Models, counts.third.joinToString(", ").ifBlank { tr("Aucun profil") }),
+                Triple(SettingsPage.Profiles, DictoIcons.Gear, counts.third.joinToString(", ").ifBlank { tr("Aucun profil") }),
                 Triple(SettingsPage.Keyboard, DictoIcons.Keyboard, keyboard),
                 open = open,
             )

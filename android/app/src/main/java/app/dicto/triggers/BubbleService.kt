@@ -347,7 +347,7 @@ class BubbleService : Service(), DictationTarget {
         if (inDismissZone()) {
             DictoApp.instance.settings.bubble.set(false)
             refresh(this)
-            android.widget.Toast.makeText(this, tr("Bulle masquée. Réactive-la dans Dicto › Déclencheurs."), android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(this, tr("Bulle masquée. Réactive-la dans Dicto › Réglages › Déclencheurs."), android.widget.Toast.LENGTH_LONG).show()
         } else {
             saveY()
         }

@@ -214,6 +214,8 @@ export const api = {
   release: () => invoke<void>("release"),
   cancel: () => invoke<void>("cancel"),
   copyText: (text: string) => invoke<void>("copy_text", { text }),
+  readJournal: () => invoke<string>("read_journal"),
+  resetPillPosition: () => invoke<void>("reset_pill_position"),
   pauseShortcuts: (paused: boolean) => invoke<string[]>("pause_shortcuts", { paused }),
   /** La langue effective de l'interface (« auto » résolu), pour le menu de l'icône et les fenêtres du système. */
   setUiLocale: (lang: "fr" | "en") => invoke<void>("set_ui_locale", { lang }),

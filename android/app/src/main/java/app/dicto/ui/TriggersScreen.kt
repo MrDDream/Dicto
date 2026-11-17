@@ -65,7 +65,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 
 @Composable
-fun TriggersScreen() {
+fun TriggersScreen(onBack: (() -> Unit)? = null) {
     val context = LocalContext.current
     val settings = DictoApp.instance.settings
     // Recalculé au retour des réglages Android (permissions, clavier).
@@ -83,7 +83,7 @@ fun TriggersScreen() {
     val edge by settings.edgeSwipe.flow.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader(tr("Déclencheurs"))
+        ScreenHeader(tr("Déclencheurs"), onBack)
         Text(
             tr("Dicte depuis n'importe quelle app, sans ouvrir Dicto. Le texte arrive dans le champ où tu écris."),
             style = MaterialTheme.typography.bodyMedium,

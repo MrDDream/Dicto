@@ -50,7 +50,7 @@ object UpdateChecker {
     private val _consent = MutableStateFlow<Boolean?>(null)
     /**
      * La réponse à « Vérifier automatiquement les mises à jour ? », posée une fois au premier lancement puis
-     * modifiable dans Réglages › Mises à jour. Null avant : rien n'est envoyé à GitHub sans réponse.
+     * modifiable dans Réglages › À propos. Null avant : rien n'est envoyé à GitHub sans réponse.
      */
     val consent: StateFlow<Boolean?> = _consent.asStateFlow()
 

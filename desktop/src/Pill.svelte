@@ -1,7 +1,9 @@
 <script lang="ts">
   // Pastille d'enregistrement : petite fenêtre toujours visible, sans focus (le texte part
-  // dans l'app active). Un clic sur la croix annule la dictée.
+  // dans l'app active). Un clic sur la croix annule la dictée ; on la glisse pour la déplacer
+  // (Dicto retient sa place), un double-clic la remet en bas au centre.
   import { onDestroy, onMount } from "svelte";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import { api, formatDuration } from "./lib/api";
   import { app } from "./lib/store.svelte";
   import { t } from "./lib/i18n.svelte";
@@ -14,6 +16,15 @@
   onDestroy(() => clearInterval(timer));
 
   const snap = $derived(app.snapshot);
+
+  function drag(e: MouseEvent) {
+    if (e.button !== 0 || (e.target as HTMLElement).closest("button")) return;
+    if (e.detail === 2) {
+      api.resetPillPosition();
+      return;
+    }
+    getCurrentWindow().startDragging().catch(() => {});
+  }
   const label = $derived(
     snap.active
       ? snap.startedAt
@@ -25,7 +36,8 @@
   );
 </script>
 
-<div class="pill" class:busy={!snap.active}>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="pill" class:busy={!snap.active} onmousedown={drag} title={t("Glisse pour déplacer · double-clic pour la remettre en bas")}>
   <span class="mic" class:idle={!snap.active}>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFCF8" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"
       ><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /></svg
@@ -64,6 +76,12 @@
     background: var(--overlay);
     box-shadow: var(--shadow-pop);
     color: var(--overlay-ink);
+    cursor: grab;
+    user-select: none;
+  }
+
+  .pill:active {
+    cursor: grabbing;
   }
 
   .mic {
@@ -88,6 +106,7 @@
   }
 
   button {
+    cursor: pointer;
     border: none;
     background: transparent;
     padding: 0;

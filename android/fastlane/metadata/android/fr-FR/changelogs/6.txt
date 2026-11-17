@@ -1,0 +1,3 @@
+- Barre du bas : Dictée, Historique, Réglages.
+- Modèles et Déclencheurs rangés dans les Réglages.
+- L'écran de dictée tient sans défiler, logo et titre plus grands.

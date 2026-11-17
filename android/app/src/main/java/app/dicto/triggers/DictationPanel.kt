@@ -122,7 +122,7 @@ fun DictationPanel(
             }
         } else if (!ui.engine.isReady) {
             Text(
-                ui.message ?: tr("Choisis un modèle dans l'onglet Modèles de Dicto."),
+                ui.message ?: tr("Choisis un modèle dans Dicto › Réglages › Modèles."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Dicto.OverlayRecordingInk,
             )

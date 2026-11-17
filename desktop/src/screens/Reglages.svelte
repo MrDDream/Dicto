@@ -201,6 +201,16 @@
     }
   }
 
+  async function copyJournal() {
+    const text = await api.readJournal();
+    if (!text.trim()) {
+      app.show(t("Le journal est vide."));
+      return;
+    }
+    await api.copyText(text);
+    app.show(t("Journal copié."));
+  }
+
   async function toggleCredits() {
     showCredits = !showCredits;
     if (showCredits && !credits.length) credits = await api.credits();
@@ -486,6 +496,14 @@
           <button class="pill-btn tonal" disabled={checking} onclick={checkUpdates}>{checking ? t("Vérification…") : t("Vérifier maintenant")}</button>
         </div>
       </section>
+      <section class="card vocab" aria-labelledby="journal">
+        <h2 id="journal">{t("Journal")}</h2>
+        <p class="hint">{t("Les erreurs et plantages de Dicto, à copier dans ton message si quelque chose ne marche pas.")}</p>
+        <div class="buttons">
+          <button class="pill-btn tonal" onclick={copyJournal}>{t("Copier le journal")}</button>
+        </div>
+      </section>
+
       <section class="card about" aria-labelledby="apropos">
         <h2 id="apropos">{t("À propos")}</h2>
         <p class="hint">

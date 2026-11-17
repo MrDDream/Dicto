@@ -69,10 +69,10 @@ import uniffi.dicto_ffi.ModelInfo
 private enum class ModelsTab(val label: String) { LOCAL("Sur le téléphone"), ONLINE("En ligne") }
 
 @Composable
-fun ModelsScreen() {
+fun ModelsScreen(onBack: (() -> Unit)? = null) {
     var tab by rememberSaveable { mutableStateOf(ModelsTab.LOCAL) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ScreenHeader(tr("Modèles"))
+        ScreenHeader(tr("Modèles"), onBack)
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             ActiveEngineCard()
             Tabs(tab) { tab = it }

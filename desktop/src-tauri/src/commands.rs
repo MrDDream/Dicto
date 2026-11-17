@@ -74,6 +74,18 @@ pub fn copy_text(text: String) -> Result<(), String> {
     crate::insert::copy(&text)
 }
 
+/// Les dernières lignes du journal (erreurs, plantages), à copier dans un message.
+#[tauri::command]
+pub fn read_journal() -> String {
+    crate::journal::tail()
+}
+
+/// La pastille revient en bas au centre de l'écran.
+#[tauri::command]
+pub fn reset_pill_position(core: Core_) {
+    core.reset_pill_position();
+}
+
 /// Suspend les raccourcis pendant qu'on en saisit un nouveau (sinon il se déclencherait).
 #[tauri::command]
 pub fn pause_shortcuts(core: Core_, paused: bool) -> Vec<String> {

@@ -1,0 +1,3 @@
+- Bottom bar: Dictation, History, Settings.
+- Models and Triggers moved into Settings.
+- The dictation screen fits without scrolling, bigger logo and title.

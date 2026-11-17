@@ -24,10 +24,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.layout.Layout
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,7 +88,7 @@ private val MODES = listOf(
 )
 
 @Composable
-fun DictationScreen(onOpenSettings: () -> Unit, onOpenModels: () -> Unit, onOpenFiles: () -> Unit) {
+fun DictationScreen(onOpenModels: () -> Unit, onOpenFiles: () -> Unit) {
     val app = DictoApp.instance
     val controller = app.dictation
     val ui by controller.ui.collectAsStateWithLifecycle()
@@ -110,92 +106,54 @@ fun DictationScreen(onOpenSettings: () -> Unit, onOpenModels: () -> Unit, onOpen
         }
     }
 
-    // La carte de transcription prend la place restante, sans descendre sous une hauteur lisible :
-    // sur un petit écran ou avec un grand texte, l'écran défile au lieu d'écraser la carte.
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val viewport = constraints.maxHeight
-        val minCard = with(LocalDensity.current) { 220.dp.roundToPx() }
-        Layout(
-            contents = listOf(
-                {
-                    Column(Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 22.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            LogoMark()
-                            Spacer(Modifier.width(10.dp))
-                            Text("Dicto", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                            // Transcrire un fichier audio : une action à part, pas un réglage de la dictée.
-                            ChipButton(onClick = onOpenFiles, accent = true) {
-                                Icon(DictoIcons.Share, null, Modifier.size(15.dp))
-                                Text(tr("Fichier audio"), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
-                            }
-                            Spacer(Modifier.width(8.dp))
-                            IconButton(
-                                onClick = onOpenSettings,
-                                modifier = Modifier.size(44.dp),
-                                colors = IconButtonDefaults.iconButtonColors(containerColor = Dicto.SurfaceSunken, contentColor = Dicto.Ink),
-                            ) { Icon(DictoIcons.Settings, contentDescription = tr("Réglages"), modifier = Modifier.size(20.dp)) }
-                    }
-
-                    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp)) {
-                        Text(tr("Bonjour"), style = MaterialTheme.typography.displaySmall)
-                        Text(tr("Que veux-tu dicter aujourd'hui ?"), style = MaterialTheme.typography.bodyMedium, color = Dicto.InkMuted, modifier = Modifier.padding(top = 6.dp))
-                    }
-
-                    // Moteur (s'abrège si le nom est long) et langue, toujours sur une ligne.
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        EngineSwitcher(ui.engine, onOpenModels, Modifier.weight(1f, fill = false))
-                        LanguageChip(language) { app.settings.setLanguage(it) }
-                        TranslateChip()
-                    }
-
-                    ModeSelector(ui.mode, enabled = !ui.isActive) { controller.setMode(it) }
-                    Text(
-                        tr(MODES.first { it.mode == ui.mode }.hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Dicto.InkMuted,
-                        modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp),
-                    )
-
-                    if (ui.message != null) {
-                        MessageBanner(ui.message!!, onDismiss = controller::dismissMessage)
-                    }
-                    }
-                },
-                { TranscriptCard(ui, Modifier.fillMaxSize(), context) },
-                {
-                    MicButton(
-                        ui = ui,
-                        onPress = {
-                            if (!granted(context, Manifest.permission.RECORD_AUDIO)) askPermissions() else controller.press()
-                        },
-                        onRelease = controller::release,
-                    )
-                },
-            ),
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        ) { (topM, cardM, micM), c ->
-            val loose = Constraints(maxWidth = c.maxWidth)
-            val tops = topM.map { it.measure(loose) }
-            val mics = micM.map { it.measure(loose) }
-            val topH = tops.sumOf { it.height }
-            val micH = mics.sumOf { it.height }
-            val cardH = maxOf(minCard, viewport - topH - micH)
-            val cards = cardM.map { it.measure(Constraints.fixed(c.maxWidth, cardH)) }
-            layout(c.maxWidth, topH + cardH + micH) {
-                var y = 0
-                for (pl in tops + cards + mics) {
-                    pl.place(0, y)
-                    y += pl.height
-                }
+    // Tout tient sur l'écran : la carte de transcription prend la place qui reste et défile seule.
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LogoMark(46.dp)
+            Spacer(Modifier.width(12.dp))
+            Text("Dicto", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+            // Transcrire un fichier audio : une action à part, pas un réglage de la dictée.
+            ChipButton(onClick = onOpenFiles, accent = true) {
+                Icon(DictoIcons.Share, null, Modifier.size(15.dp))
+                Text(tr("Fichier audio"), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
             }
         }
+
+        // Moteur (s'abrège si le nom est long) et langue, toujours sur une ligne.
+        Row(
+            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            EngineSwitcher(ui.engine, onOpenModels, Modifier.weight(1f, fill = false))
+            LanguageChip(language) { app.settings.setLanguage(it) }
+            TranslateChip()
+        }
+
+        ModeSelector(ui.mode, enabled = !ui.isActive) { controller.setMode(it) }
+        Text(
+            tr(MODES.first { it.mode == ui.mode }.hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = Dicto.InkMuted,
+            modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 8.dp),
+        )
+
+        if (ui.message != null) {
+            MessageBanner(ui.message!!, onDismiss = controller::dismissMessage)
+        }
+
+        TranscriptCard(ui, Modifier.weight(1f), context)
+
+        MicButton(
+            ui = ui,
+            onPress = {
+                if (!granted(context, Manifest.permission.RECORD_AUDIO)) askPermissions() else controller.press()
+            },
+            onRelease = controller::release,
+        )
     }
 }
 
@@ -221,7 +179,7 @@ private fun EngineChip(status: EngineStatus, onClick: () -> Unit, modifier: Modi
 
 /**
  * Puce du moteur : un toucher ouvre la liste des modèles installés et des services en ligne
- * configurés, pour changer sans quitter l'écran ; « Gérer les modèles » mène à l'onglet Modèles.
+ * configurés, pour changer sans quitter l'écran ; « Gérer les modèles » mène à Réglages › Modèles.
  */
 @Composable
 private fun EngineSwitcher(status: EngineStatus, onOpenModels: () -> Unit, modifier: Modifier = Modifier) {
@@ -325,7 +283,7 @@ private fun LanguageChip(code: String?, onSelect: (String?) -> Unit) {
 @Composable
 private fun ModeSelector(current: Mode, enabled: Boolean, onSelect: (Mode) -> Unit) {
     Row(
-        Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp).fillMaxWidth().selectableGroup(),
+        Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp).fillMaxWidth().selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         for (m in MODES) {
@@ -333,12 +291,12 @@ private fun ModeSelector(current: Mode, enabled: Boolean, onSelect: (Mode) -> Un
             Column(
                 Modifier
                     .weight(1f)
-                    .height(72.dp)
+                    .height(64.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(if (selected) Dicto.Accent else Dicto.Surface)
                     .border(1.dp, if (selected) Dicto.Accent else Dicto.Border, RoundedCornerShape(18.dp))
                     .selectable(selected = selected, enabled = enabled, role = Role.RadioButton) { onSelect(m.mode) }
-                    .padding(12.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 val color = if (selected) Dicto.OnAccent else Dicto.Ink
@@ -366,7 +324,7 @@ private fun TranscriptCard(ui: DictationUi, modifier: Modifier, context: Context
     val controller = DictoApp.instance.dictation
     Column(
         modifier
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 14.dp)
             .fillMaxWidth()
             .shadow(8.dp, RoundedCornerShape(24.dp), ambientColor = Dicto.Ink.copy(alpha = 0.12f), spotColor = Dicto.Ink.copy(alpha = 0.12f))
             .clip(RoundedCornerShape(24.dp))
@@ -451,15 +409,15 @@ private fun MicButton(ui: DictationUi, onPress: () -> Unit, onRelease: () -> Uni
         Mode.HOLD -> if (recording) tr("Relâche pour transcrire") else tr("Maintiens pour parler")
     }
     Column(
-        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 14.dp),
+        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         val ring = if (recording) Dicto.RecordingContainer else Dicto.AccentContainer
-        val ringSize = 132.dp + if (recording) (level * 16).dp else 0.dp
+        val ringSize = 120.dp + if (recording) (level * 14).dp else 0.dp
         Box(
             Modifier
-                .size(148.dp)
+                .size(134.dp)
                 .semantics {
                     role = Role.Button
                     contentDescription = label
@@ -477,9 +435,9 @@ private fun MicButton(ui: DictationUi, onPress: () -> Unit, onRelease: () -> Uni
             contentAlignment = Alignment.Center,
         ) {
             Box(Modifier.size(ringSize).clip(CircleShape).background(ring.copy(alpha = 0.5f)))
-            Box(Modifier.size(120.dp).clip(CircleShape).background(ring))
+            Box(Modifier.size(108.dp).clip(CircleShape).background(ring))
             Box(
-                Modifier.size(92.dp).shadow(10.dp, CircleShape).clip(CircleShape)
+                Modifier.size(84.dp).shadow(10.dp, CircleShape).clip(CircleShape)
                     .background(if (recording) Dicto.Recording else Dicto.Accent),
                 contentAlignment = Alignment.Center,
             ) {
@@ -487,7 +445,7 @@ private fun MicButton(ui: DictationUi, onPress: () -> Unit, onRelease: () -> Uni
                     if (recording && ui.mode != Mode.HOLD) DictoIcons.Stop else DictoIcons.MicBold,
                     contentDescription = null,
                     tint = if (recording) Dicto.OnRecording else Dicto.OnAccent,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(34.dp),
                 )
             }
         }

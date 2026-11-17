@@ -191,7 +191,7 @@ class DictationController(private val context: Context) : DictationListener {
             showMessage(
                 when (_ui.value.engine.kind) {
                     EngineStatus.Kind.LOADING -> tr("Le modèle se charge, encore un instant…")
-                    else -> tr("Choisis un modèle ou un service dans l'onglet Modèles.")
+                    else -> tr("Choisis un modèle ou un service dans Réglages › Modèles.")
                 },
             )
             return

@@ -48,7 +48,7 @@ private fun ConsentDialog() {
         title = { Text(tr("Vérifier les mises à jour ?")) },
         text = {
             Text(
-                tr("Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour."),
+                tr("Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › À propos."),
                 color = Dicto.InkMuted,
                 style = MaterialTheme.typography.bodyMedium,
             )

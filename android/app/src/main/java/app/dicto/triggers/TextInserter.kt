@@ -38,7 +38,7 @@ object TextInserter {
                 }
                 KeyboardSwitchActivity.start(context)
             }
-            else -> copy(app, text, tr("Texte copié. Active le clavier Dicto dans Déclencheurs pour l'écrire directement."))
+            else -> copy(app, text, tr("Texte copié. Active le clavier Dicto dans Réglages › Déclencheurs pour l'écrire directement."))
         }
     }
 

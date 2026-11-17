@@ -250,7 +250,7 @@ Chargement des modèles…	Loading models…
 Aucun modèle ne correspond.	No model matches.
 Sélectionné	Selected
 Vérifier les mises à jour ?	Check for updates?
-Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › Mises à jour.	Once a day, Dicto can check GitHub for a new version and offer it to you. Nothing else is sent. You can change your mind in Settings › Updates.
+Une fois par jour, Dicto peut regarder sur GitHub si une nouvelle version est sortie et te la proposer. Rien d'autre n'est envoyé. Tu pourras changer d'avis dans Réglages › À propos.	Once a day, Dicto can check GitHub for a new version and offer it to you. Nothing else is sent. You can change your mind in Settings › About.
 Non merci	No thanks
 Oui, vérifier	Yes, check
 Dicto %1$s est disponible	Dicto %1$s is available
@@ -287,13 +287,13 @@ Touche pour dicter	Tap to dictate
 Autorise « Afficher par-dessus les autres apps » pour ouvrir la dictée directement.	Allow “Display over other apps” to open dictation directly.
 Mot d'activation	Wake word
 Insérer le texte	Insert the text
-Choisis un modèle dans l'onglet Modèles de Dicto.	Choose a model in Dicto's Models tab.
+Choisis un modèle dans Dicto › Réglages › Modèles.	Choose a model in Dicto › Settings › Models.
 Annuler la dictée	Cancel dictation
 Prêt	Ready
 Arrêter	Stop
 Zone de geste Dicto : glisser vers la gauche pour dicter	Dicto gesture area: swipe left to dictate
 Dicter avec Dicto	Dictate with Dicto
-Bulle masquée. Réactive-la dans Dicto › Déclencheurs.	Bubble hidden. Turn it back on in Dicto › Triggers.
+Bulle masquée. Réactive-la dans Dicto › Réglages › Déclencheurs.	Bubble hidden. Turn it back on in Dicto › Settings › Triggers.
 Masquer la bulle	Hide the bubble
 Bulle Dicto active	Dicto bubble on
 Geste Dicto actif	Dicto gesture on
@@ -301,14 +301,14 @@ Touche la bulle pour dicter dans n'importe quelle app.	Tap the bubble to dictate
 Glisse depuis le bord droit de l'écran pour dicter.	Swipe from the right edge of the screen to dictate.
 Texte copié : aucun champ de saisie actif.	Text copied: no active text field.
 Texte copié. Choisis « Dicto » dans la liste des claviers pour qu'il s'écrive directement.	Text copied. Choose “Dicto” in the list of keyboards to have it typed directly.
-Texte copié. Active le clavier Dicto dans Déclencheurs pour l'écrire directement.	Text copied. Enable the Dicto keyboard in Triggers to type it directly.
+Texte copié. Active le clavier Dicto dans Réglages › Déclencheurs pour l'écrire directement.	Text copied. Enable the Dicto keyboard in Settings › Triggers to type it directly.
 Affichée	Shown
 Masquée	Hidden
 Dicto transcrit ce que tu dis.	Dicto is transcribing what you say.
 Aucun moteur	No engine
 Autorise le micro pour dicter.	Allow the microphone to dictate.
 Le modèle se charge, encore un instant…	The model is loading, just a moment…
-Choisis un modèle ou un service dans l'onglet Modèles.	Choose a model or a service in the Models tab.
+Choisis un modèle ou un service dans Réglages › Modèles.	Choose a model or a service in Settings › Models.
 configure la retouche dans les Réglages	set up touch-up in Settings
 consigne vide	empty instruction
 chargement…	loading…
@@ -483,3 +483,7 @@ En savoir plus : %1$s	More about %1$s
 dicter	dictate
 déplacer, masquer	move, hide
 Toucher la bulle lance la dictée dans le mode choisi sur l'écran Dictée. Un appui long écoute tant que ton doigt reste posé. Glisse-la pour la déplacer, ou jusqu'à la croix en bas à droite pour la masquer ; la tuile Réglages rapides la fait revenir.	Tapping the bubble starts dictation in the mode chosen on the Dictation screen. A long press listens while your finger stays down. Drag it to move it, or onto the cross at the bottom right to hide it; the Quick Settings tile brings it back.
+bouton flottant	floating button
+à la voix	by voice
+geste depuis le bord	edge swipe
+Clavier, bulle, voix, gestes	Keyboard, bubble, voice, gestures
