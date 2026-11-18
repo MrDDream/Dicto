@@ -31,6 +31,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import app.dicto.files.topNames
+import app.dicto.files.matchesFilter
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -182,6 +187,8 @@ fun VoiceNotesScreen(onOpenSettings: () -> Unit) {
     val items by FilesController.items.collectAsStateWithLifecycle()
     var notes by remember { mutableStateOf<List<VoiceNote>?>(null) }
     var open by rememberSaveable { mutableStateOf<Long?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var person by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Rechargée à l'ouverture, au retour dans l'app, quand un vocal se termine ou arrive.
     val done = items.count { it.voiceNote != null && it.status == FileItem.Status.DONE }
@@ -216,7 +223,12 @@ fun VoiceNotesScreen(onOpenSettings: () -> Unit) {
                     PrimaryButton(tr("Configurer"), onOpenSettings)
                 }
             } else {
-                VoiceNotesList(context, notes, texts, senders, items, onOpen = { open = it })
+                VoiceNotesList(
+                    context, notes, texts, senders, items,
+                    query = query, onQuery = { query = it },
+                    person = person, onPerson = { person = it },
+                    onOpen = { open = it },
+                )
             }
         }
     }
@@ -229,6 +241,10 @@ private fun VoiceNotesList(
     texts: Map<String, String>,
     senders: Map<String, String>,
     items: List<FileItem>,
+    query: String,
+    onQuery: (String) -> Unit,
+    person: String?,
+    onPerson: (String?) -> Unit,
     onOpen: (Long) -> Unit,
 ) {
     PrimaryButton(
@@ -237,9 +253,45 @@ private fun VoiceNotesList(
         Modifier.fillMaxWidth(),
         icon = DictoIcons.Mic,
     )
-    val list = notes
+    // Filtre rapide : un mot-clé (nom ou texte) et les noms qui reviennent le plus.
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQuery,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text(tr("Nom ou mot-clé")) },
+        leadingIcon = { Icon(DictoIcons.Search, null, Modifier.size(18.dp)) },
+        trailingIcon = if (query.isNotEmpty()) {
+            { GhostButton(null, DictoIcons.Close, { onQuery("") }, contentDescription = tr("Effacer"), tint = Dicto.InkMuted) }
+        } else {
+            null
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = Dicto.Surface,
+            focusedContainerColor = Dicto.Surface,
+            unfocusedBorderColor = Dicto.Border,
+        ),
+    )
+    val names = remember(notes, senders) { topNames(notes.orEmpty().mapNotNull { senders[it.docId] }, 8) }
+    if (names.isNotEmpty()) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (name in names) {
+                ChipButton(onClick = { onPerson(if (person == name) null else name) }, accent = person == name) {
+                    Text(name, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                }
+            }
+        }
+    }
+    val filtering = person != null || query.isNotBlank()
+    val list = notes?.filter { matchesFilter(senders[it.docId], texts[it.docId], person, query) }
     when {
         list == null -> Text(tr("Lecture du dossier…"), style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted)
+        list.isEmpty() && filtering -> Text(
+            tr("Aucun vocal ne correspond."),
+            style = MaterialTheme.typography.bodySmall,
+            color = Dicto.InkMuted,
+        )
         list.isEmpty() -> Text(
             tr("Aucun vocal dans ce dossier. Vérifie que c'est bien « WhatsApp Voice Notes » (WhatsApp › Media)."),
             style = MaterialTheme.typography.bodySmall,

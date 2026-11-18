@@ -256,3 +256,30 @@ internal fun nearestFile(times: List<Long>, target: Long, before: Long, after: L
     times.indices
         .filter { times[it] in (target - before)..(target + after) }
         .minByOrNull { kotlin.math.abs(times[it] - target) }
+
+/** Minuscules sans accents, pour une recherche qui tolère « eleve » pour « Élève ». */
+internal fun normalized(s: String): String =
+    java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").lowercase()
+
+/**
+ * Filtre de l'onglet WhatsApp : [person] (un nom ou un groupe, tel qu'affiché) doit être l'un
+ * des noms de l'expéditeur ; chaque mot de [query] doit se trouver dans l'expéditeur ou le texte.
+ */
+internal fun matchesFilter(sender: String?, text: String?, person: String?, query: String): Boolean {
+    if (person != null && (sender == null || person !in sender.split(" · "))) return false
+    val words = normalized(query).split(Regex("\\s+")).filter { it.isNotEmpty() }
+    if (words.isEmpty()) return true
+    val haystack = normalized(listOfNotNull(sender, text).joinToString(" "))
+    return words.all { it in haystack }
+}
+
+/** Les noms (personnes et groupes) qui reviennent le plus, pour les filtres rapides. */
+internal fun topNames(senders: List<String>, count: Int): List<String> =
+    senders.flatMap { it.split(" · ") }
+        .filter { it.isNotBlank() }
+        .groupingBy { it }
+        .eachCount()
+        .entries
+        .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+        .take(count)
+        .map { it.key }

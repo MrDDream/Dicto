@@ -69,4 +69,23 @@ class VoiceNotesTest {
         // Un vieux vocal d'avant la notification n'est pas pris non plus.
         assertEquals(null, nearestFile(listOf(posted - 300_000), posted, 30_000, 60_000))
     }
+
+    @Test
+    fun filterByNameAndKeyword() {
+        val text = "J'ai trouvé un petit manteau et repris de la litière pour le chat."
+        assertTrue(matchesFilter("Marie · Famille", text, null, ""))
+        assertTrue(matchesFilter("Marie · Famille", text, "Famille", ""))
+        assertTrue(matchesFilter("Marie · Famille", text, "Marie", "litiere chat"))
+        assertTrue(matchesFilter("Élodie", null, null, "elodie"))
+        assertFalse(matchesFilter("Marie · Famille", text, "Paul", ""))
+        assertFalse(matchesFilter(null, text, "Marie", ""))
+        assertFalse(matchesFilter("Marie", text, null, "chien"))
+        assertTrue(matchesFilter(null, text, null, "  MANTEAU  "))
+    }
+
+    @Test
+    fun quickFiltersAreTheMostFrequentNames() {
+        val senders = listOf("Marie · Famille", "Paul", "Marie · Famille", "Paul", "Paul", "Zoé")
+        assertEquals(listOf("Paul", "Famille", "Marie"), topNames(senders, 3))
+    }
 }

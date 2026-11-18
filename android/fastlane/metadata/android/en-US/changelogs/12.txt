@@ -1,1 +1,2 @@
 - Your own voice messages are no longer transcribed automatically.
+- WhatsApp tab: filter by name or keyword.
