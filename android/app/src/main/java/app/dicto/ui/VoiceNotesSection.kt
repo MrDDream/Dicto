@@ -15,7 +15,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +36,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.rotate
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dicto.DictoApp
@@ -71,13 +78,14 @@ fun VoiceNotesSection(onOpen: (Long) -> Unit) {
     val engine by settings.engine.collectAsStateWithLifecycle()
     val texts by VoiceNotes.texts.collectAsStateWithLifecycle()
     val items by FilesController.items.collectAsStateWithLifecycle()
+    val senders by VoiceNotes.senders.collectAsStateWithLifecycle()
     var notes by remember { mutableStateOf<List<VoiceNote>?>(null) }
-    var reload by remember { mutableIntStateOf(0) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(resumed) { granted = VoiceNotes.isGranted(context) }
-    // Liste rechargée à l'ouverture, au retour dans l'app, et quand un vocal se termine.
+    // Liste rechargée à l'ouverture, au retour dans l'app, quand un vocal se termine ou arrive.
     val done = items.count { it.voiceNote != null && it.status == FileItem.Status.DONE }
-    LaunchedEffect(granted, resumed, reload, done) {
+    LaunchedEffect(granted, resumed, done, senders.size) {
         notes = if (granted) VoiceNotes.recent(context) else null
     }
 
@@ -102,50 +110,52 @@ fun VoiceNotesSection(onOpen: (Long) -> Unit) {
         return
     }
 
-    DictoCard {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            PrimaryButton(tr("Dernier vocal"), { context.startActivity(ShareTranscribeActivity.latestIntent(context)) }, icon = DictoIcons.Mic)
-            TonalButton(tr("Ajouter la tuile"), {
-                requestTile(context, VoiceNoteTileService::class.java, tr("Dernier vocal"), tr("Dernier vocal"))
-            })
-        }
-        HorizontalDivider(color = Dicto.SurfaceSunken)
-        SettingRow(
-            tr("Transcription automatique"),
-            tr("Chaque vocal reçu est transcrit, le texte arrive en notification. Seules les notifications de WhatsApp sont lues."),
-        ) {
-            DictoSwitch(auto, { on ->
-                settings.voiceNotesAuto.set(on)
-                if (on) {
-                    if (VoiceNoteListener.isEnabled(context)) VoiceNoteListener.rebind(context) else openListenerSettings(context)
-                }
-            }, tr("Transcription automatique"))
-        }
-        if (auto && !listener) ListenerWarning(context)
-        if (auto && engine is app.dicto.data.EngineChoice.Cloud) {
-            Text(
-                tr("Avec un service en ligne comme moteur, l'audio de chaque vocal lui est envoyé."),
-                style = MaterialTheme.typography.labelSmall,
-                color = Dicto.InkMuted,
-            )
-        }
-    }
-
     val list = notes
+
     DictoCard(padding = PaddingValues(0.dp)) {
         Column {
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    VoiceNotes.folderName() ?: tr("Vocaux récents"),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Dicto.InkMuted,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                GhostButton(null, DictoIcons.History, { reload++ }, contentDescription = tr("Actualiser"), tint = Dicto.InkMuted)
-                GhostButton(null, DictoIcons.Settings, { pick.launch(VoiceNotes.initialUri) }, contentDescription = tr("Changer de dossier"), tint = Dicto.InkMuted)
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    PrimaryButton(
+                        tr("Dernier vocal"),
+                        { context.startActivity(ShareTranscribeActivity.latestIntent(context)) },
+                        Modifier.weight(1f),
+                        icon = DictoIcons.Mic,
+                    )
+                    TonalButton(tr("Ajouter la tuile"), {
+                        requestTile(context, VoiceNoteTileService::class.java, tr("Dernier vocal"), tr("Dernier vocal"))
+                    }, icon = DictoIcons.Plus)
+                }
+                SettingRow(
+                    tr("Transcription automatique"),
+                    tr("Chaque vocal reçu est transcrit, le texte arrive en notification. Seules les notifications de WhatsApp sont lues."),
+                ) {
+                    DictoSwitch(auto, { on ->
+                        settings.voiceNotesAuto.set(on)
+                        if (on) {
+                            if (VoiceNoteListener.isEnabled(context)) VoiceNoteListener.rebind(context) else openListenerSettings(context)
+                        }
+                    }, tr("Transcription automatique"))
+                }
+                when {
+                    auto && !listener -> ListenerWarning(context)
+                    !listener -> SendersHint(context)
+                }
+                if (auto && engine is app.dicto.data.EngineChoice.Cloud) {
+                    Text(
+                        tr("Avec un service en ligne comme moteur, l'audio de chaque vocal lui est envoyé."),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Dicto.InkMuted,
+                    )
+                }
             }
+            HorizontalDivider(color = Dicto.SurfaceSunken)
+            Text(
+                tr("Vocaux récents"),
+                style = MaterialTheme.typography.labelMedium,
+                color = Dicto.InkMuted,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+            )
             when {
                 list == null -> Text(tr("Lecture du dossier…"), style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted, modifier = Modifier.padding(16.dp))
                 list.isEmpty() -> Text(
@@ -154,19 +164,50 @@ fun VoiceNotesSection(onOpen: (Long) -> Unit) {
                     color = Dicto.InkMuted,
                     modifier = Modifier.padding(16.dp),
                 )
-                else -> list.forEach { note ->
-                    HorizontalDivider(color = Dicto.SurfaceSunken)
-                    VoiceNoteRow(context, note, texts[note.docId], items.firstOrNull { it.voiceNote == note.docId }, onOpen)
+                else -> {
+                    val shown = if (expanded) list else list.take(COLLAPSED)
+                    shown.forEachIndexed { i, note ->
+                        if (i > 0) HorizontalDivider(color = Dicto.SurfaceSunken, modifier = Modifier.padding(start = 68.dp))
+                        VoiceNoteRow(context, note, texts[note.docId], senders[note.docId], items.firstOrNull { it.voiceNote == note.docId }, onOpen)
+                    }
+                    if (list.size > COLLAPSED) {
+                        HorizontalDivider(color = Dicto.SurfaceSunken)
+                        Row(
+                            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                if (expanded) tr("Réduire") else tr("Voir les %1\$s autres", list.size - COLLAPSED),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Dicto.Accent,
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Icon(DictoIcons.ChevronDown, null, tint = Dicto.Accent, modifier = Modifier.size(18.dp).rotate(if (expanded) 180f else 0f))
+                        }
+                    }
                 }
+            }
+            if (expanded || list.isNullOrEmpty()) {
+                HorizontalDivider(color = Dicto.SurfaceSunken)
+                Text(
+                    tr("Changer de dossier (%1\$s)", VoiceNotes.folderName() ?: "?"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Dicto.InkMuted,
+                    modifier = Modifier.fillMaxWidth().clickable { pick.launch(VoiceNotes.initialUri) }.padding(16.dp),
+                )
             }
         }
     }
 }
 
+/** Vocaux affichés tant que la liste est repliée. */
+private const val COLLAPSED = 3
+
 @Composable
-private fun VoiceNoteRow(context: Context, note: VoiceNote, text: String?, item: FileItem?, onOpen: (Long) -> Unit) {
+private fun VoiceNoteRow(context: Context, note: VoiceNote, text: String?, sender: String?, item: FileItem?, onOpen: (Long) -> Unit) {
     val transcribe = {
-        FilesController.add(context, note.uri, VoiceNotes.WHATSAPP, voiceNote = note.docId, notify = false)
+        FilesController.add(context, note.uri, VoiceNotes.WHATSAPP, voiceNote = note.docId, title = sender?.let { tr("Vocal de %1\$s", it) }, notify = false)
         Unit
     }
     val open = {
@@ -176,19 +217,34 @@ private fun VoiceNoteRow(context: Context, note: VoiceNote, text: String?, item:
     }
     val busy = item?.takeIf { it.active || it.status == FileItem.Status.QUEUED }
     val failed = item?.takeIf { it.status == FileItem.Status.FAILED }
-    val date = DateUtils.formatDateTime(
-        context,
-        note.modifiedAt,
-        DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
-    )
     Row(
         Modifier.fillMaxWidth()
             .then(if (text != null) Modifier.clickable { open() } else Modifier)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Initiale de l'expéditeur, ou un micro quand on ne le connaît pas.
+        Box(Modifier.size(40.dp).clip(CircleShape).background(Dicto.AccentContainer), contentAlignment = Alignment.Center) {
+            val initial = sender?.firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()
+            if (initial != null) {
+                Text(initial.toString(), style = MaterialTheme.typography.titleMedium, color = Dicto.Accent)
+            } else {
+                Icon(DictoIcons.Mic, null, tint = Dicto.Accent, modifier = Modifier.size(18.dp))
+            }
+        }
         Column(Modifier.weight(1f)) {
-            Text(date, style = MaterialTheme.typography.titleSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    sender ?: tr("Message vocal"),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(relativeTime(context, note.modifiedAt), style = MaterialTheme.typography.labelSmall, color = Dicto.InkMuted, maxLines = 1)
+            }
             when {
                 text != null -> Text(
                     text.ifBlank { tr("Aucune parole détectée.") },
@@ -223,6 +279,30 @@ private fun VoiceNoteRow(context: Context, note: VoiceNote, text: String?, item:
             busy != null -> Unit
             else -> TonalButton(tr("Transcrire"), transcribe)
         }
+    }
+}
+
+/** « Aujourd'hui 14:22 », « Hier 13:35 », sinon « 17 nov. 13:02 ». */
+private fun relativeTime(context: Context, ms: Long): String {
+    val time = DateUtils.formatDateTime(context, ms, DateUtils.FORMAT_SHOW_TIME)
+    return when {
+        DateUtils.isToday(ms) -> tr("Aujourd'hui %1\$s", time)
+        DateUtils.isToday(ms + DateUtils.DAY_IN_MILLIS) -> tr("Hier %1\$s", time)
+        else -> DateUtils.formatDateTime(context, ms, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH) + " " + time
+    }
+}
+
+/** Sans l'accès aux notifications, les vocaux n'ont pas d'expéditeur. */
+@Composable
+private fun SendersHint(context: Context) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            tr("Pour voir qui a envoyé chaque nouveau vocal (personne ou groupe), autorise Dicto à lire les notifications de WhatsApp."),
+            style = MaterialTheme.typography.labelSmall,
+            color = Dicto.InkMuted,
+            modifier = Modifier.weight(1f),
+        )
+        TonalButton(tr("Autoriser"), { openListenerSettings(context) })
     }
 }
 

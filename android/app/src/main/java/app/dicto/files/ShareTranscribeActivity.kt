@@ -136,9 +136,10 @@ class ShareTranscribeActivity : ComponentActivity() {
             return
         }
         val cached = VoiceNotes.transcript(note.docId)
+        val title = VoiceNotes.sender(note.docId)?.let { tr("Vocal de %1\$s", it) }
         itemId = FilesController.findVoiceNote(note.docId)?.id
-            ?: cached?.let { FilesController.addCached(note.name, it, note.docId) }
-            ?: FilesController.add(this, note.uri, VoiceNotes.WHATSAPP, voiceNote = note.docId)
+            ?: cached?.let { FilesController.addCached(note.name, it, note.docId, title) }
+            ?: FilesController.add(this, note.uri, VoiceNotes.WHATSAPP, voiceNote = note.docId, title = title)
         notice = null
         if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) FilesController.shownId = itemId
     }
@@ -182,7 +183,14 @@ private fun TranscribePanel(id: Long, notice: String?, onClose: () -> Unit, onOp
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(tr("Message vocal"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Dicto.OverlayInk)
+                Text(
+                    item?.title ?: tr("Message vocal"),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Dicto.OverlayInk,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
                 Text(
                     listOfNotNull(item?.durationMs?.takeIf { it > 0 }?.let(::clock), item?.let { status(it) }).joinToString(" · "),
                     style = MaterialTheme.typography.labelSmall,

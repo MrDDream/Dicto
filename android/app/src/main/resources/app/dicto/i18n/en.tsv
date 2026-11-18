@@ -495,14 +495,12 @@ Ouvrir dans Dicto	Open in Dicto
 Transcription %1$s %%	Transcribing %1$s %%
 Échec	Failed
 Accès au dossier impossible.	Could not access the folder.
-Actualiser	Refresh
 Ajouter la tuile	Add the tile
 Aucun vocal dans ce dossier. Vérifie que c'est bien « WhatsApp Voice Notes » (WhatsApp › Media).	No voice messages in this folder. Check that it is “WhatsApp Voice Notes” (WhatsApp › Media).
 Aucun vocal dans le dossier WhatsApp.	No voice messages in the WhatsApp folder.
 Autorise Dicto à lire les notifications, pour repérer les vocaux de WhatsApp.	Allow Dicto to read notifications, to spot WhatsApp voice messages.
 Autoriser les vocaux WhatsApp	Allow WhatsApp voice messages
 Avec un service en ligne comme moteur, l'audio de chaque vocal lui est envoyé.	With an online service as the engine, the audio of each voice message is sent to it.
-Changer de dossier	Change folder
 Chaque vocal reçu est transcrit, le texte arrive en notification. Seules les notifications de WhatsApp sont lues.	Each voice message you receive is transcribed and the text arrives as a notification. Only WhatsApp notifications are read.
 Dernier vocal	Last voice message
 Dicto a besoin de lire le dossier où WhatsApp range les vocaux. Le sélecteur s'ouvre dessus : touche « Utiliser ce dossier », puis « Autoriser ».	Dicto needs to read the folder where WhatsApp keeps voice messages. The picker opens on it: tap “Use this folder”, then “Allow”.
@@ -517,3 +515,9 @@ Vocaux récents	Recent voice messages
 Vocaux WhatsApp	WhatsApp voice messages
 Vocaux transcrits	Transcribed voice messages
 Le texte d'un message vocal, une fois transcrit.	The text of a voice message, once transcribed.
+Aujourd'hui %1$s	Today %1$s
+Hier %1$s	Yesterday %1$s
+Changer de dossier (%1$s)	Change folder (%1$s)
+Pour voir qui a envoyé chaque nouveau vocal (personne ou groupe), autorise Dicto à lire les notifications de WhatsApp.	To see who sent each new voice message (person or group), allow Dicto to read WhatsApp notifications.
+Réduire	Show less
+Voir les %1$s autres	Show %1$s more

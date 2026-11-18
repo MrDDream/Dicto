@@ -108,9 +108,9 @@ object FilesController {
     }
 
     /** Vocal déjà transcrit : affiché tel quel, sans le retranscrire. */
-    fun addCached(name: String, text: String, voiceNote: String?): Long {
+    fun addCached(name: String, text: String, voiceNote: String?, title: String? = null): Long {
         val transcript = FileTranscript(text = text, language = null, segments = emptyList(), durationMs = 0u, engine = "")
-        val item = FileItem(nextId++, Uri.EMPTY, name, status = FileItem.Status.DONE, progress = 1f, result = transcript, voiceNote = voiceNote)
+        val item = FileItem(nextId++, Uri.EMPTY, name, status = FileItem.Status.DONE, progress = 1f, result = transcript, voiceNote = voiceNote, title = title)
         _items.update { listOf(item) + it }
         return item.id
     }

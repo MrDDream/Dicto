@@ -37,4 +37,13 @@ class VoiceNotesTest {
         assertFalse(isVoiceMessage("On se voit à 14 h ?"))
         assertFalse(isVoiceMessage(null))
     }
+
+    @Test
+    fun senderShowsThePersonThenTheGroup() {
+        assertEquals("Marie · Famille", senderLabel("Marie", "Famille (3 messages)"))
+        assertEquals("Paul", senderLabel("Paul", null))
+        assertEquals("Paul", senderLabel("Paul", "Paul"))
+        assertEquals("Famille", senderLabel(null, "Famille"))
+        assertEquals(null, senderLabel(" ", null))
+    }
 }

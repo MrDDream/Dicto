@@ -19,27 +19,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Transcription automatique des vocaux WhatsApp : quand une notification de WhatsApp annonce
- * un vocal (« 🎤 »), on attend que le fichier arrive dans le dossier accordé, puis on le
- * transcrit ; le texte arrive dans une notification « Vocal de … ». Seules les notifications
- * de WhatsApp sont regardées, et rien n'en est gardé.
+ * Vocaux WhatsApp vus par leurs notifications : quand WhatsApp annonce un vocal (« 🎤 »), on
+ * attend que le fichier arrive dans le dossier accordé et on note son expéditeur (personne,
+ * groupe). Si la transcription automatique est active, on le transcrit aussi ; le texte arrive
+ * dans une notification « Vocal de … ». Seules les notifications de WhatsApp sont regardées,
+ * et seul le nom de l'expéditeur en est gardé.
  */
 class VoiceNoteListener : NotificationListenerService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     /** Dernier message traité par conversation : WhatsApp republie la même notification. */
     private val handled = mutableMapOf<String, Long>()
 
-    override fun onListenerConnected() {
-        // Interrupteur coupé : on rend la main au système, qui ne nous réveillera plus.
-        if (!DictoApp.instance.settings.voiceNotesAuto.value) runCatching { requestUnbind() }
-    }
-
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val app = DictoApp.instance
-        if (!app.settings.voiceNotesAuto.value) {
-            runCatching { requestUnbind() }
-            return
-        }
         if (sbn.packageName !in VoiceNotes.APPS) return
         val notification = sbn.notification ?: return
         if (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
@@ -57,27 +48,32 @@ class VoiceNoteListener : NotificationListenerService() {
             Journal.add("vocaux", "vocal reçu, mais pas d'accès au dossier WhatsApp")
             return
         }
-        val sender = last?.person?.name?.toString()
-        val chat = style?.conversationTitle?.toString() ?: notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
-        val who = listOfNotNull(sender, chat?.takeIf { it != sender }).joinToString(" · ").ifBlank { null }
-        val title = who?.let { tr("Vocal de %1\$s", it) } ?: tr("Vocal transcrit")
+        val person = last?.person?.name?.toString()
+        val group = style?.takeIf { it.isGroupConversation }?.conversationTitle?.toString()
+        val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
+        val who = senderLabel(person ?: title, group)
         val source = sbn.packageName
-        scope.launch { transcribeNew(sbn.postTime - SLACK_MS, source, title) }
+        scope.launch { attach(sbn.postTime - SLACK_MS, source, who) }
     }
 
-    /** Attend le fichier du vocal (téléchargé par WhatsApp juste avant ou après la notification). */
-    private suspend fun transcribeNew(since: Long, source: String, title: String) {
+    /**
+     * Attend le fichier du vocal (téléchargé par WhatsApp juste avant ou après la notification),
+     * note son expéditeur, et le transcrit si la transcription automatique est active.
+     */
+    private suspend fun attach(since: Long, source: String, who: String?) {
         repeat(ATTEMPTS) {
             val note = VoiceNotes.recent(applicationContext, 5).firstOrNull {
-                it.modifiedAt >= since &&
-                    VoiceNotes.transcript(it.docId) == null &&
-                    FilesController.findVoiceNote(it.docId) == null &&
-                    VoiceNotes.claim(it.docId)
+                it.modifiedAt >= since && VoiceNotes.sender(it.docId) == null && VoiceNotes.claim(it.docId)
             }
             if (note != null) {
-                Journal.add("vocaux", "transcription automatique de ${note.name}")
-                withContext(Dispatchers.Main) {
-                    FilesController.add(applicationContext, note.uri, source, voiceNote = note.docId, title = title)
+                who?.let { VoiceNotes.rememberSender(note.docId, it) }
+                val auto = DictoApp.instance.settings.voiceNotesAuto.value
+                if (auto && VoiceNotes.transcript(note.docId) == null && FilesController.findVoiceNote(note.docId) == null) {
+                    Journal.add("vocaux", "transcription automatique de ${note.name}")
+                    val title = who?.let { tr("Vocal de %1\$s", it) } ?: tr("Vocal transcrit")
+                    withContext(Dispatchers.Main) {
+                        FilesController.add(applicationContext, note.uri, source, voiceNote = note.docId, title = title)
+                    }
                 }
                 return
             }

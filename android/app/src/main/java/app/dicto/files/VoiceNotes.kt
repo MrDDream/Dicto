@@ -112,9 +112,12 @@ object VoiceNotes {
 
     private val lock = Any()
     private val index = LinkedHashMap<String, String>()
+    private val senderIndex = LinkedHashMap<String, String>()
     private var loaded = false
     private val _texts = MutableStateFlow<Map<String, String>>(emptyMap())
     private val textsFlow = _texts.asStateFlow()
+    private val _senders = MutableStateFlow<Map<String, String>>(emptyMap())
+    private val sendersFlow = _senders.asStateFlow()
 
     /** Texte de chaque vocal déjà transcrit, par docId. */
     val texts: StateFlow<Map<String, String>>
@@ -123,18 +126,34 @@ object VoiceNotes {
             return textsFlow
         }
 
+    /** Expéditeur de chaque vocal (« Marie · Famille »), noté depuis la notification de WhatsApp. */
+    val senders: StateFlow<Map<String, String>>
+        get() {
+            ensureLoaded()
+            return sendersFlow
+        }
+
     fun transcript(docId: String): String? {
         ensureLoaded()
         return synchronized(lock) { index[docId] }
     }
 
-    fun remember(docId: String, text: String) {
+    fun sender(docId: String): String? {
+        ensureLoaded()
+        return synchronized(lock) { senderIndex[docId] }
+    }
+
+    fun remember(docId: String, text: String) = put(index, _texts, docId, text)
+
+    fun rememberSender(docId: String, sender: String) = put(senderIndex, _senders, docId, sender)
+
+    private fun put(map: LinkedHashMap<String, String>, flow: MutableStateFlow<Map<String, String>>, docId: String, value: String) {
         ensureLoaded()
         synchronized(lock) {
-            index.remove(docId)
-            index[docId] = text
-            while (index.size > INDEX_MAX) index.remove(index.keys.first())
-            _texts.value = index.toMap()
+            map.remove(docId)
+            map[docId] = value
+            while (map.size > INDEX_MAX) map.remove(map.keys.first())
+            flow.value = map.toMap()
             save()
         }
     }
@@ -145,26 +164,36 @@ object VoiceNotes {
         if (loaded) return@synchronized
         loaded = true
         runCatching {
-            val array = JSONArray(file().readText())
-            for (i in 0 until array.length()) {
-                val o = array.getJSONObject(i)
-                index[o.getString("id")] = o.getString("text")
-            }
+            val raw = file().readText()
+            // Première version : un tableau des seuls textes.
+            val root = if (raw.trimStart().startsWith("[")) JSONObject().put("texts", JSONArray(raw)) else JSONObject(raw)
+            read(root.optJSONArray("texts"), "text", index)
+            read(root.optJSONArray("senders"), "sender", senderIndex)
         }
         _texts.value = index.toMap()
+        _senders.value = senderIndex.toMap()
+    }
+
+    private fun read(array: JSONArray?, key: String, into: LinkedHashMap<String, String>) {
+        if (array == null) return
+        for (i in 0 until array.length()) {
+            val o = array.getJSONObject(i)
+            into[o.getString("id")] = o.getString(key)
+        }
     }
 
     private fun save() {
-        val array = JSONArray()
-        for ((id, text) in index) array.put(JSONObject().put("id", id).put("text", text))
-        runCatching { file().writeText(array.toString()) }
+        fun write(map: Map<String, String>, key: String) =
+            JSONArray().apply { for ((id, v) in map) put(JSONObject().put("id", id).put(key, v)) }
+        val root = JSONObject().put("texts", write(index, "text")).put("senders", write(senderIndex, "sender"))
+        runCatching { file().writeText(root.toString()) }
     }
 
-    // --- Vocaux en cours de recherche (transcription automatique) ---------------------
+    // --- Vocaux rattachés à une notification ------------------------------------------
 
     private val claimed = mutableSetOf<String>()
 
-    /** Réserve un vocal pour la transcription automatique ; faux s'il est déjà pris. */
+    /** Rattache un vocal à une notification de WhatsApp ; faux s'il l'est déjà. */
     fun claim(docId: String): Boolean = synchronized(claimed) { claimed.add(docId) }
 }
 
@@ -185,3 +214,14 @@ internal fun newestFolders(folders: List<DocEntry>, count: Int): List<DocEntry> 
 
 /** WhatsApp annonce un vocal par « 🎤 Message vocal (0:12) », quelle que soit la langue. */
 internal fun isVoiceMessage(text: CharSequence?): Boolean = text?.contains("🎤") == true
+
+/**
+ * « Marie · Famille » : la personne, puis le groupe s'il y en a un. Le titre d'une notification
+ * de groupe peut finir par « (3 messages) » : on l'enlève.
+ */
+internal fun senderLabel(person: String?, group: String?): String? {
+    val clean = { s: String? -> s?.replace(Regex("""\s*\(\d+[^)]*\)\s*$"""), "")?.trim()?.takeIf { it.isNotEmpty() } }
+    val p = clean(person)
+    val g = clean(group)?.takeIf { it != p }
+    return listOfNotNull(p, g).joinToString(" · ").ifEmpty { null }
+}
