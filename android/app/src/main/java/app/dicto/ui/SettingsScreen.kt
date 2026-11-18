@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 enum class SettingsPage(val title: String) {
     Models("Modèles"),
     Triggers("Déclencheurs"),
+    WhatsApp("Vocaux WhatsApp"),
     Dictation("Dictée"),
     Words("Mots et remplacements"),
     Refine("Retouche par IA"),
@@ -86,6 +87,7 @@ fun SettingsScreen(page: SettingsPage?, onPage: (SettingsPage?) -> Unit) {
                 SettingsPage.Refine -> RefineSettingsCard()
                 SettingsPage.Profiles -> ProfilesCard()
                 SettingsPage.Keyboard -> KeyboardPage()
+                SettingsPage.WhatsApp -> VoiceNotesSettingsPage()
                 SettingsPage.Appearance -> AppearanceCard()
                 SettingsPage.Backup -> BackupCard()
                 SettingsPage.About -> AboutPage(openCredits = { creditsOpen = true })
@@ -157,6 +159,7 @@ private fun SettingsHome(open: (SettingsPage) -> Unit) {
             NavCard(
                 Triple(SettingsPage.Models, DictoIcons.Models, engine),
                 Triple(SettingsPage.Triggers, DictoIcons.Triggers, triggers),
+                Triple(SettingsPage.WhatsApp, DictoIcons.Wave, voiceNotesSummary()),
                 open = open,
             )
             Spacer(Modifier.height(8.dp))

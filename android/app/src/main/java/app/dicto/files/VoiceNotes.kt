@@ -225,3 +225,25 @@ internal fun senderLabel(person: String?, group: String?): String? {
     val g = clean(group)?.takeIf { it != p }
     return listOfNotNull(p, g).joinToString(" · ").ifEmpty { null }
 }
+
+/**
+ * Rattache chaque message (son heure) au fichier d'heure la plus proche, à [tolerance] près,
+ * chacun une seule fois : les écarts les plus petits d'abord. Renvoie message → fichier (indices).
+ */
+internal fun matchByTime(messages: List<Long>, files: List<Long>, tolerance: Long): Map<Int, Int> {
+    val pairs = buildList {
+        for (i in messages.indices) for (j in files.indices) {
+            val gap = kotlin.math.abs(messages[i] - files[j])
+            if (gap <= tolerance) add(Triple(gap, i, j))
+        }
+    }.sortedBy { it.first }
+    val out = mutableMapOf<Int, Int>()
+    val used = mutableSetOf<Int>()
+    for ((_, i, j) in pairs) {
+        if (i !in out && j !in used) {
+            out[i] = j
+            used += j
+        }
+    }
+    return out
+}

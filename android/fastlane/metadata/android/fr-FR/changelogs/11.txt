@@ -1,0 +1,2 @@
+- Onglet WhatsApp (à activer dans Réglages › Vocaux WhatsApp) : dernier vocal et historique des vocaux avec expéditeur.
+- Réglages des vocaux regroupés dans Réglages ; expéditeurs retrouvés dans les notifications non lues.

@@ -46,4 +46,16 @@ class VoiceNotesTest {
         assertEquals("Famille", senderLabel(null, "Famille"))
         assertEquals(null, senderLabel(" ", null))
     }
+
+    @Test
+    fun messagesFindTheFileOfTheSameTime() {
+        val minute = 60_000L
+        // Deux vocaux à 10:00 et 10:05 ; fichiers à 10:05:20, 10:00:10 et 9:30.
+        val matches = matchByTime(listOf(600 * minute, 605 * minute), listOf(605 * minute + 20_000, 600 * minute + 10_000, 570 * minute), 3 * minute)
+        assertEquals(mapOf(0 to 1, 1 to 0), matches)
+        // Trop loin : pas de rattachement.
+        assertEquals(emptyMap<Int, Int>(), matchByTime(listOf(600 * minute), listOf(500 * minute), 3 * minute))
+        // Un seul fichier pour deux messages : il va au plus proche.
+        assertEquals(mapOf(1 to 0), matchByTime(listOf(600 * minute, 601 * minute), listOf(601 * minute), 3 * minute))
+    }
 }

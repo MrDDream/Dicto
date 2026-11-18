@@ -47,6 +47,8 @@ import app.dicto.ui.theme.DictoTheme
 enum class Tab(val label: String, val icon: ImageVector) {
     Dictation("Dictée", DictoIcons.Mic),
     History("Historique", DictoIcons.History),
+    /** Affiché seulement quand les vocaux WhatsApp sont activés (Réglages › Vocaux WhatsApp). */
+    WhatsApp("WhatsApp", DictoIcons.Wave),
     Settings("Réglages", DictoIcons.Settings),
 }
 
@@ -97,6 +99,9 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_OPEN_FILES = "app.dicto.OPEN_FILES"
 
+        /** Demande d'ouvrir la rubrique Vocaux WhatsApp des réglages. */
+        val openWhatsApp = kotlinx.coroutines.flow.MutableStateFlow(false)
+
         /** Demande d'ouvrir l'écran Fichiers (partage reçu). */
         val openFiles = kotlinx.coroutines.flow.MutableStateFlow(false)
     }
@@ -122,6 +127,19 @@ fun DictoRoot() {
     var settingsPage by rememberSaveable { mutableStateOf<SettingsPage?>(null) }
     var filesOpen by rememberSaveable { mutableStateOf(false) }
     val shareRequest by MainActivity.openFiles.collectAsStateWithLifecycle()
+    val whatsApp by app.dicto.DictoApp.instance.settings.voiceNotesEnabled.flow.collectAsStateWithLifecycle()
+    val whatsAppRequest by MainActivity.openWhatsApp.collectAsStateWithLifecycle()
+    // Onglet retiré (option coupée) : retour à la dictée.
+    androidx.compose.runtime.LaunchedEffect(whatsApp) { if (!whatsApp && tab == Tab.WhatsApp) tab = Tab.Dictation }
+    // Dernier vocal demandé sans dossier accordé : la rubrique des réglages.
+    androidx.compose.runtime.LaunchedEffect(whatsAppRequest) {
+        if (whatsAppRequest) {
+            filesOpen = false
+            settingsPage = SettingsPage.WhatsApp
+            tab = Tab.Settings
+            MainActivity.openWhatsApp.value = false
+        }
+    }
     androidx.compose.runtime.LaunchedEffect(shareRequest) {
         if (shareRequest) {
             filesOpen = true
@@ -147,11 +165,15 @@ fun DictoRoot() {
                         onOpenFiles = { filesOpen = true },
                     )
                     Tab.History -> HistoryScreen()
+                    Tab.WhatsApp -> VoiceNotesScreen(onOpenSettings = {
+                        settingsPage = SettingsPage.WhatsApp
+                        tab = Tab.Settings
+                    })
                     Tab.Settings -> SettingsScreen(settingsPage) { settingsPage = it }
                 }
             }
         }
-        if (!filesOpen) BottomNav(tab) {
+        if (!filesOpen) BottomNav(tab, Tab.entries.filter { it != Tab.WhatsApp || whatsApp }) {
             // Toucher « Réglages » depuis une rubrique ramène à l'accueil des réglages.
             if (it == Tab.Settings && tab == Tab.Settings) settingsPage = null
             tab = it
@@ -161,11 +183,11 @@ fun DictoRoot() {
 }
 
 @Composable
-private fun BottomNav(current: Tab, onSelect: (Tab) -> Unit) {
+private fun BottomNav(current: Tab, tabs: List<Tab>, onSelect: (Tab) -> Unit) {
     Column(Modifier.background(Dicto.Surface).navigationBarsPadding()) {
         HorizontalDivider(color = Dicto.SurfaceSunken)
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 10.dp)) {
-            for (tab in Tab.entries) {
+            for (tab in tabs) {
                 val selected = tab == current
                 Surface(
                     onClick = { onSelect(tab) },

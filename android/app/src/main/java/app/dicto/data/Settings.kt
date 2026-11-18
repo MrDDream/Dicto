@@ -156,6 +156,8 @@ class Settings(private val storage: Storage) {
     val diarize = flag("files.diarize", false)
     /** Vocaux WhatsApp : dossier accordé par le sélecteur d'Android (URI d'arbre), vide = aucun. */
     val voiceNotesFolder = text("voicenotes.folder", "")
+    /** Vocaux WhatsApp : onglet WhatsApp et rubrique activés (d'office si le dossier est déjà accordé). */
+    val voiceNotesEnabled = flag("voicenotes.enabled", voiceNotesFolder.value.isNotBlank())
     /** Vocaux WhatsApp : transcrire seul chaque vocal reçu (lecture des notifications de WhatsApp). */
     val voiceNotesAuto = flag("voicenotes.auto", false)
     /** Paragraphes automatiques : pause (ms) qui ouvre un paragraphe, « 0 » = jamais. */

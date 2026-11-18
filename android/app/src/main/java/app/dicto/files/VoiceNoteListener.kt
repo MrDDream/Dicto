@@ -30,8 +30,52 @@ class VoiceNoteListener : NotificationListenerService() {
     /** Dernier message traité par conversation : WhatsApp republie la même notification. */
     private val handled = mutableMapOf<String, Long>()
 
+    override fun onListenerConnected() {
+        instance = this
+        scanActive()
+    }
+
+    override fun onListenerDisconnected() {
+        if (instance === this) instance = null
+    }
+
+    /**
+     * Vocaux encore annoncés dans le volet (messages non lus) : chaque « 🎤 » est rattaché au
+     * fichier arrivé à la même heure, pour retrouver l'expéditeur des vocaux reçus avant.
+     * Rien n'est transcrit ici.
+     */
+    fun scanActive() {
+        if (!DictoApp.instance.settings.voiceNotesEnabled.value || !VoiceNotes.isGranted(this)) return
+        val voices = runCatching { activeNotifications?.toList() }.getOrNull().orEmpty()
+            .filter { it.packageName in VoiceNotes.APPS && it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0 }
+            .flatMap { sbn ->
+                val n = sbn.notification
+                val style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(n) ?: return@flatMap emptyList()
+                val group = style.takeIf { it.isGroupConversation }?.conversationTitle?.toString()
+                val title = n.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
+                style.messages
+                    .filter { isVoiceMessage(it.text) }
+                    .mapNotNull { m -> senderLabel(m.person?.name?.toString() ?: title, group)?.let { m.timestamp to it } }
+            }
+        if (voices.isEmpty()) return
+        scope.launch {
+            // Tous les fichiers récents, pour qu'un message retrouve son propre fichier même s'il a
+            // déjà un expéditeur ; seuls les rattachements à un fichier sans expéditeur comptent.
+            // Les tout derniers vocaux restent à onNotificationPosted (transcription automatique).
+            val fresh = System.currentTimeMillis() - (SLACK_MS + ATTEMPTS * POLL_MS)
+            val files = VoiceNotes.recent(applicationContext, 40)
+            val matches = matchByTime(voices.map { it.first }, files.map { it.modifiedAt }, MATCH_MS)
+                .filter { (_, f) -> VoiceNotes.sender(files[f].docId) == null && files[f].modifiedAt < fresh }
+            for ((m, f) in matches) {
+                VoiceNotes.claim(files[f].docId)
+                VoiceNotes.rememberSender(files[f].docId, voices[m].second)
+            }
+            if (matches.isNotEmpty()) Journal.add("vocaux", "${matches.size} expéditeur(s) retrouvé(s) dans les notifications")
+        }
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (sbn.packageName !in VoiceNotes.APPS) return
+        if (sbn.packageName !in VoiceNotes.APPS || !DictoApp.instance.settings.voiceNotesEnabled.value) return
         val notification = sbn.notification ?: return
         if (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
 
@@ -67,7 +111,8 @@ class VoiceNoteListener : NotificationListenerService() {
             }
             if (note != null) {
                 who?.let { VoiceNotes.rememberSender(note.docId, it) }
-                val auto = DictoApp.instance.settings.voiceNotesAuto.value
+                val settings = DictoApp.instance.settings
+                val auto = settings.voiceNotesEnabled.value && settings.voiceNotesAuto.value
                 if (auto && VoiceNotes.transcript(note.docId) == null && FilesController.findVoiceNote(note.docId) == null) {
                     Journal.add("vocaux", "transcription automatique de ${note.name}")
                     val title = who?.let { tr("Vocal de %1\$s", it) } ?: tr("Vocal transcrit")
@@ -83,6 +128,7 @@ class VoiceNoteListener : NotificationListenerService() {
     }
 
     override fun onDestroy() {
+        if (instance === this) instance = null
         scope.cancel()
         super.onDestroy()
     }
@@ -91,6 +137,12 @@ class VoiceNoteListener : NotificationListenerService() {
         private const val SLACK_MS = 30_000L
         private const val POLL_MS = 3_000L
         private const val ATTEMPTS = 30
+        /** Écart toléré entre l'heure d'un message et celle de son fichier. */
+        private const val MATCH_MS = 3 * 60_000L
+
+        /** Écouteur relié par le système, s'il l'est. */
+        @Volatile var instance: VoiceNoteListener? = null
+            private set
 
         fun isEnabled(context: Context): Boolean =
             context.packageName in NotificationManagerCompat.getEnabledListenerPackages(context)

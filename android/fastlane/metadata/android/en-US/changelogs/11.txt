@@ -1,0 +1,2 @@
+- WhatsApp tab (turn it on in Settings › WhatsApp voice messages): last voice message and history with senders.
+- Voice message settings grouped in Settings; senders found in unread notifications.

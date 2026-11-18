@@ -77,7 +77,11 @@ class ShareTranscribeActivity : ComponentActivity() {
         if (itemId < 0 && intent.getBooleanExtra(EXTRA_LATEST, false)) {
             // Tuile ou bouton « Dernier vocal » : le plus récent du dossier WhatsApp.
             if (!VoiceNotes.isGranted(this)) {
-                openDicto()
+                // Tuile ajoutée avant : on active l'option pour montrer toute la rubrique.
+                app.dicto.DictoApp.instance.settings.voiceNotesEnabled.set(true)
+                MainActivity.openWhatsApp.value = true
+                startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                finish()
                 return
             }
             notice = tr("Recherche du dernier vocal…")
