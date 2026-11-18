@@ -1,0 +1,2 @@
+- WhatsApp voice messages: "Last voice message" tile, recent voice messages list, optional automatic transcription.
+- The text shows over WhatsApp or as a notification, with Copy and Share.

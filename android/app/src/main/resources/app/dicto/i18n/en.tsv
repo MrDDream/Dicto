@@ -208,7 +208,6 @@ Autorise « Afficher par-dessus les autres apps » %1$s.	Allow “Display over o
 Infos de Dicto	Dicto app info
 Autoriser	Allow
 Bulle Dicto	Dicto bubble
-Ouvre le volet des réglages rapides, touche le crayon et ajoute « Dicto ».	Open the Quick Settings panel, tap the pencil and add “Dicto”.
 Le fournisseur activé reçoit le texte transcrit (jamais l'audio) ; Ollama peut tourner sur ton propre PC. La roue dentée règle la clé, l'adresse et le modèle. Les clés restent chiffrées sur l'appareil (Android Keystore).	The active provider receives the transcribed text (never the audio); Ollama can run on your own PC. The gear sets the key, the address and the model. Keys stay encrypted on the device (Android Keystore).
 Consigne	Instruction
 Personnalisée	Custom
@@ -495,3 +494,26 @@ Texte copié.	Text copied.
 Ouvrir dans Dicto	Open in Dicto
 Transcription %1$s %%	Transcribing %1$s %%
 Échec	Failed
+Accès au dossier impossible.	Could not access the folder.
+Actualiser	Refresh
+Ajouter la tuile	Add the tile
+Aucun vocal dans ce dossier. Vérifie que c'est bien « WhatsApp Voice Notes » (WhatsApp › Media).	No voice messages in this folder. Check that it is “WhatsApp Voice Notes” (WhatsApp › Media).
+Aucun vocal dans le dossier WhatsApp.	No voice messages in the WhatsApp folder.
+Autorise Dicto à lire les notifications, pour repérer les vocaux de WhatsApp.	Allow Dicto to read notifications, to spot WhatsApp voice messages.
+Autoriser les vocaux WhatsApp	Allow WhatsApp voice messages
+Avec un service en ligne comme moteur, l'audio de chaque vocal lui est envoyé.	With an online service as the engine, the audio of each voice message is sent to it.
+Changer de dossier	Change folder
+Chaque vocal reçu est transcrit, le texte arrive en notification. Seules les notifications de WhatsApp sont lues.	Each voice message you receive is transcribed and the text arrives as a notification. Only WhatsApp notifications are read.
+Dernier vocal	Last voice message
+Dicto a besoin de lire le dossier où WhatsApp range les vocaux. Le sélecteur s'ouvre dessus : touche « Utiliser ce dossier », puis « Autoriser ».	Dicto needs to read the folder where WhatsApp keeps voice messages. The picker opens on it: tap “Use this folder”, then “Allow”.
+Lecture du dossier…	Reading the folder…
+Ouvre le volet des réglages rapides, touche le crayon et ajoute « %1$s ».	Open the Quick Settings panel, tap the pencil and add “%1$s”.
+Recherche du dernier vocal…	Looking for the last voice message…
+Transcription automatique	Automatic transcription
+Transcrire	Transcribe
+Transcrire les messages vocaux sans passer par Partager	Transcribe voice messages without going through Share
+Vocal de %1$s	Voice message from %1$s
+Vocaux récents	Recent voice messages
+Vocaux WhatsApp	WhatsApp voice messages
+Vocaux transcrits	Transcribed voice messages
+Le texte d'un message vocal, une fois transcrit.	The text of a voice message, once transcribed.

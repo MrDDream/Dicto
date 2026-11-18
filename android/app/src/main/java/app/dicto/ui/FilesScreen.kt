@@ -83,6 +83,8 @@ fun FilesScreen(onBack: () -> Unit) {
             modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp),
         )
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            VoiceNotesSection(onOpen = { open = it })
+            SectionTitle(tr("Fichier audio"))
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Dicto.Surface)
                     .border(1.5.dp, Dicto.Border, RoundedCornerShape(22.dp)).padding(20.dp),

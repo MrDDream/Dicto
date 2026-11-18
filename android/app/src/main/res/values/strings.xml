@@ -5,4 +5,6 @@
     <string name="ime_label" translatable="false">Dicto</string>
     <string name="ime_subtype">Dictation</string>
     <string name="share_label">Transcribe with Dicto</string>
+    <string name="voicenote_tile">Last voice message</string>
+    <string name="voicenote_listener">Dicto: WhatsApp voice messages</string>
 </resources>

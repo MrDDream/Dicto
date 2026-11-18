@@ -76,7 +76,7 @@ jobs:
           DICTO_KEY_ALIAS: ${{ secrets.DICTO_KEY_ALIAS }}
           DICTO_KEY_PASSWORD: ${{ secrets.DICTO_KEY_PASSWORD }}
         run: |
-          ./gradlew --no-daemon :app:testDebugUnitTest --tests 'app.dicto.update.*' :app:assembleRelease
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests 'app.dicto.update.*' --tests 'app.dicto.files.*' --tests 'app.dicto.i18n.*' :app:assembleRelease
           mkdir ../dist
           for f in app/build/outputs/apk/release/*-release.apk; do
             abi=$(basename "$f" | sed -E 's/^Dicto-v[^-]+-(.*)-release\.apk$/\1/')

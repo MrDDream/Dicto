@@ -46,6 +46,12 @@ data class FileItem(
     val source: String? = null,
     /** Copie locale d'un fichier partagé, supprimée une fois traité. */
     val cached: java.io.File? = null,
+    /** Vocal du dossier WhatsApp (docId) : son texte est gardé pour ne pas le retranscrire. */
+    val voiceNote: String? = null,
+    /** Titre de la notification de résultat (« Vocal de Marie »). */
+    val title: String? = null,
+    /** Notification du texte si le panneau n'est pas affiché (non : lancé depuis la liste, dans l'app). */
+    val notify: Boolean = true,
 ) {
     enum class Status { QUEUED, VOICE_MODEL, DECODING, TRANSCRIBING, DONE, FAILED, CANCELLED }
 
@@ -74,9 +80,16 @@ object FilesController {
      * Met un fichier en file. Partagé depuis une autre app (`source`), il est d'abord copié :
      * le droit de lecture accordé par le partage peut tomber dès que le panneau se ferme.
      */
-    fun add(context: Context, uri: Uri, source: String? = null): Long {
+    fun add(
+        context: Context,
+        uri: Uri,
+        source: String? = null,
+        voiceNote: String? = null,
+        title: String? = null,
+        notify: Boolean = true,
+    ): Long {
         val name = displayName(context, uri)
-        val item = FileItem(nextId++, uri, name, source = source)
+        val item = FileItem(nextId++, uri, name, source = source, voiceNote = voiceNote, title = title, notify = notify)
         _items.update { listOf(item) + it }
         FileWorkService.start(context)
         if (source == null) {
@@ -93,6 +106,18 @@ object FilesController {
         }
         return item.id
     }
+
+    /** Vocal déjà transcrit : affiché tel quel, sans le retranscrire. */
+    fun addCached(name: String, text: String, voiceNote: String?): Long {
+        val transcript = FileTranscript(text = text, language = null, segments = emptyList(), durationMs = 0u, engine = "")
+        val item = FileItem(nextId++, Uri.EMPTY, name, status = FileItem.Status.DONE, progress = 1f, result = transcript, voiceNote = voiceNote)
+        _items.update { listOf(item) + it }
+        return item.id
+    }
+
+    /** Élément de la file pour ce vocal, s'il est en attente, en cours ou terminé. */
+    fun findVoiceNote(docId: String): FileItem? =
+        _items.value.firstOrNull { it.voiceNote == docId && it.status != FileItem.Status.FAILED && it.status != FileItem.Status.CANCELLED }
 
     fun cancel(id: Long) {
         if (currentId == id) job?.cancel()
@@ -144,10 +169,11 @@ object FilesController {
                 },
             )
             update(id) { it.copy(status = FileItem.Status.DONE, progress = 1f, result = result) }
+            item.voiceNote?.let { VoiceNotes.remember(it, result.text) }
             if (item.source != null) {
                 runCatching { app.storage.addHistory(result.asDictation(), item.source) }
                     .onFailure { Log.w("DictoFiles", "historique de ${item.name}", it) }
-                if (shownId != id) notifyResult(app, id, result.text)
+                if (item.notify && shownId != id) notifyResult(app, id, item.title, result.text)
             }
         } catch (e: uniffi.dicto_ffi.FfiException.Cancelled) {
             update(id) { it.copy(status = FileItem.Status.CANCELLED) }
@@ -170,7 +196,7 @@ object FilesController {
     }
 
     /** Transcription d'un fichier partagé, terminée alors que le panneau était fermé. */
-    private fun notifyResult(context: Context, id: Long, text: String) {
+    private fun notifyResult(context: Context, id: Long, title: String?, text: String) {
         val manager = context.getSystemService(android.app.NotificationManager::class.java)
         if (!manager.areNotificationsEnabled()) return
         val open = PendingIntent.getActivity(
@@ -182,14 +208,18 @@ object FilesController {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val body = text.ifBlank { tr("Aucune parole détectée.") }
-        val notification = NotificationCompat.Builder(context, DictoApp.CHANNEL_DOWNLOADS)
+        val builder = NotificationCompat.Builder(context, DictoApp.CHANNEL_VOICE_NOTES)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setContentTitle(tr("Vocal transcrit"))
+            .setContentTitle(title ?: tr("Vocal transcrit"))
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(open)
             .setAutoCancel(true)
-            .build()
+        if (text.isNotBlank()) {
+            builder.addAction(0, tr("Copier"), TranscriptActionReceiver.copyAction(context, id, text))
+            builder.addAction(0, tr("Partager"), TranscriptActionReceiver.shareAction(context, id, text))
+        }
+        val notification = builder.build()
         runCatching { manager.notify(RESULT_NOTIFICATION + id.toInt(), notification) }
     }
 
@@ -241,6 +271,7 @@ class FileWorkService : Service() {
     companion object {
         fun start(context: Context) {
             runCatching { ContextCompat.startForegroundService(context, Intent(context, FileWorkService::class.java)) }
+                .onFailure { app.dicto.data.Journal.add("fichiers", "service de premier plan refusé : ${it.message}") }
         }
 
         fun stop(context: Context) {

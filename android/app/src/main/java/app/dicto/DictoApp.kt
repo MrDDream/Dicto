@@ -54,11 +54,17 @@ class DictoApp : Application(), androidx.work.Configuration.Provider {
                 setShowBadge(false)
             },
         )
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_VOICE_NOTES, tr("Vocaux transcrits"), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = tr("Le texte d'un message vocal, une fois transcrit.")
+            },
+        )
     }
 
     companion object {
         const val CHANNEL_DICTATION = "dictation"
         const val CHANNEL_DOWNLOADS = "downloads"
+        const val CHANNEL_VOICE_NOTES = "voicenotes"
 
         lateinit var instance: DictoApp
             private set

@@ -36,7 +36,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +50,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dicto.ui.MainActivity
 import app.dicto.ui.copy
@@ -54,6 +58,7 @@ import app.dicto.ui.share
 import app.dicto.ui.theme.Dicto
 import app.dicto.ui.theme.DictoIcons
 import app.dicto.ui.theme.DictoTheme
+import kotlinx.coroutines.launch
 
 /**
  * « Transcrire avec Dicto » depuis le menu Partager (message vocal WhatsApp, Signal…) :
@@ -62,12 +67,22 @@ import app.dicto.ui.theme.DictoTheme
  * l'historique.
  */
 class ShareTranscribeActivity : ComponentActivity() {
-    private var itemId: Long = -1
+    private var itemId by mutableLongStateOf(-1L)
+    /** Message à la place du panneau de progression (recherche du dernier vocal, aucun vocal…). */
+    private var notice by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        itemId = savedInstanceState?.getLong(KEY_ID, -1) ?: -1
-        if (itemId < 0) {
+        itemId = savedInstanceState?.getLong(KEY_ID, -1L) ?: -1L
+        if (itemId < 0 && intent.getBooleanExtra(EXTRA_LATEST, false)) {
+            // Tuile ou bouton « Dernier vocal » : le plus récent du dossier WhatsApp.
+            if (!VoiceNotes.isGranted(this)) {
+                openDicto()
+                return
+            }
+            notice = tr("Recherche du dernier vocal…")
+            lifecycleScope.launch { openLatest() }
+        } else if (itemId < 0) {
             val uri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
             if (uri == null) {
                 finish()
@@ -88,6 +103,7 @@ class ShareTranscribeActivity : ComponentActivity() {
                 ) {
                     TranscribePanel(
                         id = itemId,
+                        notice = notice,
                         onClose = ::finish,
                         onOpenDicto = ::openDicto,
                         modifier = Modifier.navigationBarsPadding().padding(12.dp)
@@ -113,21 +129,42 @@ class ShareTranscribeActivity : ComponentActivity() {
         super.onStop()
     }
 
+    private suspend fun openLatest() {
+        val note = VoiceNotes.latest(this)
+        if (note == null) {
+            notice = tr("Aucun vocal dans le dossier WhatsApp.")
+            return
+        }
+        val cached = VoiceNotes.transcript(note.docId)
+        itemId = FilesController.findVoiceNote(note.docId)?.id
+            ?: cached?.let { FilesController.addCached(note.name, it, note.docId) }
+            ?: FilesController.add(this, note.uri, VoiceNotes.WHATSAPP, voiceNote = note.docId)
+        notice = null
+        if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) FilesController.shownId = itemId
+    }
+
     private fun openDicto() {
         MainActivity.openFiles.value = true
         startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         finish()
     }
 
-    private companion object {
-        const val KEY_ID = "item"
+    companion object {
+        /** Transcrire le vocal le plus récent du dossier WhatsApp accordé. */
+        const val EXTRA_LATEST = "app.dicto.LATEST_VOICE_NOTE"
+        private const val KEY_ID = "item"
         /** App d'origine inconnue : le texte va quand même dans l'historique. */
-        const val SHARED = "share"
+        private const val SHARED = "share"
+
+        fun latestIntent(context: android.content.Context): Intent =
+            Intent(context, ShareTranscribeActivity::class.java)
+                .putExtra(EXTRA_LATEST, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
     }
 }
 
 @Composable
-private fun TranscribePanel(id: Long, onClose: () -> Unit, onOpenDicto: () -> Unit, modifier: Modifier = Modifier) {
+private fun TranscribePanel(id: Long, notice: String?, onClose: () -> Unit, onOpenDicto: () -> Unit, modifier: Modifier = Modifier) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val items by FilesController.items.collectAsStateWithLifecycle()
     val item = items.firstOrNull { it.id == id }
@@ -162,6 +199,9 @@ private fun TranscribePanel(id: Long, onClose: () -> Unit, onOpenDicto: () -> Un
             ) { Box(contentAlignment = Alignment.Center) { Icon(DictoIcons.Close, tr("Fermer"), Modifier.size(16.dp)) } }
         }
 
+        if (item == null && notice != null) {
+            Text(notice, style = MaterialTheme.typography.bodyMedium, color = Dicto.OverlayMuted)
+        }
         if (item != null) when (item.status) {
             FileItem.Status.CANCELLED -> Unit
             FileItem.Status.QUEUED, FileItem.Status.VOICE_MODEL, FileItem.Status.DECODING, FileItem.Status.TRANSCRIBING -> {

@@ -1,0 +1,2 @@
+- Vocaux WhatsApp : tuile « Dernier vocal », liste des vocaux récents, transcription automatique en option.
+- Le texte arrive par-dessus WhatsApp ou en notification, avec Copier et Partager.

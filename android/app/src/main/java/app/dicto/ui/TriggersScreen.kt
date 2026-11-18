@@ -326,15 +326,18 @@ private fun ListRow(title: String, subtitle: String, trailing: @Composable () ->
     }
 }
 
-private fun addTile(context: Context) {
+private fun addTile(context: Context) = requestTile(context, DictoTileService::class.java, tr("Bulle Dicto"), "Dicto")
+
+/** Propose d'ajouter une tuile au volet des réglages rapides (Android 13+), sinon explique comment faire. */
+fun requestTile(context: Context, service: Class<*>, label: String, tileName: String) {
     if (Build.VERSION.SDK_INT >= 33) {
         context.getSystemService(StatusBarManager::class.java).requestAddTileService(
-            ComponentName(context, DictoTileService::class.java),
-            tr("Bulle Dicto"),
+            ComponentName(context, service),
+            label,
             Icon.createWithResource(context, R.drawable.ic_launcher_monochrome),
             context.mainExecutor,
         ) { }
     } else {
-        Toast.makeText(context, tr("Ouvre le volet des réglages rapides, touche le crayon et ajoute « Dicto »."), Toast.LENGTH_LONG).show()
+        Toast.makeText(context, tr("Ouvre le volet des réglages rapides, touche le crayon et ajoute « %1\$s ».", tileName), Toast.LENGTH_LONG).show()
     }
 }
