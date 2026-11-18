@@ -50,6 +50,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import android.graphics.BitmapFactory
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dicto.DictoApp
@@ -150,7 +156,7 @@ fun VoiceNotesSettingsPage() {
         HorizontalDivider(color = Dicto.SurfaceSunken)
         SettingRow(
             tr("Expéditeurs"),
-            if (listener) tr("Notés depuis les notifications de WhatsApp, pour les vocaux reçus depuis l'activation.")
+            if (listener) tr("Noms et photos notés depuis les notifications de WhatsApp, pour les vocaux reçus depuis l'activation. Rien ne quitte le téléphone.")
             else tr("Pour voir qui a envoyé chaque nouveau vocal (personne ou groupe), autorise Dicto à lire les notifications de WhatsApp."),
         ) {
             if (listener) Pill(tr("Actif"), Dicto.AccentContainer, Dicto.Accent) else TonalButton(tr("Autoriser"), { openListenerSettings(context) })
@@ -344,15 +350,7 @@ private fun VoiceNoteRow(context: Context, note: VoiceNote, text: String?, sende
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Initiale de l'expéditeur, ou un micro quand on ne le connaît pas.
-        Box(Modifier.size(40.dp).clip(CircleShape).background(Dicto.AccentContainer), contentAlignment = Alignment.Center) {
-            val initial = sender?.firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()
-            if (initial != null) {
-                Text(initial.toString(), style = MaterialTheme.typography.titleMedium, color = Dicto.Accent)
-            } else {
-                Icon(DictoIcons.Mic, null, tint = Dicto.Accent, modifier = Modifier.size(18.dp))
-            }
-        }
+        SenderAvatar(sender)
         Column(Modifier.weight(1f)) {
             // Expéditeur connu : son nom et l'heure. Sinon l'heure seule.
             Text(
@@ -397,6 +395,41 @@ private fun VoiceNoteRow(context: Context, note: VoiceNote, text: String?, sende
         }
     }
 }
+
+/**
+ * Photo de l'expéditeur (sinon son initiale, ou un micro s'il est inconnu), avec celle du
+ * groupe en pastille dans le coin.
+ */
+@Composable
+private fun SenderAvatar(sender: String?) {
+    val version by VoiceNotes.avatarsVersion.collectAsStateWithLifecycle()
+    val names = sender?.split(" · ")
+    val person = names?.firstOrNull()
+    val group = names?.getOrNull(1)
+    val photo = remember(person, version) { person?.let(::loadAvatar) }
+    val groupPhoto = remember(group, version) { group?.let(::loadAvatar) }
+    Box(Modifier.size(40.dp)) {
+        Box(Modifier.size(40.dp).clip(CircleShape).background(Dicto.AccentContainer), contentAlignment = Alignment.Center) {
+            val initial = person?.firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()
+            when {
+                photo != null -> Image(photo, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                initial != null -> Text(initial.toString(), style = MaterialTheme.typography.titleMedium, color = Dicto.Accent)
+                else -> Icon(DictoIcons.Mic, null, tint = Dicto.Accent, modifier = Modifier.size(18.dp))
+            }
+        }
+        if (groupPhoto != null) {
+            Image(
+                groupPhoto,
+                null,
+                Modifier.size(18.dp).align(Alignment.BottomEnd).clip(CircleShape).border(1.5.dp, Dicto.Surface, CircleShape),
+                contentScale = ContentScale.Crop,
+            )
+        }
+    }
+}
+
+private fun loadAvatar(name: String): ImageBitmap? =
+    VoiceNotes.avatarFile(name)?.let { runCatching { BitmapFactory.decodeFile(it.path)?.asImageBitmap() }.getOrNull() }
 
 /** « Aujourd'hui », « Hier », sinon la date (« lun. 17 nov. »). */
 private fun dayLabel(context: Context, ms: Long): String = when {

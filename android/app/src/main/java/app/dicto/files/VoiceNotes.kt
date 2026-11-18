@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import androidx.core.graphics.drawable.toBitmap
 import app.dicto.DictoApp
 import app.dicto.data.Journal
 import kotlinx.coroutines.Dispatchers
@@ -189,6 +190,33 @@ object VoiceNotes {
         runCatching { file().writeText(root.toString()) }
     }
 
+    // --- Photos de profil (personnes, groupes) -----------------------------------------
+
+    private const val AVATAR_PX = 128
+    private val _avatars = MutableStateFlow(0)
+
+    /** Change à chaque photo enregistrée, pour réafficher la liste. */
+    val avatarsVersion: StateFlow<Int> = _avatars.asStateFlow()
+
+    private fun avatarDir() = File(DictoApp.instance.filesDir, "avatars").apply { mkdirs() }
+
+    private fun avatarPath(name: String): File {
+        val digest = java.security.MessageDigest.getInstance("SHA-1").digest(normalized(name).toByteArray())
+        return File(avatarDir(), digest.joinToString("") { "%02x".format(it) } + ".png")
+    }
+
+    /** Photo enregistrée pour ce nom (« Marie », « Famille »), si on en a une. */
+    fun avatarFile(name: String): File? = avatarPath(name).takeIf { it.exists() }
+
+    /** Garde une petite copie (128 px) de la photo d'une personne ou d'un groupe, sur le téléphone. */
+    fun saveAvatar(name: String, drawable: android.graphics.drawable.Drawable) {
+        runCatching {
+            val bitmap = drawable.toBitmap(AVATAR_PX, AVATAR_PX)
+            avatarPath(name).outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            _avatars.value++
+        }
+    }
+
     // --- Vocaux rattachés à une notification ------------------------------------------
 
     private val claimed = mutableSetOf<String>()
@@ -215,14 +243,16 @@ internal fun newestFolders(folders: List<DocEntry>, count: Int): List<DocEntry> 
 /** WhatsApp annonce un vocal par « 🎤 Message vocal (0:12) », quelle que soit la langue. */
 internal fun isVoiceMessage(text: CharSequence?): Boolean = text?.contains("🎤") == true
 
+/** Nom affiché d'une personne ou d'un groupe, sans le « (3 messages) » final. */
+internal fun cleanName(s: String?): String? = s?.replace(Regex("""\s*\(\d+[^)]*\)\s*$"""), "")?.trim()?.takeIf { it.isNotEmpty() }
+
 /**
  * « Marie · Famille » : la personne, puis le groupe s'il y en a un. Le titre d'une notification
  * de groupe peut finir par « (3 messages) » : on l'enlève.
  */
 internal fun senderLabel(person: String?, group: String?): String? {
-    val clean = { s: String? -> s?.replace(Regex("""\s*\(\d+[^)]*\)\s*$"""), "")?.trim()?.takeIf { it.isNotEmpty() } }
-    val p = clean(person)
-    val g = clean(group)?.takeIf { it != p }
+    val p = cleanName(person)
+    val g = cleanName(group)?.takeIf { it != p }
     return listOfNotNull(p, g).joinToString(" · ").ifEmpty { null }
 }
 

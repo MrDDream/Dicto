@@ -1,2 +1,3 @@
 - Tes propres vocaux ne sont plus transcrits automatiquement.
 - Onglet WhatsApp : filtre par nom ou mot-clé.
+- Onglet WhatsApp : photos de profil des personnes et des groupes.

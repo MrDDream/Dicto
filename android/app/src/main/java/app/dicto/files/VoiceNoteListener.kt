@@ -6,7 +6,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.graphics.drawable.Icon
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.core.app.NotificationManagerCompat
 import app.dicto.DictoApp
 import app.dicto.data.Journal
@@ -55,7 +57,10 @@ class VoiceNoteListener : NotificationListenerService() {
                 val title = n.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
                 style.messages
                     .filter { isVoiceMessage(it.text) && !fromMe(style, it) }
-                    .mapNotNull { m -> senderLabel(m.person?.name?.toString() ?: title, group)?.let { m.timestamp to it } }
+                    .mapNotNull { m ->
+                        saveAvatars(cleanName(m.person?.name?.toString() ?: title), m.person?.icon, cleanName(group), n.getLargeIcon(), refresh = false)
+                        senderLabel(m.person?.name?.toString() ?: title, group)?.let { m.timestamp to it }
+                    }
             }
         if (voices.isEmpty()) return
         scope.launch {
@@ -98,8 +103,29 @@ class VoiceNoteListener : NotificationListenerService() {
         val group = style?.takeIf { it.isGroupConversation }?.conversationTitle?.toString()
         val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
         val who = senderLabel(person ?: title, group)
+        saveAvatars(cleanName(person ?: title), last?.person?.icon, cleanName(group), notification.getLargeIcon(), refresh = true)
         val source = sbn.packageName
         scope.launch { attach(sbn.postTime, source, who) }
+    }
+
+    /**
+     * Photos de la personne et du groupe, gardées en petit sur le téléphone. En conversation
+     * privée, la grande icône de la notification est la photo du contact ; dans un groupe, celle
+     * du groupe. [refresh] remplace une photo déjà gardée (vocal qui arrive).
+     */
+    private fun saveAvatars(person: String?, personIcon: IconCompat?, group: String?, large: Icon?, refresh: Boolean) {
+        if (person == null && group == null) return
+        val context = applicationContext
+        scope.launch(Dispatchers.IO) {
+            if (person != null && (refresh || VoiceNotes.avatarFile(person) == null)) {
+                val photo = personIcon?.let { runCatching { it.loadDrawable(context) }.getOrNull() }
+                    ?: large?.takeIf { group == null }?.let { runCatching { it.loadDrawable(context) }.getOrNull() }
+                photo?.let { VoiceNotes.saveAvatar(person, it) }
+            }
+            if (group != null && (refresh || VoiceNotes.avatarFile(group) == null)) {
+                large?.let { runCatching { it.loadDrawable(context) }.getOrNull() }?.let { VoiceNotes.saveAvatar(group, it) }
+            }
+        }
     }
 
     /** Message écrit par l'utilisateur : sans auteur, ou au nom de l'utilisateur de la conversation. */
