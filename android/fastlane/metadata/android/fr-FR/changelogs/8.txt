@@ -1,0 +1,3 @@
+- La séparation des voix fonctionne (elle échouait toujours au chargement).
+- Un vocal partagé est transcrit sans séparation des voix, donc plus vite.
+- Boutons clairs lisibles en thème sombre (panneau de transcription, bulle).

@@ -143,7 +143,8 @@ fun DictationPanel(
                 modifier = Modifier.weight(1f).height(46.dp),
                 shape = RoundedCornerShape(23.dp),
                 color = if (text.isNotBlank()) Dicto.OverlayInk else Dicto.OverlayLine,
-                contentColor = Dicto.Ink,
+                // Couleurs fixes du panneau sombre : Dicto.Ink devient clair en thème sombre.
+                contentColor = Dicto.OverlayBackground,
             ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(DictoIcons.Check, null, Modifier.size(17.dp))

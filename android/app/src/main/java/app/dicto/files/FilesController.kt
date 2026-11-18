@@ -115,7 +115,8 @@ object FilesController {
         try {
             val engine = app.dictation.currentEngine() ?: throw IllegalStateException(tr("choisis d'abord un modèle"))
             // Séparation des voix : son modèle (~46 Mo) est téléchargé la première fois.
-            val voices = if (app.settings.diarize.value) {
+            // Pas pour un message vocal partagé : une seule voix, et le texte doit venir vite.
+            val voices = if (app.settings.diarize.value && item.source == null) {
                 app.models.supportPath(DIARIZATION) ?: run {
                     update(id) { it.copy(status = FileItem.Status.VOICE_MODEL, progress = 0f) }
                     app.models.downloadSupport(

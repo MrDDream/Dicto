@@ -1,0 +1,3 @@
+- Speaker separation works (it always failed to load).
+- A shared voice message is transcribed without speaker separation, so faster.
+- Light buttons readable in the dark theme (transcription panel, bubble).

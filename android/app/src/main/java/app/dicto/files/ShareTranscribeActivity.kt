@@ -223,7 +223,7 @@ private fun PanelButton(text: String, icon: ImageVector?, onClick: () -> Unit, m
         modifier = modifier.height(46.dp),
         shape = RoundedCornerShape(23.dp),
         color = if (primary) Dicto.OverlayInk else Color.Transparent,
-        contentColor = if (primary) Dicto.Ink else Dicto.OverlayInk,
+        contentColor = if (primary) Dicto.OverlayBackground else Dicto.OverlayInk,
         border = if (primary) null else BorderStroke(1.dp, Dicto.OverlayLine),
     ) {
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {

@@ -13,7 +13,8 @@ pub struct Turn {
 }
 
 /// Fichiers attendus dans le dossier du modèle de séparation des voix (catalogue « diarization »).
-pub const SEGMENTATION_MODEL: &str = "sherpa-onnx-pyannote-segmentation-3-0/model.int8.onnx";
+/// L'archive de segmentation est extraite sans son dossier racine (voir `models::extract_tar_bz2`).
+pub const SEGMENTATION_MODEL: &str = "model.int8.onnx";
 pub const EMBEDDING_MODEL: &str = "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx";
 
 /// Donne à chaque segment la voix qui parle le plus longtemps pendant celui-ci ; les voix
