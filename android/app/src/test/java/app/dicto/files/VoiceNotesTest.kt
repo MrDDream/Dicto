@@ -58,4 +58,15 @@ class VoiceNotesTest {
         // Un seul fichier pour deux messages : il va au plus proche.
         assertEquals(mapOf(1 to 0), matchByTime(listOf(600 * minute, 601 * minute), listOf(601 * minute), 3 * minute))
     }
+
+    @Test
+    fun theReceivedFileIsTheOneClosestToTheNotification() {
+        val posted = 1_000_000L
+        // Reçu 5 s avant la notification ; ton vocal de réponse 40 s après : le reçu gagne.
+        assertEquals(0, nearestFile(listOf(posted - 5_000, posted + 40_000), posted, 30_000, 60_000))
+        // Seul ton vocal enregistré 2 min plus tard : hors fenêtre, rien n'est pris.
+        assertEquals(null, nearestFile(listOf(posted + 120_000), posted, 30_000, 60_000))
+        // Un vieux vocal d'avant la notification n'est pas pris non plus.
+        assertEquals(null, nearestFile(listOf(posted - 300_000), posted, 30_000, 60_000))
+    }
 }

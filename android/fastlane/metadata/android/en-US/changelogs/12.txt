@@ -1,0 +1,1 @@
+- Your own voice messages are no longer transcribed automatically.

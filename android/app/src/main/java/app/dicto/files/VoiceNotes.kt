@@ -247,3 +247,12 @@ internal fun matchByTime(messages: List<Long>, files: List<Long>, tolerance: Lon
     }
     return out
 }
+
+/**
+ * Indice du fichier dont l'heure est la plus proche de [target], dans la fenêtre
+ * [target - before, target + after] ; null s'il n'y en a aucun.
+ */
+internal fun nearestFile(times: List<Long>, target: Long, before: Long, after: Long): Int? =
+    times.indices
+        .filter { times[it] in (target - before)..(target + after) }
+        .minByOrNull { kotlin.math.abs(times[it] - target) }

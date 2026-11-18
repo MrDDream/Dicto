@@ -54,7 +54,7 @@ class VoiceNoteListener : NotificationListenerService() {
                 val group = style.takeIf { it.isGroupConversation }?.conversationTitle?.toString()
                 val title = n.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
                 style.messages
-                    .filter { isVoiceMessage(it.text) }
+                    .filter { isVoiceMessage(it.text) && !fromMe(style, it) }
                     .mapNotNull { m -> senderLabel(m.person?.name?.toString() ?: title, group)?.let { m.timestamp to it } }
             }
         if (voices.isEmpty()) return
@@ -83,6 +83,8 @@ class VoiceNoteListener : NotificationListenerService() {
         val last = style?.messages?.lastOrNull()
         val text = last?.text ?: notification.extras.getCharSequence(Notification.EXTRA_TEXT)
         if (!isVoiceMessage(text)) return
+        // Ton propre vocal (WhatsApp remet ta réponse dans la notification) : rien à faire.
+        if (style != null && last != null && fromMe(style, last)) return
         val stamp = last?.timestamp ?: sbn.postTime
         synchronized(handled) {
             if (handled[sbn.key] == stamp) return
@@ -97,18 +99,28 @@ class VoiceNoteListener : NotificationListenerService() {
         val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
         val who = senderLabel(person ?: title, group)
         val source = sbn.packageName
-        scope.launch { attach(sbn.postTime - SLACK_MS, source, who) }
+        scope.launch { attach(sbn.postTime, source, who) }
+    }
+
+    /** Message écrit par l'utilisateur : sans auteur, ou au nom de l'utilisateur de la conversation. */
+    private fun fromMe(style: NotificationCompat.MessagingStyle, m: NotificationCompat.MessagingStyle.Message): Boolean {
+        val author = m.person ?: return true
+        val me = style.user
+        return (author.key != null && author.key == me.key) || (author.name != null && author.name.toString() == me.name?.toString())
     }
 
     /**
      * Attend le fichier du vocal (téléchargé par WhatsApp juste avant ou après la notification),
      * note son expéditeur, et le transcrit si la transcription automatique est active.
      */
-    private suspend fun attach(since: Long, source: String, who: String?) {
+    private suspend fun attach(postedAt: Long, source: String, who: String?) {
         repeat(ATTEMPTS) {
-            val note = VoiceNotes.recent(applicationContext, 5).firstOrNull {
-                it.modifiedAt >= since && VoiceNotes.sender(it.docId) == null && VoiceNotes.claim(it.docId)
-            }
+            // Le fichier arrivé le plus près de la notification, dans une fenêtre bornée : un vocal
+            // que tu enregistres ensuite pour répondre n'est pas pris pour celui reçu.
+            val candidates = VoiceNotes.recent(applicationContext, 8).filter { VoiceNotes.sender(it.docId) == null }
+            val note = nearestFile(candidates.map { it.modifiedAt }, postedAt, SLACK_MS, AFTER_MS)
+                ?.let { candidates[it] }
+                ?.takeIf { VoiceNotes.claim(it.docId) }
             if (note != null) {
                 who?.let { VoiceNotes.rememberSender(note.docId, it) }
                 val settings = DictoApp.instance.settings
@@ -134,9 +146,11 @@ class VoiceNoteListener : NotificationListenerService() {
     }
 
     companion object {
+        /** Fenêtre autour de la notification où chercher le fichier du vocal reçu. */
         private const val SLACK_MS = 30_000L
+        private const val AFTER_MS = 60_000L
         private const val POLL_MS = 3_000L
-        private const val ATTEMPTS = 30
+        private const val ATTEMPTS = 22
         /** Écart toléré entre l'heure d'un message et celle de son fichier. */
         private const val MATCH_MS = 3 * 60_000L
 
