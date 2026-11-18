@@ -1,6 +1,6 @@
 [package]
 name = "dicto-desktop"
-version = "0.1.5"
+version = "0.1.6"
 description = "Dicto : dictée vocale pour Windows, Linux et macOS"
 edition = "2024"
 rust-version = "1.85"
