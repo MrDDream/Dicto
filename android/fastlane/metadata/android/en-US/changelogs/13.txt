@@ -1,0 +1,1 @@
+- WhatsApp tab: only received voice messages are shown, a button reveals the others.

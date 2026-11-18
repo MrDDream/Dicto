@@ -20,7 +20,7 @@ class VoiceNotesTest {
 
     @Test
     fun newestWeeksComeFirst() {
-        val folders = listOf(dir("202645", 100), dir("202647", 300), dir(".hidden", 999), dir("202646", 200))
+        val folders = listOf(dir("202645", 100), dir("202647", 300), dir(".hidden", 999), dir("Sent", 999), dir("202646", 200))
         assertEquals(listOf("202647", "202646"), newestFolders(folders, 2).map { it.name })
     }
 

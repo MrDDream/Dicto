@@ -195,6 +195,7 @@ fun VoiceNotesScreen(onOpenSettings: () -> Unit) {
     var open by rememberSaveable { mutableStateOf<Long?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var person by rememberSaveable { mutableStateOf<String?>(null) }
+    var showUnknown by rememberSaveable { mutableStateOf(false) }
 
     // Rechargée à l'ouverture, au retour dans l'app, quand un vocal se termine ou arrive.
     val done = items.count { it.voiceNote != null && it.status == FileItem.Status.DONE }
@@ -233,6 +234,7 @@ fun VoiceNotesScreen(onOpenSettings: () -> Unit) {
                     context, notes, texts, senders, items,
                     query = query, onQuery = { query = it },
                     person = person, onPerson = { person = it },
+                    showUnknown = showUnknown, onShowUnknown = { showUnknown = it },
                     onOpen = { open = it },
                 )
             }
@@ -251,6 +253,8 @@ private fun VoiceNotesList(
     onQuery: (String) -> Unit,
     person: String?,
     onPerson: (String?) -> Unit,
+    showUnknown: Boolean,
+    onShowUnknown: (Boolean) -> Unit,
     onOpen: (Long) -> Unit,
 ) {
     PrimaryButton(
@@ -290,9 +294,19 @@ private fun VoiceNotesList(
         }
     }
     val filtering = person != null || query.isNotBlank()
-    val list = notes?.filter { matchesFilter(senders[it.docId], texts[it.docId], person, query) }
+    // Rien dans un fichier ne dit qui l'a envoyé : un vocal reçu se reconnaît à l'expéditeur noté
+    // depuis sa notification. Les autres (tes envois, les vocaux reçus conversation ouverte ou
+    // avant l'activation) restent cachés tant qu'on ne demande pas à les voir.
+    val matching = notes?.filter { matchesFilter(senders[it.docId], texts[it.docId], person, query) }
+    val hidden = if (showUnknown) 0 else matching.orEmpty().count { senders[it.docId] == null }
+    val list = if (showUnknown) matching else matching?.filter { senders[it.docId] != null }
     when {
         list == null -> Text(tr("Lecture du dossier…"), style = MaterialTheme.typography.bodySmall, color = Dicto.InkMuted)
+        list.isEmpty() && hidden > 0 -> Text(
+            tr("Aucun vocal reçu avec son expéditeur pour l'instant. Les prochains apparaîtront ici."),
+            style = MaterialTheme.typography.bodySmall,
+            color = Dicto.InkMuted,
+        )
         list.isEmpty() && filtering -> Text(
             tr("Aucun vocal ne correspond."),
             style = MaterialTheme.typography.bodySmall,
@@ -321,6 +335,24 @@ private fun VoiceNotesList(
                     }
                 }
             }
+        }
+    }
+    if (hidden > 0 || showUnknown) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onShowUnknown(!showUnknown) }.padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                if (showUnknown) tr("Masquer les vocaux sans expéditeur") else tr("Afficher aussi les %1\$s vocaux sans expéditeur", hidden),
+                style = MaterialTheme.typography.labelLarge,
+                color = Dicto.Accent,
+            )
+            Text(
+                tr("Tes vocaux envoyés, et ceux reçus sans notification (conversation ouverte, ou avant l'activation)."),
+                style = MaterialTheme.typography.labelSmall,
+                color = Dicto.InkMuted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }

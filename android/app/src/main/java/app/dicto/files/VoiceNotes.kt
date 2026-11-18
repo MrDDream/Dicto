@@ -236,7 +236,8 @@ internal fun isVoiceFile(name: String): Boolean {
 
 /** Les sous-dossiers (semaines « 202647 ») les plus récents. */
 internal fun newestFolders(folders: List<DocEntry>, count: Int): List<DocEntry> =
-    folders.filterNot { it.name.startsWith(".") }
+    // « Sent » : vocaux envoyés, si WhatsApp les range à part.
+    folders.filterNot { it.name.startsWith(".") || it.name.equals("Sent", ignoreCase = true) }
         .sortedWith(compareByDescending<DocEntry> { it.modified }.thenByDescending { it.name })
         .take(count)
 

@@ -534,3 +534,7 @@ transcription auto	auto transcription
 Tuile « Dernier vocal »	“Last voice message” tile
 Nom ou mot-clé	Name or keyword
 Aucun vocal ne correspond.	No voice message matches.
+Aucun vocal reçu avec son expéditeur pour l'instant. Les prochains apparaîtront ici.	No voice message received with its sender yet. The next ones will show up here.
+Masquer les vocaux sans expéditeur	Hide voice messages without a sender
+Afficher aussi les %1$s vocaux sans expéditeur	Also show the %1$s voice messages without a sender
+Tes vocaux envoyés, et ceux reçus sans notification (conversation ouverte, ou avant l'activation).	Voice messages you sent, and those received without a notification (chat open, or before you allowed it).
