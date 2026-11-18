@@ -1,0 +1,3 @@
+- WhatsApp voice message › Share › "Transcribe with Dicto": the text shows over the app, ready to copy or share.
+- Closed midway, the text arrives as a notification.
+- Transcribed voice messages go to the history.

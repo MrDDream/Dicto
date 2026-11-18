@@ -42,10 +42,24 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- « Partager vers Dicto » un message vocal ou une vidéo : transcription. -->
+            <!-- Plusieurs fichiers partagés vers Dicto : écran Fichiers. -->
+            <intent-filter android:label="@string/share_label">
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- « Transcrire avec Dicto » sur un message vocal : panneau par-dessus l'app d'origine. -->
+        <activity
+            android:name=".files.ShareTranscribeActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="app.dicto.share"
+            android:theme="@style/Theme.Dicto.Translucent">
             <intent-filter android:label="@string/share_label">
                 <action android:name="android.intent.action.SEND" />
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="audio/*" />
                 <data android:mimeType="video/*" />

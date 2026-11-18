@@ -76,6 +76,12 @@ class MainActivity : ComponentActivity() {
 
     /** Fichiers partagés depuis une autre app : mis en file de transcription. */
     private fun handleShare(intent: android.content.Intent?) {
+        // Notification « Vocal transcrit » : ouvre l'écran Fichiers.
+        if (intent?.getBooleanExtra(EXTRA_OPEN_FILES, false) == true) {
+            intent.removeExtra(EXTRA_OPEN_FILES)
+            openFiles.value = true
+            return
+        }
         val uris: List<android.net.Uri> = when (intent?.action) {
             android.content.Intent.ACTION_SEND ->
                 listOfNotNull(androidx.core.content.IntentCompat.getParcelableExtra(intent, android.content.Intent.EXTRA_STREAM, android.net.Uri::class.java))
@@ -89,6 +95,8 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_OPEN_FILES = "app.dicto.OPEN_FILES"
+
         /** Demande d'ouvrir l'écran Fichiers (partage reçu). */
         val openFiles = kotlinx.coroutines.flow.MutableStateFlow(false)
     }

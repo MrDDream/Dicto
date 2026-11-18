@@ -1,0 +1,3 @@
+- Vocal WhatsApp › Partager › « Transcrire avec Dicto » : le texte s'affiche par-dessus l'app, à copier ou partager.
+- Fermé en cours de route, le texte arrive en notification.
+- Les vocaux transcrits vont dans l'historique.

@@ -2,6 +2,7 @@ package app.dicto.files
 
 import app.dicto.i18n.tr
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -17,6 +18,7 @@ import androidx.core.content.ContextCompat
 import app.dicto.DictoApp
 import app.dicto.R
 import app.dicto.dictation.userMessage
+import app.dicto.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import uniffi.dicto_ffi.DictationResult
 import uniffi.dicto_ffi.FileJob
 import uniffi.dicto_ffi.FileTranscript
 import uniffi.dicto_ffi.ProgressListener
@@ -39,6 +42,10 @@ data class FileItem(
     val durationMs: Long = 0,
     val result: FileTranscript? = null,
     val error: String? = null,
+    /** App d'où vient le fichier partagé (ex. com.whatsapp) : la transcription va dans l'historique. */
+    val source: String? = null,
+    /** Copie locale d'un fichier partagé, supprimée une fois traité. */
+    val cached: java.io.File? = null,
 ) {
     enum class Status { QUEUED, VOICE_MODEL, DECODING, TRANSCRIBING, DONE, FAILED, CANCELLED }
 
@@ -56,17 +63,35 @@ object FilesController {
     private var nextId = 1L
     @Volatile private var job: FileJob? = null
     @Volatile private var currentId: Long? = null
+    /** Élément affiché par le panneau de partage : pas de notification pour lui. */
+    @Volatile var shownId: Long? = null
 
     init {
         scope.launch { for (id in queue) process(id) }
     }
 
-    fun add(context: Context, uri: Uri) {
+    /**
+     * Met un fichier en file. Partagé depuis une autre app (`source`), il est d'abord copié :
+     * le droit de lecture accordé par le partage peut tomber dès que le panneau se ferme.
+     */
+    fun add(context: Context, uri: Uri, source: String? = null): Long {
         val name = displayName(context, uri)
-        val item = FileItem(nextId++, uri, name)
+        val item = FileItem(nextId++, uri, name, source = source)
         _items.update { listOf(item) + it }
         FileWorkService.start(context)
-        queue.trySend(item.id)
+        if (source == null) {
+            queue.trySend(item.id)
+        } else {
+            val app = context.applicationContext
+            scope.launch(Dispatchers.IO) {
+                val local = runCatching { copyToCache(app, uri, item.id, name) }
+                    .onFailure { Log.w("DictoFiles", "copie de $name", it) }
+                    .getOrNull()
+                if (local != null) update(item.id) { it.copy(uri = Uri.fromFile(local), cached = local) }
+                queue.trySend(item.id)
+            }
+        }
+        return item.id
     }
 
     fun cancel(id: Long) {
@@ -81,7 +106,10 @@ object FilesController {
 
     private suspend fun process(id: Long) {
         val item = _items.value.firstOrNull { it.id == id } ?: return
-        if (item.status == FileItem.Status.CANCELLED) return
+        if (item.status == FileItem.Status.CANCELLED) {
+            item.cached?.delete()
+            return
+        }
         val app = DictoApp.instance
         currentId = id
         try {
@@ -115,17 +143,56 @@ object FilesController {
                 },
             )
             update(id) { it.copy(status = FileItem.Status.DONE, progress = 1f, result = result) }
+            if (item.source != null) {
+                runCatching { app.storage.addHistory(result.asDictation(), item.source) }
+                    .onFailure { Log.w("DictoFiles", "historique de ${item.name}", it) }
+                if (shownId != id) notifyResult(app, id, result.text)
+            }
         } catch (e: uniffi.dicto_ffi.FfiException.Cancelled) {
             update(id) { it.copy(status = FileItem.Status.CANCELLED) }
         } catch (e: Exception) {
             Log.w("DictoFiles", "transcription de ${item.name}", e)
             update(id) { it.copy(status = FileItem.Status.FAILED, error = e.userMessage()) }
         } finally {
+            item.cached?.delete()
             job = null
             currentId = null
             if (_items.value.none { it.status == FileItem.Status.QUEUED || it.active }) FileWorkService.stop(app)
         }
     }
+
+    private fun copyToCache(context: Context, uri: Uri, id: Long, name: String): java.io.File {
+        val dir = java.io.File(context.cacheDir, "shared").apply { mkdirs() }
+        val file = java.io.File(dir, "$id.${name.substringAfterLast('.', "audio").take(8)}")
+        context.contentResolver.openInputStream(uri)!!.use { input -> file.outputStream().use { input.copyTo(it) } }
+        return file
+    }
+
+    /** Transcription d'un fichier partagé, terminée alors que le panneau était fermé. */
+    private fun notifyResult(context: Context, id: Long, text: String) {
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        if (!manager.areNotificationsEnabled()) return
+        val open = PendingIntent.getActivity(
+            context,
+            id.toInt(),
+            Intent(context, MainActivity::class.java)
+                .putExtra(MainActivity.EXTRA_OPEN_FILES, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val body = text.ifBlank { tr("Aucune parole détectée.") }
+        val notification = NotificationCompat.Builder(context, DictoApp.CHANNEL_DOWNLOADS)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setContentTitle(tr("Vocal transcrit"))
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        runCatching { manager.notify(RESULT_NOTIFICATION + id.toInt(), notification) }
+    }
+
+    private const val RESULT_NOTIFICATION = 100
 
     private fun update(id: Long, f: (FileItem) -> FileItem) =
         _items.update { list -> list.map { if (it.id == id) f(it) else it } }
@@ -137,6 +204,18 @@ object FilesController {
             }
         }.getOrNull() ?: uri.lastPathSegment ?: "audio"
 }
+
+/** Entrée d'historique d'un fichier transcrit (pas de commandes vocales ni de retouche). */
+private fun FileTranscript.asDictation() = DictationResult(
+    text = text,
+    edits = emptyList(),
+    rawText = text,
+    language = language,
+    engine = engine,
+    durationMs = durationMs,
+    warning = null,
+    newParagraph = false,
+)
 
 /** Garde Dicto actif pendant la transcription d'un fichier, écran éteint ou app fermée. */
 class FileWorkService : Service() {
