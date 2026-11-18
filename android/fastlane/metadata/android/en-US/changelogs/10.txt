@@ -1,0 +1,2 @@
+- WhatsApp voice messages: the sender (person · group) is noted from notifications.
+- Clearer section: 3 latest voice messages, "Show more", Today / Yesterday.

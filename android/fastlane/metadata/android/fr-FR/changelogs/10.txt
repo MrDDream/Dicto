@@ -1,0 +1,2 @@
+- Vocaux WhatsApp : l'expéditeur (personne · groupe) est noté via les notifications.
+- Section plus claire : 3 derniers vocaux, « Voir les autres », Aujourd'hui / Hier.
