@@ -1181,7 +1181,7 @@ dependencies = [
 
 [[package]]
 name = "dicto-core"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -1203,7 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "dicto-desktop"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "arboard",
  "ashpd",
@@ -1235,7 +1235,7 @@ dependencies = [
 
 [[package]]
 name = "dicto-ffi"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "dicto-core",
  "thiserror 2.0.21",
