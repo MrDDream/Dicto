@@ -1186,7 +1186,6 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bzip2 0.6.1",
- "futures-util",
  "hex",
  "hound",
  "reqwest 0.12.28",

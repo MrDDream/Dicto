@@ -3,7 +3,6 @@ package app.dicto.ui
 import app.dicto.i18n.tr
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -306,20 +305,6 @@ fun NavRow(icon: ImageVector, title: String, summary: String?, onClick: () -> Un
                 null,
                 Modifier.size(18.dp).graphicsLayer { rotationZ = 180f },
                 tint = Dicto.InkMuted,
-            )
-        }
-    }
-}
-
-/** Les 3 à 4 points « Rapidité ●●●○ ». */
-@Composable
-fun Dots(value: Int, max: Int = 4, color: Color = Dicto.Accent) {
-    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        repeat(max) { i ->
-            Box(
-                Modifier.size(7.dp).clip(CircleShape)
-                    .background(if (i < value) color else Color.Transparent)
-                    .border(1.dp, if (i < value) color else Dicto.Border, CircleShape),
             )
         }
     }
